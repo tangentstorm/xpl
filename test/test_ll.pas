@@ -3,12 +3,13 @@ implementation uses ll;
 
   var
     ls	 : list;
-    a, b : pnode;
+    a, b : node;
 
   procedure setup;
   begin
     ls := list.init;
-    new( a ); new( b );
+    a := node.create;
+    b := node.create;
   end;
 
   procedure test_init;
