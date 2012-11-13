@@ -54,6 +54,7 @@ interface uses crt, num, stri;
   procedure cwcommand( cn : byte; s : string );
   procedure cwrite   ( s : string );
   procedure cwriteln ( s : string );
+  procedure cwriteln ( args : array of const );
   procedure cwritexy ( x, y : byte; s : string );
   procedure ccenterxy( x, y : byte; s : string );
 
@@ -315,9 +316,19 @@ implementation
   textattr := tcolor;
  end;
 
- procedure cwriteln( s : string );
+  procedure cwriteln( s : string );
+  begin cwrite( s ); write( #13 ); writeln;
+  end;
+
+  procedure cwriteln( args : array of const );
+    var i : integer;
   begin
-   cwrite( s + #13 );
+    for i := 0 to high( args ) do
+      case args[ i ].vtype of
+	vtstring  : cwrite( args[ i ].vstring^ );
+	vtinteger : cwrite( n2s( args[ i ].vinteger ));
+      end;
+     write( #13, #10 ); writeln;
   end;
 
  procedure cwritexy( x, y : byte; s : string );
