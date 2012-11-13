@@ -66,33 +66,9 @@ implementation
     else result := nil
   end; { find }
 
-
-  procedure List.insert(n: pNode);
-    { be sure to change zmenu.add IF you change this!!! }
-  begin
-    if mFirst = nil then
-    begin
-      mLast := n;
-      mFirst := n;
-    end
-    else
-    begin
-      n^.next := mFirst;
-      mFirst := n;
-      n^.prev := mFirst;
-    end;
-  end; { insert }
-
-
   procedure list.foreachdo( what : listaction ); inline; deprecated;
   begin foreach( what )
   end;
-
-  procedure list.append( n: pNode );
-  begin
-    self.insert( n );
-    mLast := n;
-  end; { append }
 
   procedure list.foreach( what : listaction );
     var p, q : pnode;
@@ -107,6 +83,41 @@ implementation
   end;
 
 
+
+  function addFirstOne( self : list; n : pNode ) : boolean;
+  begin
+    if self.mFirst = nil then begin
+      self.mLast := n;
+      self.mFirst := n;
+      result := true;
+    end
+    else result := false;
+  end;
+
+  procedure list.append( n: pNode );
+  begin
+    if not addFirstOne( self, n ) then
+    begin
+      n^.prev := mLast;
+      mLast^.next := n;
+      mLast := n;
+    end;
+  end; { append }
+
+
+  procedure List.insert(n: pNode);
+    { be sure to change zmenu.add IF you change this!!! }
+  begin
+    if not addFirstOne( self, n ) then
+    begin
+      n^.next := mFirst;
+      mFirst^.prev := n;
+      mFirst := n;
+    end;
+  end; { insert }
+
+
+
   procedure List.remove(n: pNode);
     var
       p: pNode;
