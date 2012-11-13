@@ -50,32 +50,34 @@ begin
     end;
   end;
   case result of
-    pass : begin inc( passed ); {c}write( {'|g',} 'o' ) end;
-    fail : begin inc( failed ); {c}write( {'|y',} '!' ) end;
-    err  : begin inc( broken ); {c}write( {'|r',} 'X' ) end;
+    pass : begin inc( passed ); cwrite( '|g.' ) end;
+    fail : begin inc( failed ); cwrite( '|y!' ) end;
+    err  : begin inc( broken ); cwrite( '|rX' ) end;
   end;
 end;
 
 procedure report;
   var total : integer; p : problem;
 begin
-  //cwriteln( '|K');
-  writeln;
-  {c}writeln('----------------------------------------------' );
-  writeln;
+  if length( problems ) > 0 then begin
+    cwriteln( '|K');
+    writeln('----------------------------------------------' );
+    writeln;
+  end;
+
   for p in problems do begin
     {c}writeln( {'|K',} '[ ',  { colors[ p.result ] + }
 	       p.test_name, {'|K',}  ' ] ');
     writeln( {'|w',} p.error );
     writeln;
   end;
-  //cwriteln( '|K');
-  {c}writeln('----------------------------------------------' );
+  cwriteln( '|K');
+  writeln('----------------------------------------------' );
   total := passed + failed + broken;
-  {c}writeln( {'|K',} 'results: ', {'\w',} total, ' tests run. ',
-	   passed, ' tests passed; ',
-           failed, ' failed; ',
-           broken, ' broken.' );
+  cwriteln([ '|K', 'results: ', '|w', total, ' tests run. ',
+	     passed, ' tests passed; ',
+             failed, ' failed; ',
+             broken, ' broken.' ]);
   writeln;
 end;
 
