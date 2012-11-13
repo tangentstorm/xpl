@@ -16,10 +16,13 @@ for path in map( str.strip, os.popen( 'ls test_*.pas' )):
         print >> toprun, "unit_name := '%s';" % unit_name
         if line.startswith( 'procedure setup' ):
             has_setup = True
+            print >> subdef, ' ', line
         if line.startswith( 'procedure test_' ):
             print >> subdef, ' ', line
             test_name = line.split( ' ', 1 )[ 1 ]
             test_name = test_name[ : -1 ] # strip final ";"
+            if has_setup:
+                print >> toprun, "%s.setup;" % unit_name
             print >> toprun, "run( '%s', @%s.%s );" \
                 % ( test_name, unit_name, test_name )
     subdef.close()
