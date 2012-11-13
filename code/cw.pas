@@ -325,8 +325,9 @@ implementation
   begin
     for i := 0 to high( args ) do
       case args[ i ].vtype of
-	vtstring  : cwrite( args[ i ].vstring^ );
-	vtinteger : cwrite( n2s( args[ i ].vinteger ));
+	vtinteger    : cwrite( n2s( args[ i ].vinteger ));
+	vtstring     : cwrite( args[ i ].vstring^ );
+	vtansistring : cwrite( ansistring( args[ i ].vansistring ));
       end;
      write( #13, #10 ); writeln;
   end;
