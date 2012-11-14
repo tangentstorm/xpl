@@ -33,6 +33,6 @@ begin
     showInvert;
     repeat until not pressed;
     showNormal;
-    result := mouseover; { releasing outside box canccels }
+    result := mouseover; { releasing outside box cancels }
   end
 end;
