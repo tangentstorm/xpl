@@ -3,11 +3,9 @@
 unit ui;
 interface uses xpc, cw, ll, crt, kvm, mou, kbd, stri, fx, num, cli;
 
-
 { note : this module considers (0,0) to be the top left corner! }
 
 type
-    
   { a clickable rectangle onscreen }
   ZObj  = class ( ll.Node )
     x, y, x2, y2 : Byte; { TODO : mX, mY, etc }
@@ -118,7 +116,14 @@ type
     constructor create( a, b, tl, dl, tc, ac : Byte; esc : Boolean;
                       start : String );
     constructor default( a, b, tl, dl : Byte; start : String );
-    procedure Reset;
+    procedure reset;
+    procedure fw_token;
+    procedure bw_token;
+    procedure bw_del_token;
+    procedure del_this_token;
+    procedure del_to_end;
+    procedure accept;
+    procedure cancel;
     procedure show; virtual;
     procedure del;
     procedure backspace;
