@@ -2,6 +2,13 @@
 unit xpc; { cross-platform compilation help }
 interface uses sysutils;
 
+
+  const { Boolean synonyms }
+    Yes	 = true;
+    No	 = false;
+    On	 = true;
+    Off	 = false;
+  
   { some handy debug routines }
   procedure pause( msg : string );
   procedure hexdump( data : string );
