@@ -23,7 +23,12 @@ interface
 
   function mousethere : BOOLEAN;
   procedure resetmouse( var status : BOOLEAN; var numbtns : INTEGER );
-  procedure showmouse( yn : BOOLEAN );
+
+  procedure showmouse( yn : BOOLEAN ); deprecated;
+  procedure show;
+  procedure hide;
+  procedure show_if( cond : boolean );
+
   procedure mouseon;
   procedure getmpos;
   procedure gettextmpos;
@@ -70,6 +75,10 @@ var
   end;
 
 
+  procedure show; begin end;
+  procedure hide; begin end;
+  procedure show_if( cond : boolean ); begin end;
+  
   procedure showmouse( yn : BOOLEAN );
   begin
     if not mpresent then begin
