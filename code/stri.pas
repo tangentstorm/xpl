@@ -1,5 +1,6 @@
+{$i xpc.inc}
 unit stri; { string interface }
-interface
+interface uses xpc;
 
   function pad( s : string; len : byte; ch : char ) : string;
   function chntimes( c : char; n : byte ) : string;

@@ -1,5 +1,6 @@
+{$i xpc.inc}
 unit cw; { colorwrite }
-interface uses crt, num, stri;
+interface uses xpc, crt, num, stri;
 
   const
     { cwrite commands }

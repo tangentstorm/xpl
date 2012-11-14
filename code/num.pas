@@ -1,5 +1,6 @@
+{$i xpc.inc}
 unit num; { ■ number/conversion commands }
-interface
+interface uses xpc;
   function min( p, q : longint ) : longint;
   function max( p, q : longint ) : longint;
   function inc2( goesto, amt, max : longint ) : longint;
