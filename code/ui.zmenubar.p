@@ -1,12 +1,12 @@
 
-constructor zMenubar.init(
-  x_, y_ : Byte; p : String; e, a : Boolean; head : pzChoice );
+constructor zMenubar.create(
+  x_, y_ : Byte; p : String; e, a : Boolean; head : zChoice );
 begin
   tx    := x_;
   ty    := y_;
   width := 0;
   setpal( p );
-  zMenu.init( e, a, on, head );
+  zMenu.create( e, a, on, head );
 end;
   
 
@@ -20,8 +20,8 @@ begin
       if submenu <> nil then
       begin
         subactive := true;
-        submenu^.Reset;
-        subactive := submenu^.mCurrent <> nil
+        submenu.Reset;
+        subactive := submenu.mCurrent <> nil
       end
     end
 end;
@@ -34,7 +34,7 @@ begin
     #71, #73,           { home, pageup, }
     #79, #81,           { end,  pgdown, }
     kbd.UP, kbd.DOWN :  { up & down }
-      if subactive then submenu^.handlestripped( ch );
+      if subactive then submenu.handlestripped( ch );
     
     kbd.LEFT :
       begin { go to prev one }
@@ -43,8 +43,8 @@ begin
         if submenu <> nil then
         begin
           subactive := true;
-          submenu^.Reset;
-          subactive := submenu^.mCurrent <> nil
+          submenu.Reset;
+          subactive := submenu.mCurrent <> nil
         end
       end;
     
@@ -57,8 +57,8 @@ begin
         if submenu <> nil then
         begin
           subactive := true;
-          submenu^.Reset;
-          subactive := submenu^.mCurrent <> nil
+          submenu.Reset;
+          subactive := submenu.mCurrent <> nil
         end
       end;
     
@@ -80,13 +80,13 @@ begin
 end;
   
 
-procedure zMenubar.format( choice : pzChoice );
+procedure zMenubar.format( choice : zChoice );
 begin
-  zMenu.format( choice );
-  choice^.y  := ty;
-  choice^.y2 := ty;
-  choice^.x  := tx + width;
-  width      := width + clength( choice^.st1 ) - 1;
-  choice^.x2 := tx + width;
+  inherited format( choice );
+  choice.y  := ty;
+  choice.y2 := ty;
+  choice.x  := tx + width;
+  width      := width + clength( choice.st1 ) - 1;
+  choice.x2 := tx + width;
 end;
 

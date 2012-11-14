@@ -1,7 +1,7 @@
 
-constructor zHexCounter.Init( a, b, tc, ac : Byte; minVal, maxVal, strt : Word );
+constructor zHexCounter.create( a, b, tc, ac : Byte; minVal, maxVal, strt : Word );
 begin
-  zcounter.init( a, b, tc, ac, minVal, maxVal, strt );
+  zcounter.create( a, b, tc, ac, minVal, maxVal, strt );
   x2 := a + 8;
 end;
 

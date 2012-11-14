@@ -1,8 +1,8 @@
 
 { TODO: this should just be an alternate constructor for ztoggle }
 
-constructor zyesno.init( a, b, tc : Byte; startval : Boolean );
+constructor zyesno.create( a, b, tc : Byte; startval : Boolean );
 begin
-  ztoggle.init( a, b, tc, 'Yes', 'No ', startval );
+  ztoggle.create( a, b, tc, 'Yes', 'No ', startval );
 end;
 

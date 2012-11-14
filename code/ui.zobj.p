@@ -1,4 +1,4 @@
-constructor ZObj.init( a, b, a2, b2 : Byte );
+constructor ZObj.create( a, b, a2, b2 : Byte );
 begin
   x  := a;
   y  := b;
@@ -17,14 +17,13 @@ end;
 function zObj.mouseover : Boolean;
 begin
   gettextmpos;
-  result :=
-  ( mx >= x ) and ( mx <= x2 ) and
-  ( my >= y ) and ( my <= y2 );
+  result :=  ( mx >= x ) and ( mx <= x2 ) and
+	     ( my >= y ) and ( my <= y2 );
 end;
 
 function zObj.pressed : Boolean;
 begin
-  result := mouseover and ( ms.state and 1 <> 0 );
+  result := mouseover and ( mou.state and 1 <> 0 );
 end;
 
 function zObj.click : Boolean;

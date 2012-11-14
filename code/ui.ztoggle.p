@@ -1,8 +1,8 @@
 
-constructor ztoggle.init(
+constructor ztoggle.create(
     a, b, tc : Byte; ts, fs : String; startval : Boolean );
 begin
-  inherited init( a, b, a, b );
+  inherited create( a, b, a, b );
   tcol     := tc;
   truestr  := ts;
   falsestr := fs;

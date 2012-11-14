@@ -1,15 +1,15 @@
 
-constructor zPassword.init(
+constructor zPassword.create(
   a, b, tl, dl, tc, ac : Byte; pwc : Char; start : String );
 begin
-  zInput.init( a, b, tl, dl, tc, ac, true, start );
+  zInput.create( a, b, tl, dl, tc, ac, true, start );
   pwchar := pwc;
 end;
 
 
 constructor zPassword.default( a, b, tl, dl : Byte; start : String );
 begin
-  init( a, b, tl, dl, $0A, $0E, 'þ', start );
+  create( a, b, tl, dl, $0A, $0E, 'þ', start );
 end;
 
 

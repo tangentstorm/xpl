@@ -1,8 +1,8 @@
 
-constructor zMenu.init( esc, alt, usetemp : Boolean; head : pzchoice );
+constructor zMenu.create( esc, alt, usetemp : Boolean; head : zchoice );
 var i : integer;
 begin
-  mChoices.init;
+  mChoices.create;
   mChoices.insert( head );
 {
   for i := 0 to high( choices ) do
@@ -13,11 +13,11 @@ begin
 
   assert( menu <> nil, 'menu must not be nil' );
   add( menu );
-  each := pzchoice( mChoices.first );
+  each := zchoice( mChoices.first );
   // post-setformat
   while ( each <> nil ) do begin
     format( each );
-    each := pzchoice( each.next );
+    each := zchoice( each.next );
   end;
 }
   setonfirst;
@@ -29,55 +29,55 @@ begin
   subactive := false;
 end;
 
-function zMenu.firstChoice : pzChoice;
+function zMenu.firstChoice : zChoice;
 begin
-  result := pzChoice( mChoices.first );
+  result := zChoice( mChoices.first );
 end;
 
-function zMenu.lastChoice : pzChoice;
+function zMenu.lastChoice : zChoice;
 begin
-  result := pzChoice( mChoices.last );
+  result := zChoice( mChoices.last );
 end;
 
-function zMenu.thisChoice : pzChoice;
+function zMenu.thisChoice : zChoice;
 begin
-  result := pzChoice( mCurrent );
+  result := zChoice( mCurrent );
 end;
 
-procedure zMenu.insert( z : pzchoice );
+procedure zMenu.insert( z : zchoice );
 var
-  l : pzchoice;
+  l : zchoice;
 begin
   mChoices.insert( z );
 {
   if z = nil then exit;
   l := z;
-  while l^.next <> nil do l := pzchoice( l^.next );
+  while l.next <> nil do l := zchoice( l.next );
   if mChoices.Last = nil then mLast := l
-  else l^.next := mLast^.next;
-  last^.next := z;
+  else l.next := mLast.next;
+  last.next := z;
 }
 end;
 
 
-procedure zMenu.add( z : pzchoice );
-// var l, t : pzchoice;
+procedure zMenu.add( z : zchoice );
+// var l, t : zchoice;
 begin
   if z = nil then exit;  { has to add in all the nexts! }
   insert( z );
 {
     l := z;
-    while l^.next <> nil do
+    while l.next <> nil do
 begin
       t := l;
-      l := pzchoice( l^.next );
-      if l <> nil then l^.prev := t;
+      l := zchoice( l.next );
+      if l <> nil then l.prev := t;
 end;
     if self.last = nil then self.last := l
-    else l^.next := self.last^.next;
-    first()^.prev := l;
-    last^.next := z;
-    z^.prev := last;
+    else l.next := self.last.next;
+    first().prev := l;
+    last.next := z;
+    z.prev := last;
     last := l;
     }
 end;
@@ -87,14 +87,14 @@ procedure zMenu.show;
 var
   oldIsMV :   Boolean;
   p, q    : zchoice;
-  node    : ll.pNode;
-  choice  : ui.pZChoice;
+  node    : ll.node;
+  choice  : ui.zChoice;
 begin
   node := mChoices.first;
   repeat
-    choice := pzChoice( node );
-    choice^.draw( mCurrent = choice );
-    node := node^.next;
+    choice := node as zChoice;
+    choice.draw( mCurrent = choice );
+    node := node.next;
   until node = mChoices.last;
 
   {
@@ -102,33 +102,33 @@ begin
   while p <> nil do begin
     q := p;
     p := zchoice( mChoices.next( p ) );
-    q^.draw( q = mCurrent );
+    q.draw( q = mCurrent );
   end;
   }
 
-  if submenu <> nil then submenu^.show;
+  if submenu <> nil then submenu.show;
   begin
     oldIsMV := mvisible;
-    if oldIsMV then showmouse( off );
-    if oldIsMV then showmouse( on );
+    if oldIsMV then mou.hide;
+    if oldIsMV then mou.show;
   end;
 end;
 
 
-procedure zMenu.seton( z : pzChoice );
+procedure zMenu.seton( z : zChoice );
 begin
-{  if ( z <> nil ) and ( z^.on ) then  }
+{  if ( z <> nil ) and ( z.on ) then  }
 {    mCurrent := mChoices.first.find( z ) as ll.Node;}
   subactive := submenu <> nil;
   if subactive then
     begin
-      submenu^.reset;
-      subactive := submenu^.mCurrent <> nil
+      submenu.reset;
+      subactive := submenu.mCurrent <> nil
     end
 end;
 
 
-procedure zMenu.setto( z : pzChoice );
+procedure zMenu.setto( z : zChoice );
 begin
   seton( z );
   show;
@@ -136,13 +136,13 @@ end;
 
 procedure zMenu.setonfirst;
 begin
- if not mChoices.isEmpty then
+ if not mChoices.is_empty then
  begin
-   mCurrent := pzChoice( mChoices.first );
+   mCurrent := zChoice( mChoices.first );
    repeat
-      if ( mCurrent <> nil) and (thisChoice^.on) then
-         mCurrent := pzChoice( mCurrent^.Next );
-    until ( mCurrent = pzChoice( mChoices.last )) or ( thisChoice^.on );
+      if ( mCurrent <> nil) and (thisChoice.on) then
+         mCurrent := zChoice( mCurrent.Next );
+    until ( mCurrent = zChoice( mChoices.last )) or ( thisChoice.on );
  end;
 end;
 
@@ -173,9 +173,9 @@ begin
 
   if subactive then
   begin
-    submenu^.handle( ch );
-    endloop := submenu^.endloop;
-    submenu^.endloop := false;
+    submenu.handle( ch );
+    endloop := submenu.endloop;
+    submenu.endloop := false;
   end
 
   else  { sub <> nil }
@@ -192,63 +192,63 @@ end; { handle }
 
 
 procedure ZMenu.Handlestripped( ch : Char );
-var l : pzchoice;
+var l : zchoice;
 begin
   if ( subactive ) and ( ch in sArrows ) then
-    submenu^.handlestripped( ch )
+    submenu.handlestripped( ch )
   else begin
     case Ch of
       kbd.UP :
         begin
           repeat
-            if ( mCurrent = pzChoice( mChoices.First )) then
-              mCurrent := pzChoice( mChoices.Last )
+            if ( mCurrent = zChoice( mChoices.First )) then
+              mCurrent := zChoice( mChoices.Last )
             else
-              mCurrent := pzChoice( mCurrent^.prev )
-          until ( thisChoice^.enabled ) or ( mCurrent = pzChoice( mChoices.First ));
+              mCurrent := zChoice( mCurrent.prev )
+          until ( thisChoice.enabled ) or ( mCurrent = zChoice( mChoices.First ));
           show;
         end;
 
       kbd.LEFT :
         if subactive then
-          if submenu^.subactive then
-            submenu^.handlestripped( ch )
+          if submenu.subactive then
+            submenu.handlestripped( ch )
           else begin
               subactive := no;
-              submenu^.mCurrent := nil
+              submenu.mCurrent := nil
             end;
 
       kbd.DOWN :
         begin
           repeat
-            if ( mCurrent = pzChoice( mChoices.Last )) then
-              mCurrent := pzChoice( mChoices.First )
+            if ( mCurrent = zChoice( mChoices.Last )) then
+              mCurrent := zChoice( mChoices.First )
             else if mCurrent <> nil then
-              mCurrent := pzChoice( mCurrent^.next )
-          until ( thisChoice^.enabled ) or ( mCurrent = pzChoice( mChoices.Last ));
+              mCurrent := zChoice( mCurrent.next )
+          until ( thisChoice.enabled ) or ( mCurrent = zChoice( mChoices.Last ));
           if mCurrent = nil then halt;
           show;
         end;
 
       kbd.RIGHT :
-        if thisChoice^.sub <> nil then
+        if thisChoice.sub <> nil then
         begin
           subactive := true;
-          submenu^.Reset;
-          subactive := submenu^.FirstChoice <> nil; { TODO .FirstEnabled ? }
+          submenu.Reset;
+          subactive := submenu.FirstChoice <> nil; { TODO .FirstEnabled ? }
         end;
 
       #71, #73 : { home }
         begin
-          mCurrent := pzChoice( mChoices.First );
-          if not thisChoice^.enabled then
+          mCurrent := zChoice( mChoices.First );
+          if not thisChoice.enabled then
              handlestripped( kbd.DOWN );
         end;
 
       #79, #81 : { end }
         begin
-          mCurrent := pzChoice( mChoices.Last );
-          if not thisChoice^.enabled then
+          mCurrent := zChoice( mChoices.Last );
+          if not thisChoice.enabled then
              handlestripped( kbd.UP );
         end;
     otherwise handle( ch );
@@ -258,13 +258,13 @@ end; { handlestripped }
 
 procedure zMenu.Reset;
 begin
-  if not mChoices.isEmpty then
+  if not mChoices.is_empty then
   begin
     setonfirst;
     repeat
-      mCurrent := pzChoice( mCurrent^.next );
-    if thisChoice^.sub <> nil then submenu^.Reset
-    until mCurrent = pzChoice( mChoices.last );
+      mCurrent := zChoice( mCurrent.next );
+    if thisChoice.sub <> nil then submenu.Reset
+    until mCurrent = zChoice( mChoices.last );
     setonfirst;
     subactive := submenu <> nil;
     endloop   := false;
@@ -272,23 +272,23 @@ begin
 end;
 
 procedure zMenu.domousestuff;
-var node : ll.pNode; choice : pzchoice;
+var node : ll.node; choice : zchoice;
 begin
   if not mpresent then exit;
   getmpos;
 
   if submenu <> nil then
   begin
-    submenu^.domousestuff;
-    endloop := submenu^.endloop;
-    submenu^.endloop := false;
+    submenu.domousestuff;
+    endloop := submenu.endloop;
+    submenu.endloop := false;
   end;
 
   if endloop then exit;
 
-  if ( ms.state = 2 ) then
+  if ( mou.state = 2 ) then
   begin
-    repeat getmpos until ( ms.state and 2 = 0 );
+    repeat getmpos until ( mou.state and 2 = 0 );
     handle( kbd.ESC );
   end
   else { no right click, procede as usual }
@@ -296,12 +296,12 @@ begin
     node := mChoices.first;
     while node <> nil do
     begin
-      choice := pzChoice( node );
-      node := node^.next;
-      if ( choice^.on ) and ( choice^.pressed ) then
+      choice := zChoice( node );
+      node := node.next;
+      if ( choice.on ) and ( choice.pressed ) then
       begin
         setto( choice );
-        if choice^.click then handle( kbd.ENTER );
+        if choice.click then handle( kbd.ENTER );
       end;
       show;
     end { clicked }
@@ -316,15 +316,15 @@ begin
   { multi-tasking in other words.. }
 end;
 
-procedure zMenu.format( choice : pzchoice );
+procedure zMenu.format( choice : zchoice );
 { virtual procedure }
 begin
-  if choice^.st2 = ''
-  then choice^.st2 := invertstr( choice^.st1 )
-  else choice^.st2 := invertstr( choice^.st2 );
+  if choice.st2 = ''
+  then choice.st2 := invertstr( choice.st1 )
+  else choice.st2 := invertstr( choice.st2 );
 
-  if choice^.st1 <> ''
-  then choice^.st1 := normalstr( choice^.st1 );
+  if choice.st1 <> ''
+  then choice.st1 := normalstr( choice.st1 );
 end;
 
 function zMenu.normalstr( s : String ) : String;
@@ -337,35 +337,35 @@ begin
   result := '|!' + zbhb + '|' + zbhf + s;
 end;
 
-function zMenu.submenu : pzMenu;
+function zMenu.submenu : zMenu;
 begin
-  if thisChoice^.sub <> nil
-  then result := pzMenu( thisChoice^.sub )
+  if thisChoice.sub <> nil
+  then result := zMenu( thisChoice.sub )
   else result := nil;
 end;
 
 
-function zMenu.shortcut( ch : Char ) : pzchoice;
-  function match_shortcut( node : ll.pNode ): boolean;
+function zMenu.shortcut( ch : Char ) : zchoice;
+  function match_shortcut( node : ll.node ): boolean;
   begin
-    result := pzchoice( node )^.sc = ch
+    result := zchoice( node ).sc = ch
   end;
 begin
   { TODO : find should return the content, not the node }
 
-  result := pzchoice( mChoices.find( match_shortcut ));
-  if Assigned( result ) and not result^.enabled then
+  result := zchoice( mChoices.find( @match_shortcut ));
+  if Assigned( result ) and not result.enabled then
     result := nil
 end;
 
-function zMenu.valuecut( v : Word ) : pzChoice;
-  function match_valcut( node : ll.pNode ): boolean;
+function zMenu.valuecut( v : Word ) : zChoice;
+  function match_valcut( node : ll.node ): boolean;
   begin
-    result := pzchoice( node )^.v = v;
+    result := zchoice( node ).v = v;
   end;
 begin
-  result := pzChoice( mChoices.find( match_valcut ));
-  if Assigned( result ) and not result^.enabled then
+  result := zChoice( mChoices.find( @match_valcut ));
+  if Assigned( result ) and not result.enabled then
     result := nil;
 end;
 
@@ -376,9 +376,9 @@ begin
   if mCurrent = nil then
     result := 255
   else if submenu <> nil then
-    result := submenu^.value
+    result := submenu.value
   else
-    result := thisChoice^.v;
+    result := thisChoice.v;
 end;
 
 
@@ -388,18 +388,18 @@ var
   mv : Boolean;
 begin
   ta := crt.textattr;
-  if mChoices.isEmpty then
+  if mChoices.is_empty then
     result := 0
   else
     begin
       topmenu := true;
       mv      := mvisible;
-      if mv then showmouse( off );
-      if mv then showmouse( on );
+      if mv then mou.hide;
+      if mv then mou.show;
       endloop := false;
       Reset;
       if mCurrent = nil then
-        mCurrent := pzChoice( mChoices.First );
+        mCurrent := zChoice( mChoices.First );
       show;
       repeat
         dowhilelooping;
@@ -413,8 +413,8 @@ begin
       get     := value;
       topmenu := false;
       mv      := mvisible;
-      if mv then showmouse( off );
-      if mv then showmouse( on );
+      if mv then mou.hide;
+      if mv then mou.show;
       crt.textAttr := ta;
   end;
 end;

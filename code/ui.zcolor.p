@@ -1,6 +1,6 @@
-constructor zcolor.init( a, b, tc, ac, strt : Byte );
+constructor zcolor.create( a, b, tc, ac, strt : Byte );
 begin
-  zcounter.init( a, b, tc, ac, 0, $f, strt );
+  zcounter.create( a, b, tc, ac, 0, $f, strt );
   x2 := a + 8;
   truecol := tcol;
 end;

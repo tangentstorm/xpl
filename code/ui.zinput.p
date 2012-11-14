@@ -1,8 +1,8 @@
 
-constructor zInput.init(
+constructor zInput.create(
   a, b, tl, dl, tc, ac : Byte; esc : Boolean; start : String );
 begin
-  inherited init( a, b, a, b );
+  inherited create( a, b, a, b );
   tlen     := tl;
   dlen     := dl;
   tcol     := tc;
@@ -20,7 +20,7 @@ end;
   
 constructor zInput.Default( a, b, tl, dl : Byte; start : String );
 begin
-  init( a, b, tl, dl, $4E, $07, true, start );
+  create( a, b, tl, dl, $4E, $07, true, start );
 end;
   
   
@@ -38,13 +38,13 @@ end;
 procedure zInput.Show;
 var v : String;
 begin
-  if tovr then doscursorbig else doscursoron;
+  if tovr then //doscursorbig else //doscursoron;
   
   if length( strg ) > dlen
   then colorxy( mX + dlen, mY, acol, '¯' )
   else colorxy( mX + dlen, mY, acol, ' ' );
   
-  if cpos = tlen + 1 then doscursoroff;
+  if cpos = tlen + 1 then //doscursoroff;
   
   while cpos > d1st + dlen do d1st := d1st + 1;
   while cpos < d1st do d1st := d1st - 1;
@@ -210,7 +210,7 @@ end;
 procedure zInput.Finish;
 begin
   isdone := true;
-  DosCursorOff;
+  //doscursorOff;
 end;
 
 

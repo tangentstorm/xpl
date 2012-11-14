@@ -1,7 +1,7 @@
 
-constructor zcounter.init( a, b, tc, ac : Byte; minVal, maxVal, strt : Word );
+constructor zcounter.create( a, b, tc, ac : Byte; minVal, maxVal, strt : Word );
 begin
-  inherited init( a, b, a + 6, b );
+  inherited create( a, b, a + 6, b );
   acol    := ac;
   tcol    := tc;
   value   := strt;
@@ -16,7 +16,7 @@ procedure zcounter.show;
 var mv : Boolean;
 begin  
   mv := mvisible;
-  showmouse( off );
+  mou.hide;
   if value > min then
     colorxy( x, y, acol, '®' )
   else
@@ -27,7 +27,7 @@ begin
     colorxy( x2, mY, acol, '¯' )
   else
     colorxy( x2, mY, acol, 'þ' );
-  showmouse( mv )
+  mou.show_if( mv )
 end;
 
   
@@ -60,8 +60,8 @@ begin
   if pressed then
     begin
       delay( 50 );
-      if ms.mx = x then handle( kbd.LEFT );
-      if ms.mx = x2 then handle( kbd.RIGHT );
+      if mou.mx = x then handle( kbd.LEFT );
+      if mou.mx = x2 then handle( kbd.RIGHT );
     end;
 end;
 

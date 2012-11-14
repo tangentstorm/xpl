@@ -1,4 +1,4 @@
-constructor zConfirmbox.init( a, b, border : Byte; s1, s2 : String );
+constructor zConfirmbox.create( a, b, border : Byte; s1, s2 : String );
 begin
   mX    := a;
   mY    := b;
@@ -10,14 +10,14 @@ end;
 
 constructor zConfirmbox.default( a, b : Byte; s1, s2 : String );
 begin
-  zConfirmbox.init( a, b, $08, s1, s2 );
+  zConfirmbox.create( a, b, $08, s1, s2 );
 end;
 
 
 function zConfirmbox.get : Boolean;
 begin
-  bar( mX, mY, mX + 1 + clength( str1 ), mY + 3, bcol );
-  greyshadow( mX, mY, mX + 1 + clength( str1 ), mY + 3 );
+  fx.bar( mX, mY, mX + 1 + clength( str1 ), mY + 3, bcol );
+  fx.greyshadow( mX, mY, mX + 1 + clength( str1 ), mY + 3 );
   cwritexy( mX + 1, mY + 1, str1 );
   ccenterxy( mX + clength( str1 ) div 2, mY + 2, str2 );
   result := yesno;

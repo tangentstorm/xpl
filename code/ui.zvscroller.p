@@ -1,8 +1,8 @@
 
-constructor zVScroller.init(
+constructor zVScroller.create(
   a, b, _min, _max, strt : Byte; bc, hc : Char; ba, ha : Byte );
 begin
-  inherited init( a, b, a, b + _max - _min );
+  inherited create( a, b, a, b + _max - _min );
   bch   := bc;
   bat   := ba;
   hch   := hc;
@@ -16,7 +16,7 @@ end;
 
 constructor zVScroller.default( a, b, _min, _max, strt : Byte );
 begin
-  init( a, b, _min, _max, strt, '³', 'þ', $08, $0A );
+  create( a, b, _min, _max, strt, '³', 'þ', $08, $0A );
 end;
 
 
@@ -34,10 +34,10 @@ procedure zVScroller.show;
 var mv : Boolean;
 begin
   mv := mvisible;
-  showmouse( off );
+  mou.hide;
   colorxyv( mX, mY, bat, chntimes( bch, max - min + 1 ) );
   colorxy( mX, mY + value, hat, hch );
-  showmouse( mv )
+  mou.show_if( mv )
 end;
 
 
