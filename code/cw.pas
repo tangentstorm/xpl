@@ -47,8 +47,8 @@ interface uses crt, num, stri;
   procedure colorxy  ( const x, y, c : byte; const s : string );
   procedure colorxyc ( x, y, c : byte; s : string );
 
-  procedure colorxyv ( const x, y, c : byte; const s : string );
-  deprecated; // v = 'virtual'? 'vga'?
+  procedure colorxyv ( const x, y, c : byte; const s : string ); // v = vertical
+
 
   { colorwrite : color code interpreter }
   procedure cwcommand( cn : byte; s : string );
@@ -76,27 +76,27 @@ interface uses crt, num, stri;
 implementation
 
   procedure colorxy( const x, y, c : byte; const s : string);
-    // var count  : word; ox, oy : byte;
   begin
-    {  TODO : make colorxy callers (e.g., xmenu) manage own cursor position }
-    // ox := crt.wherex; oy := crt.wherey;
-
-    crt.gotoxy( x, y );
-    crt.textAttr := c;
+    crt.TextAttr := c;
+    crt.GotoXY( x, y );
     write( s );
-    //  crt.gotoxy( ox, oy );
-    { this stores a copy in the buffer }
-    { TODO: migrate to fpc's video unit, so we can do both. }
-    //  for count := 1 to length(s) do
-    //  setScreenData( a-1, b-1, s[count], c );
+  end; { ColorXY }
+
+  { vertical colorxy }
+  procedure Colorxyv( const x, y, c : byte;
+		      const s	   : string );
+    var i : byte;
+  begin
+    for i := 1 to length( s ) do
+    begin
+      crt.TextAttr := c;
+      crt.GotoXy( x, y + i - 1 );
+      write( s[ i ]);
+    end;
   end;
 
-  procedure Colorxyv( const x, y, c : byte; const s: string );
-    inline; deprecated;
-  begin colorxy( x, y, c, s );
-  end;
 
- procedure colorxyc( x, y, c : byte; s : string );
+  procedure colorxyc( x, y, c : byte; s : string );
   begin
    colorxy( x + 1 - length( s ) div 2, y, c, s );
   end;
