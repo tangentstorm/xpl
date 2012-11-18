@@ -1,2 +1,9 @@
 * xpl : cross-platform / cross-pascal library
 
+** project structure:
+
+| ~code~ | code for the modules                   |
+| ~demo~ | small demo programs                    |
+| ~test~ | test cases for the code                |
+
+# | ~snip~ | snippets ( templates for your editor ) |
