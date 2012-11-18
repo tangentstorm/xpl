@@ -189,7 +189,7 @@ implementation
       result^.kind := kINT;
       result^.int  := x;
     end; { read_integer }
-
+
     function read_list : pNode;
       const kSize = 64;
     begin

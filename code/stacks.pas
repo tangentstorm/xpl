@@ -3,7 +3,7 @@
   Simple stack objects.
   author  : michal j wallace
   license : MIT / ngaro
-  
+
 }
 {$i xpc.inc }
 unit stacks;
@@ -49,13 +49,13 @@ implementation
     if sp >= length( cell ) then overflow
     else cell[ sp ] := t;
   end; { stack.push }
-  
+
   function stack.pop : int32;
   begin
     result := tos;
     drop;
   end; { stack.pop }
-  
+
   procedure stack.pop1( var t : int32 );
   begin
     t := pop
@@ -66,7 +66,7 @@ implementation
     self.push( n );
     self.push( t );
   end; { stack.push2 }
-  
+
   procedure stack.pop2( var t, n :  int32 );
   begin
     t := self.pop;
@@ -79,14 +79,14 @@ implementation
     self.push( n );
     self.push( t );
   end; { stack.push3 }
-  
+
   procedure stack.pop3( var t, n, x :  int32 );
   begin
     t := self.pop;
     n := self.pop;
     x := self.pop
   end; { stack.pop3 }
-  
+
   function stack.tos : int32;
   begin
     result := cell[ sp ];
@@ -147,7 +147,7 @@ implementation
       result += s
     end
   end; { stack.dumps }
-  
+
   procedure stack.dump;
   begin
     writeln( dumps );
