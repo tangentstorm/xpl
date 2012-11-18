@@ -8,7 +8,9 @@ interface uses sysutils;
     No	 = false;
     On	 = true;
     Off	 = false;
-  
+
+  procedure pass;
+
   { some handy debug routines }
   procedure pause( msg : string );
   procedure hexdump( data : string );
@@ -46,6 +48,10 @@ implementation
 
   {$i xpc_str.pas }
 
+  procedure pass; inline;
+  begin
+  end;
+
   procedure pause( msg : string );
   begin
     writeln;
@@ -68,10 +74,10 @@ implementation
     writeln( '-- hexdump --' );
     writeln( '[', hexstr, ' ', ascstr, ']' );
   end;
-  
+
   function toint( s : set32 ) : int32;
     var i, p : byte;
-  begin
+   begin
     result := 0;
     p := 1;
     for i := 0 to 31 do begin
