@@ -3,10 +3,10 @@ unit sq;{ sequences }
 interface uses xpc, ll;
 
   type
-    nodefunc = function( i : int32 ) : pnode ;
-    nodes    = array of pnode;
-  
-  type			      
+    nodefunc = function( i : int32 ) : node ;
+    nodes    = array of node;
+
+  type
 
     (* exception hierarchy *)
     exception	  = class
@@ -21,24 +21,24 @@ interface uses xpc, ll;
       curr : cardinal;
       finished : boolean;
       constructor create( f : nodefunc );
-      procedure send( msg : pnode );
-      function next : pnode;
+      procedure send( msg : node );
+      function next : node;
       function to_list : ll.list;
     end;
 
     (* iter is a base class for iterable objects. *)
     iter = class
-      function first : pnode; virtual;
-      function after( item : pnode ): pnode; virtual;
+      function first : node; virtual;
+      function after( item : node ): node; virtual;
       function to_array : nodes;
     end;
 
     (* Seq is like an Iter but allows moving forward or backward. *)
     seq = class ( iter )
-      function final : pnode;
-      function prior( item : pnode) : pnode; virtual;
-      function offset( item : pnode; k : integer ) : pnode;
-      function keyed( key : integer ) : pnode;
+      function final : node;
+      function prior( item : node) : node; virtual;
+      function offset( item : node; k : integer ) : node;
+      function keyed( key : integer ) : node;
       function length : integer;
     end;
 
@@ -46,13 +46,13 @@ interface uses xpc, ll;
     iterseq = class ( seq )
       data : nodes;
       constructor create( it : iter );
-      function first  : pnode; override;
-      function after( item : pnode ): pnode; override;
-      function final  : pnode; virtual;
-      function prior( item : pnode ) : pnode; override;
-      function offset( item : pnode; k : integer ) : pnode; virtual;
-      function keyed( key : integer ) : pnode; virtual;
-    end;		  
+      function first  : node; override;
+      function after( item : node ): node; override;
+      function final  : node; virtual;
+      function prior( item : node ) : node; override;
+      function offset( item : node; k : integer ) : node; virtual;
+      function keyed( key : integer ) : node; virtual;
+    end;
 
 implementation
 
@@ -62,13 +62,13 @@ implementation
     curr := 0;
   end;
 
-  function gen.next : pnode;
+  function gen.next : node;
   begin
     inc( self.curr );
     result := self.func( self.curr );
   end; { gen.next }
-  
-  procedure gen.send( msg : pnode );
+
+  procedure gen.send( msg : node );
   begin
     writeln( ' sq.gen.send does nothing yet.' );
   end;
@@ -95,13 +95,13 @@ implementation
     check.equal( gen.next(), 2 )
     }
 
-  function iter.first : pnode;
+  function iter.first : node;
   begin
     writeln( ' error! iter.first not defined in sq.pas' );
     result := nil; {  TODO }
   end;
 
-  function iter.after( item : pnode ) : pnode;
+  function iter.after( item : node ) : node;
   begin
     writeln( ' error! iter.after not defined in sq.pas' );
     result := nil; {  TODO }
@@ -126,31 +126,31 @@ implementation
     end
   end;
   }
-  
-  function seq.final : pnode;
+
+  function seq.final : node;
   begin
     writeln( ' error! seq.final not defined in sq.pas' );
     result := nil; {  TODO }
   end;
 
-  function seq.prior( item : pnode ): pnode;
+  function seq.prior( item : node ): node;
   begin
     writeln( ' error! seq.prior not defined in sq.pas' );
     result := nil; {  TODO }
   end;
 
-  function seq.offset( item : pnode;  k : integer ): pnode;
+  function seq.offset( item : node;  k : integer ): node;
   begin
     writeln( ' error! seq.offset not defined in sq.pas' );
     result := nil; {  TODO }
   end;
 
-  function seq.keyed( key : integer ) : pnode;
+  function seq.keyed( key : integer ) : node;
   begin
     writeln( ' error! seq.keyed not defined in sq.pas' );
     result := nil; {  TODO }
   end;
-  
+
   function seq.length : integer;
   begin
     writeln( ' error! seq.keyed not defined in sq.pas' );
@@ -166,35 +166,35 @@ implementation
   begin new Iter(self.data)
   end; }
 
-  function iterseq.first: pnode;
+  function iterseq.first: node;
   begin
     result := self.data[ 0 ]
   end;
 
-  function iterseq.final: pnode;
+  function iterseq.final: node;
   begin
     result := self.data[ system.length( self.data ) - 1 ];
   end;
 
-  function iterseq.after( item : pnode ): pnode;
+  function iterseq.after( item : node ): node;
   begin
     writeln( ' iterseq.after not implemented' );
     result := self.data[ 0 ];
   end;
 
-  function iterseq.prior( item : pnode ): pnode;
+  function iterseq.prior( item : node ): node;
   begin
     writeln( ' iterseq.prior not implemented' );
     result := self.data[ 0 { item - 1 } ];
   end;
 
-  function iterseq.offset( item	: pnode; k :integer ) : pnode;
+  function iterseq.offset( item	: node; k :integer ) : node;
   begin
     writeln( ' iterseq.offset not implemented' );
     result := nil ; { self.data.at (self.data.indexOf item) + k }
   end;
 
-  function iterseq.keyed( key : integer ) : pnode;
+  function iterseq.keyed( key : integer ) : node;
   begin
     result := self.data[ key ];
   end;

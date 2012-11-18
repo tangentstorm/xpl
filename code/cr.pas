@@ -13,7 +13,7 @@ interface uses xpc, sq, ll, stacks;
      *)
     cursor = class
       seq : sq.seq;
-      focus : pnode;
+      focus : node;
       constructor create( aseq : seq );
       procedure to_head;
       procedure to_next;
