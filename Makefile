@@ -1,13 +1,22 @@
 XPL = ~/x/code
 FPC = fpc -Mobjfpc  -FE./bin -Fu./code -Fi./code -gl
 
-default: test
+targets:
+	@echo
+	@echo 'available targets:'
+	@echo
+	@echo '  test    : run test cases'
+	@echo '  clean   : delete compiled binaries and backup files'
+	@echo
+	@echo 'also:'
+	@echo '   bin/%   : compiles demo/%.pas'
+	@echo
 
 bin/%.ppu: /%.pas
 	@mkdir -p bin
 	$(FPC) $<
 
-bin/%: progs/%.pas
+bin/%: demo/%.pas
 	@mkdir -p bin
 	$(FPC) -gl $<
 
@@ -32,6 +41,4 @@ fs:   bin/fs.ppu    stri
 stri: bin/stri.ppu
 num:  bin/num.ppu
 
-#-- progs -------------------------------------
-
-
+#-- demos -------------------------------------
