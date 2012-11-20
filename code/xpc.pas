@@ -22,31 +22,13 @@ interface uses sysutils;
   function min( a, b : int32 ): int32;
   function max( a, b : int32 ): int32;
 
-  function cLength( s : string ) : byte;                { length - color codes }
-  function cstrip( s : string ) : string;
-  function normaltext( s : string ) : string;
-  function strtrunc( s : string; len : byte ) : string;
-  function UpStr( s : string ) : String;
-  function DnCase( ch : char ) : Char;
-  function DnStr( s : string ) : String;
-  function chntimes( c : char; n : byte ) : string;
-  function flushrt( s : string; n : byte; ch : char ) : string;
-  function padstr( s : string; len : byte; ch : char ) : string;
-  function unpadstr( s : string; ch : char ) : string;
-  function cpadstr( s : string; len : byte; ch : char ) : string;
-
-  { i don't think the str is necessary }
-  function pad( s : string; len : byte; ch : char ) : string;
-
   type thunk = procedure of object;
   type logger = object
     procedure debug( args : array of const );
   end;
   var log : logger;
-
+
 implementation
-
-  {$i xpc_str.pas }
 
   procedure pass; inline;
   begin
@@ -60,7 +42,7 @@ implementation
     readln;
   end; { pause }
 
-
+
   procedure hexdump( data :  string );
     var ch : char; hexstr, ascstr : string; i : integer;
   begin
@@ -86,7 +68,7 @@ implementation
     end;
   end; { toint }
 
-
+
   procedure logger.debug( args :  array of const );
     var i : integer;
   begin
@@ -120,7 +102,7 @@ implementation
       end;
     end;
   end;
-
+
   function min( a, b :  int32 ) : int32;
   begin
     if a < b then result := a else result := b;
@@ -130,5 +112,6 @@ implementation
   begin
     if a > b then result := a else result := b;
   end;
-		     
-end.		     
+
+
+end.
