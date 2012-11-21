@@ -40,6 +40,7 @@ interface uses xpc, crt, num, stri;
 	      x, y, w, h : integer
 	    end;
 
+  type unichar = string[ 4 ];
   var
     cur, sav	       : point;
     scr		       : rect;
@@ -49,7 +50,7 @@ interface uses xpc, crt, num, stri;
     cwnchexpected      : byte;     { cwrite #chars expected }
     cwchar,                        { cwrite character }
     cwdigit1, cwdigit2,            { 2nd digit of n1 }
-    cwdigit3, cwdigit4 : char;     { 2nd digit of n2 }
+    cwdigit3, cwdigit4 : unichar;  { 2nd digit of n2 }
 
 { ■ string writing commands }
 
@@ -153,9 +154,9 @@ implementation
       cwsavecol	   : sav.c := crt.textattr;
       cwloadcol	   : crt.textattr := sav.c;
       cwchntimes   : begin
-		       if length(s) <> 3 then exit;
 		       if ( s[ 2 ] in digits ) and ( s[ 3 ] in digits ) then
-			 cwrite( normaltext( stri.chntimes( s[ 1 ], s2n( s[ 2 ] + s[ 3 ])) ));
+			 write( stri.chntimes( s[ 1 ], s2n( s[ 2 ] + s[ 3 ])) )
+		       else halt;
 		     end;
       cwgotoxy	   : begin
 		       if length( s ) <> 4 then exit;
@@ -183,111 +184,78 @@ implementation
   end; { of cwcommand }
 
   procedure cwrite( s : string );
-    var b : byte;
-  begin
-    if s = '' then exit; {0311.95: i never bothered to check that!!}
-    b := 0;
-    repeat
-      inc( b );
+
+    var i : integer;
+      ch    : char;
+      uch   : unichar;
+      bytes : byte;
+
+    procedure next_char;
+    begin
+      ch := s[ i + 1 ];
+      case ord( ch ) of
+	$00 .. $7F : bytes := 1;
+	$80 .. $BF ,
+	$C0 .. $C1 : die( 'invalid utf-8 sequence' );
+	$C2 .. $DF : bytes := 2;
+	$E0 .. $EF : bytes := 3;
+	$F0 .. $F7 : bytes := 4;
+	$F8 .. $FF : die( 'invalid utf-8 sequence' );
+      end;
+      uch := copy( s, i + 1, bytes );
+      inc( i, bytes );
+    end;
+
+    procedure runcmd( cmd : command; nchars : integer = 0 );
+      var j : integer; arg : string;
+    begin
+      arg := '';
+      for j := 1 to nchars do begin
+	next_char;
+	arg := arg + uch;
+      end;
+      // clear the state:
+      cwcurrenttask := cwnotask;
+      cwcommandmode := false;
+      // make the call:
+      cwcommand( cmd, arg );
+    end;
+
+  begin { cwrite }
+    i := 0;
+    while i < length( s ) do
+    begin
+      next_char;
       if not cwcommandmode then
-	case s[ b ] of
+	case ch of
 	  trg : cwcommandmode := true;
-	  #13, #10 : cwcommand( cwcr, '' );
-	  #08 : cwcommand( cwbs, '' );
-	  else write( s[ b ]);
+	  #13,
+	  #10 : runcmd( cwcr );
+	  #08 : runcmd( cwbs );
+	  else write( uch );
 	end
       else
-	case cwcurrenttask of
-	  cwnotask     : begin
-		       case s[ b ] of
-			 '|' : write( '|' );
-			 '_' : begin
-				cwcommandmode := false;
-				cwrite(#13);
-			      end;
-			 '!' : cwcurrenttask := cwbg;
-			 '@' : begin
-				cwcurrenttask := cwgotoxy;
-				cwnchexpected := 4;
-			      end;
-			 '#' : begin
-				cwcurrenttask := cwchntimes;
-				cwnchexpected := 3;
-			      end;
-			 '$' : begin
-				cwcommandmode := false;
-				cwcommand( cwclrscr, '' );
-			      end;
-			 '%' : begin
-				cwcommandmode := false;
-				cwcurrenttask := cwnotask;
-				cwcommand( cwclreol, '' );
-			      end;
-			 '^' : begin
-				cwcurrenttask := cwspecialstr;
-				cwnchexpected := 1;
-			      end;
-			 ')' : cwcommand( cwsavecol, '' );
-			 '(' : cwcommand( cwloadcol, '' );
-			 ']' : cwcommand( cwsavexy, '' );
-			 '[' : cwcommand( cwloadxy, '' );
-			 '0'..'9': begin
-				     cwdigit1 := s[ b ];
-				     cwcurrenttask := cwrenegade;
-				     cwnchexpected := 1;
-				   end;
-			 else
-			   if s[ b ] in ccolset then cwcommand( cwfg, s[ b ] );
-		       end;
-		       if ( cwcurrenttask = cwnotask ) then cwcommandmode := false;
-		     end;
-	  cwbg : begin
-			   if s[b] in ccolset then cwcommand( cwbg, s[ b ] );
-			   cwcurrenttask := cwnotask;
-			   cwcommandmode := false;
-			 end;
-	  cwgotoxy     : begin
-		       case cwnchexpected of
-			 4 : cwdigit1 := s[ b ];
-			 3 : cwdigit2 := s[ b ];
-			 2 : cwdigit3 := s[ b ];
-			 1 : begin
-			       cwcommandmode := false;
-			       cwcurrenttask := cwnotask;
-			       cwcommand( cwgotoxy,
-					 cwdigit1 + cwdigit2 + cwdigit3 + s[ b ]);
-			     end;
-		       end;
-		       dec( cwnchexpected );
-		     end;
-	  cwchntimes   : begin
-			 case cwnchexpected of
-			   3 : cwchar := s[ b ];
-			   2 : cwdigit1 := s[ b ];
-			   1 : begin
-				 cwcommandmode := false;
-				 cwcurrenttask := cwnotask;
-				 cwcommand( cwchntimes, cwchar + cwdigit1 + s[ b ]);
-			       end;
-			 end;
-			 dec( cwnchexpected );
-		       end;
-	  cwspecialstr : if cwnchexpected = 1 then
-			 begin
-			   cwcommandmode := false;
-			   cwcurrenttask := cwnotask;
-			   dec( cwnchexpected );
-			   cwcommand( cwspecialstr, s[ b ]);
-			 end;
-	  cwrenegade   : if cwnchexpected = 1 then
-		       begin
-			 cwcommandmode := false;
-			 cwcurrenttask := cwnotask;
-			 dec( cwnchexpected );
-			 cwcommand( cwrenegade, cwdigit1 + s[ b ]);
-		       end;
-	end;
-    until b = length( s );
+	case ch of
+	  '|' : write( '|' );
+	  '_' : runcmd( cwcr );
+	  '!' : runcmd( cwbg, 1 );
+	  '@' : runcmd( cwgotoxy, 4 );
+	  '#' : runcmd( cwchntimes, 3 );
+	  '$' : runcmd( cwclrscr );
+	  '%' : runcmd( cwclreol );
+	  '^' : runcmd( cwspecialstr, 1 );
+	  ')' : runcmd( cwsavecol );
+	  '(' : runcmd( cwloadcol );
+	  ']' : runcmd( cwsavexy );
+	  '[' : runcmd( cwloadxy );
+	  '0'..'9': begin
+		      dec( i ); // rewind, so ch becomes part of the arg
+		      runcmd( cwrenegade, 2 ) // + next char = 2 total
+		    end;
+	  else if ch in ccolset then begin dec( i ); runcmd( cwfg, 1 ) end
+	  else write( trg, uch ); // just ignore invalid triggers
+	end
+    end
   end;
 
   procedure cwriteln( s : string );
