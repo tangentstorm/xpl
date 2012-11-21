@@ -1,6 +1,6 @@
 {$i xpc.inc}
 unit num; { ■ number/conversion commands }
-interface uses xpc;
+interface uses xpc, sysutils;
   function min( p, q : longint ) : longint;
   function max( p, q : longint ) : longint;
   function inc2( goesto, amt, max : longint ) : longint;
@@ -103,7 +103,7 @@ implementation
     var i, e : Integer;
   begin
     val( s, i, e );
-    if e <> 0 then s2n := 0 else s2n := i;
+    if e <> 0 then raise Exception.create( 'bad number:' + s ) else s2n := i;
   end;
 
   function truth( p : longint ) : byte;
