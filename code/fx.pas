@@ -89,7 +89,7 @@ implementation
     Rectangle(a,b,x,y, at);
     For cy := b +1  to y-1 do
       For cx := a +1 to x-1 do
-	Colorxy(cx,cy,at,' ');
+	cw.colorxy(cx,cy,at,' ');
   End;
 
 
@@ -100,14 +100,14 @@ implementation
     h := b2 - b1;
     for i := 1 to w do
       writeto^[ (a1 + i) * 2 - 1 + (b2 * sw) ] := $08;
-    if a2 < txmax-txmin+1 then
+    if a2 < scr.w+1 then
       for i := 0 to h do
 	writeto^[ (a2 * 2) + 1 + ( b1 + i ) * sw ] := $08;
   end;
   procedure metalbar( a1, b1, a2, b2 : byte );
     var i, w, c  : byte; z : string;
   begin
-    c := tcolor;
+    c := cw.cur.c;
     w := a2 - a1 - 1;
     z := chntimes( ' ', w );
     cwritexy( a1, b1, '|W|!w█' + stri.ntimes( '▀', w ) + '|K█');
@@ -118,7 +118,7 @@ implementation
     end;
     cwritexy( a1, b2, '|W|!w█|K' + stri.ntimes( '▄', w ) + '|K█');
     greyshadow(a1,b1+1,a2,b2+1);
-    tcolor := c;
+    cw.cur.c := c;
   end;
 
   procedure metalbox( a1, b1, a2, b2 : byte );
