@@ -4,25 +4,24 @@ interface uses xpc, crt, num, stri;
 
   const trg = '|'; // trigger char
 
-  const
-    { cwrite commands }
-    cwnotask	 = $00;
-    cwchangefore = $01;
-    cwchangeback = $02;
-    cwCR	 = $03;
-    cwBS	 = $04;
-    cwclrscr	 = $05;
-    cwclreol	 = $06;
-    cwgotoxy	 = $07;
-    cwgotox	 = $08;
-    cwgotoy	 = $09;
-    cwsavexy	 = $0A;
-    cwloadxy	 = $0B;
-    cwsavecol	 = $0C;
-    cwloadcol	 = $0D;
-    cwchntimes	 = $0E;
-    cwspecialstr = $0F;
-    cwrenegade	 = $10;
+  type command =
+   ( cwnotask,
+     cwfg,
+     cwbg,
+     cwCR,
+     cwBS,
+     cwclrscr,
+     cwclreol,
+     cwgotoxy,
+     cwgotox,
+     cwgotoy,
+     cwsavexy,
+     cwloadxy,
+     cwsavecol,
+     cwloadcol,
+     cwchntimes,
+     cwspecialstr,
+     cwrenegade );
 
   const //  why do I need both of these?
     ccolors : array [0..15] of char = 'kbgcrmywKBGCRMYW';
@@ -30,21 +29,30 @@ interface uses xpc, crt, num, stri;
     ccolset = [ 'k','b','g','c','r','m','y','w',
 		'K','B','G','C','R','M','Y','W' ];
 
+  type
+    point = object
+	      x, y, fg, bg : byte;
+              procedure setc( value : byte );
+              function getc : byte;
+      	      property c : byte read getc write setc;
+	    end;
+    rect  = record
+	      x, y, w, h : integer
+	    end;
+
   var
-    tColor,                        { CWrite color }
-    sColor,                        { saved tColor }
-    tXmin, tYmin,                  { CWrite xy min }
-    tXmax, tYmax       : byte;           { CWrite xy max }
-    tXSav, tYSav       : byte;           { saved t[xy]pos }
+    cur, sav	       : point;
+    scr		       : rect;
+    tXmax, tYmax       : byte;     { CWrite xy max }
     cwcommandmode      : boolean;  { cwrite command mode? }
-    cwcurrenttask      : byte;     { cwrite current task? }
+    cwcurrenttask      : command;  { cwrite current command }
     cwnchexpected      : byte;     { cwrite #chars expected }
     cwchar,                        { cwrite character }
     cwdigit1, cwdigit2,            { 2nd digit of n1 }
     cwdigit3, cwdigit4 : char;     { 2nd digit of n2 }
-		       
+
 { ■ string writing commands }
-		       
+
   { primitives	       : these write text in solid colors }
   procedure colorxy  ( const x, y, c : byte; const s : string );
   procedure colorxyc ( x, y, c : byte; s : string );
@@ -52,7 +60,7 @@ interface uses xpc, crt, num, stri;
 
 
   { colorwrite : color code interpreter }
-  procedure cwcommand( cn : byte; s : string );
+  procedure cwcommand( cn : command; s : string );
   procedure cwrite   ( s : string );
   procedure cwriteln ( s : string );
   procedure cwriteln ( args : array of const );
@@ -76,23 +84,30 @@ interface uses xpc, crt, num, stri;
 
 implementation
 
-  procedure colorxy( const x, y, c : byte; const s : string);
+  function point.getc : byte;
   begin
-    crt.TextAttr := c;
+    result := (( bg and $0F ) << 4 ) + ( fg and $0F ); //  todo : make this << 8 so I can use 256 colors
+  end;
+  procedure point.setc( value : byte );
+  begin
+    self.fg := lo( value );
+    self.bg := hi( value );
+  end;
+
+  procedure colorxy( const x, y, c : byte; const s : string); inline;
+  begin
+    crt.TextColor( c );
     crt.GotoXY( x, y );
     write( s );
-  end; { ColorXY }
+  end;
 
   { vertical colorxy }
   procedure Colorxyv( const x, y, c : byte;
 		      const s : string );
     var i : byte;
   begin
-    for i := 1 to length( s ) do
-    begin
-      crt.TextColor( c );
-      crt.GotoXy( x, y + i - 1 );
-      write( s[ i ]);
+    for i := 1 to length( s ) do begin
+      colorxy( x, y + i - 1, c, s[ i ]);
     end;
   end;
 
@@ -101,39 +116,42 @@ implementation
     colorxy( x + 1 - length( s ) div 2, y, c, s );
   end;
 
-  procedure cwcommand( cn : byte; s : string );
+  procedure cwcommand( cn : command; s : string );
     const digits = ['0','1','2','3','4','5','6','7','8','9'];
   begin
+    cur.x := crt.wherex;
+    cur.y := crt.wherey;
+    cur.bg := hi( crt.textattr );
+    cur.fg := lo( crt.textattr );
     case cn of
-      cwchangefore : if s[ 1 ] in ccolset then
-		       tcolor := ( tcolor and $F0 ) + pos( s[ 1 ], ccolors ) - 1;
-      cwchangeback : if s[ 1 ] in ccolset then
-		       tcolor := ( tcolor and $0F ) + ( pos( s[ 1 ], ccolors ) - 1 ) * 16;
+      cwfg : if s[ 1 ] in ccolset then
+		       cur.fg := pos( s[ 1 ], ccolors ) - 1;
+      cwbg : if s[ 1 ] in ccolset then
+		       cur.bg := pos( s[ 1 ], ccolors ) - 1;
       cwCR	   : begin
-		       tXpos := 1;
-		       typos := inc2( tYpos, 1, tYmax - tymin + 2 );
-		       if tYpos > tYmax - tymin + 1 then
+		       cur.x := 1;
+		       inc( cur.y );
+		       if cur.y > scr.h then
 		       begin
-			 //  scrollup1( txmin, txmax, tymin, tymax, writeto );
-			 tYpos := tYmax - tymin + 1;
-			 txpos := 1;
+			 //  scrollup1( scr.x, txmax, scr.y, tymax, writeto );
+			 cur.y := scr.h;
+			 cur.x := 1;
 			 cwrite( trg + '%' );
 		       end;
 		     end;
-      cwBS	   : if tXpos <> 1 then
-		       begin
-			 colorxy( txmin + tXpos - 1, tymin + tYpos, tColor, ' ' );
-			 dec( tXpos );
-		       end;
-      cwclrscr	   : begin
-		       //  fillbox( txmin, tymin, txmax, tymax, tcolor*256 + 32 );
-		       txpos := 1;
-		       typos := 1;
+      cwBS	   : if cur.x <> 1 then
+		     begin
+		       colorxy( cur.x - 1, cur.y, cur.c, ' ' );
+		       dec( cur.x );
 		     end;
-      cwclreol	   : colorxy( txmin + txpos - 1, tymin + typos - 1,
-			     tcolor, stri.chntimes( ' ', txmax - txpos + 1 ) );
-      cwsavecol	   : sColor := tColor;
-      cwloadcol	   : tColor := sColor;
+      cwclrscr	   : begin
+		       //  fillbox( scr.x, scr.y, txmax, tymax, tcolor*256 + 32 );
+		       cur.x := 1;
+		       cur.y := 1;
+		     end;
+      cwclreol	   : write( stri.chntimes( ' ', max( 0, scr.w - cur.x - 1 )));
+      cwsavecol	   : sav.c := crt.textattr;
+      cwloadcol	   : crt.textattr := sav.c;
       cwchntimes   : begin
 		       if length(s) <> 3 then exit;
 		       if ( s[ 2 ] in digits ) and ( s[ 3 ] in digits ) then
@@ -147,38 +165,25 @@ implementation
 			 and ( s[ 4 ] in digits )
 			 then
 		       begin
-			 txpos := s2n( s[ 1 ] + s[ 2 ]);
-			 typos := s2n( s[ 3 ] + s[ 4 ]);
-			 gotoxy( txpos + txmin - 1 , typos + tymin - 1 );
+			 cur.x := s2n( s[ 1 ] + s[ 2 ]);
+			 cur.y := s2n( s[ 3 ] + s[ 4 ]);
 		       end;
 		     end;
-      cwsavexy	   : begin
-		       txsav := txpos;
-		       tysav := typos;
-		     end;
-      cwloadxy	   : begin
-		       txpos := txsav;
-		       typos := tysav;
-		       gotoxy( txpos + txmin -1 , typos + tymin - 1 );
-		     end;
+      cwsavexy	   : sav := cur;
+      cwloadxy	   : cur := sav;
       cwspecialstr :
 	{ //  if i want to do things like this i should make it a 'macro' callback
 	  case upcase(s[1]) of
 	  'P' : cwrite( thisdir );
 	  'D' : cwrite( stardate );
 	  end; } ;
-	cwrenegade : tcolor := s2n( s );
+	cwrenegade : cur.fg := s2n( s );
     end; { of case cn }
+    crt.gotoxy( cur.x, cur.y ); crt.textattr := cur.c;
   end; { of cwcommand }
 
   procedure cwrite( s : string );
     var b : byte;
-    procedure write( s : string );
-    begin
-      colorxy( tXmin + tXpos - 1, tYmin + tYpos - 1, tColor, s );
-      inc( tXpos );
-      if tXpos > tXmax - txmin + 1 then cwrite( #13 );
-    end;
   begin
     if s = '' then exit; {0311.95: i never bothered to check that!!}
     b := 0;
@@ -187,7 +192,7 @@ implementation
       if not cwcommandmode then
 	case s[ b ] of
 	  trg : cwcommandmode := true;
-	  #13 : cwcommand( cwcr, '' );
+	  #13, #10 : cwcommand( cwcr, '' );
 	  #08 : cwcommand( cwbs, '' );
 	  else write( s[ b ]);
 	end
@@ -200,7 +205,7 @@ implementation
 				cwcommandmode := false;
 				cwrite(#13);
 			      end;
-			 '!' : cwcurrenttask := cwchangeback;
+			 '!' : cwcurrenttask := cwbg;
 			 '@' : begin
 				cwcurrenttask := cwgotoxy;
 				cwnchexpected := 4;
@@ -232,12 +237,12 @@ implementation
 				     cwnchexpected := 1;
 				   end;
 			 else
-			   if s[ b ] in ccolset then cwcommand( cwchangefore, s[ b ] );
+			   if s[ b ] in ccolset then cwcommand( cwfg, s[ b ] );
 		       end;
 		       if ( cwcurrenttask = cwnotask ) then cwcommandmode := false;
 		     end;
-	  cwchangeback : begin
-			   if s[b] in ccolset then cwcommand( cwchangeback, s[ b ] );
+	  cwbg : begin
+			   if s[b] in ccolset then cwcommand( cwbg, s[ b ] );
 			   cwcurrenttask := cwnotask;
 			   cwcommandmode := false;
 			 end;
@@ -283,12 +288,10 @@ implementation
 		       end;
 	end;
     until b = length( s );
-    gotoxy( txmin + txpos - 1, tymin + typos - 1 );
-    textattr := tcolor;
   end;
 
   procedure cwriteln( s : string );
-  begin cwrite( s ); write( #13 ); writeln;
+  begin cwrite( s ); writeln;
   end;
 
   procedure cwriteln( args : array of const );
@@ -300,13 +303,12 @@ implementation
 	vtstring  : cwrite( args[ i ].vstring^ );
 	vtansistring : cwrite( ansistring( args[ i ].vansistring ));
       end;
-    write( #13, #10 ); writeln;
+    writeln;
   end;
 
   procedure cwritexy( x, y : byte; s : string );
-    var c, d : byte;
   begin
-    gotoxy( x, y );
+    crt.gotoxy( x, y );
     cwrite( s );
   end;
 
@@ -321,12 +323,12 @@ implementation
     for counter := 1 to Length(S) do
     begin
       case S[counter] of
-	'a'..'z','0'..'9','A'..'Z',' ' : TColor := $0F;
-	'[',']','(',')','{','}','<','>','"' : TColor := $09;
-	//  '░'..'▀' : TColor := $08;
-	else TColor := $07;
+	'a'..'z','0'..'9','A'..'Z',' ' : crt.textcolor( $0F );
+	'[',']','(',')','{','}','<','>','"' : crt.textcolor( $09 );
+	#127 .. #255 : crt.textcolor( $08 ); //  '░'..'▀'
+	else crt.textcolor( $07 );
       end;
-      cwrite(s[counter]);
+      cwrite( s[ counter ]);
     end;
   end;
 
@@ -337,8 +339,8 @@ implementation
 
   procedure StWritexy( x, y : byte; s : string );
   begin
-    txpos := x;
-    typos := y;
+    cur.x := x;
+    cur.y := y;
     stwrite( s );
   end;
 
@@ -405,17 +407,17 @@ implementation
 
 
 initialization
- cwcommandmode := false;
- cwcurrenttask := cwnotask;
- cwnchexpected := 0;
- tColor := $0007;
- sColor := $000E;
- tXpos := wherex;
- tYpos := wherey;
- tXsav := 1;
- tYsav := 1;
- tXmin := 1;
- tYmin := 1;
- tXmax := 80;
- tYmax := 50;
+  cwcommandmode := false;
+  cwcurrenttask := cwnotask;
+  cwnchexpected := 0;
+  cur.c := $0007;
+  sav.c := $000E;
+  cur.x := wherex;
+  cur.y := wherey;
+  sav.x := 1;
+  sav.y := 1;
+  scr.x := 1;
+  scr.y := 1;
+  scr.h := crt.windmaxy;
+  scr.w := crt.windmaxx;
 end.
