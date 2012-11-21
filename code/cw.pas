@@ -28,7 +28,7 @@ interface uses xpc, crt, num, stri;
     ccolstr : string		    = 'kbgcrmywKBGCRMYW';
     ccolset = [ 'k','b','g','c','r','m','y','w',
 		'K','B','G','C','R','M','Y','W' ];
-
+
   type
     point = object
 	      x, y, fg, bg : byte;
@@ -51,7 +51,7 @@ interface uses xpc, crt, num, stri;
     cwchar,                        { cwrite character }
     cwdigit1, cwdigit2,            { 2nd digit of n1 }
     cwdigit3, cwdigit4 : unichar;  { 2nd digit of n2 }
-
+
 { ■ string writing commands }
 
   { primitives	       : these write text in solid colors }
@@ -82,7 +82,7 @@ interface uses xpc, crt, num, stri;
   procedure StWrite( s : string );
   procedure StWriteln( s : string );
   procedure StWritexy( x, y : byte; s : String );
-
+
 implementation
 
   function point.getc : byte;
