@@ -12,6 +12,7 @@ interface uses sysutils;
   procedure pass;
 
   { some handy debug routines }
+  procedure die( msg :  string );
   procedure pause( msg : string );
   procedure hexdump( data : string );
 
@@ -32,6 +33,14 @@ implementation
 
   procedure pass; inline;
   begin
+  end; { pass }
+
+  procedure die( msg :  string );
+  begin
+    writeln;
+    write( msg );
+    writeln;
+    halt;
   end;
 
   procedure pause( msg : string );
