@@ -16,7 +16,6 @@ implementation
     while KeyPressed do ReadKey;
     ReadKey;
     cwrite( '' );
-    txpos  := 1;
     crt.textAttr := tc;
   end; { HitAKey }
 
@@ -26,5 +25,4 @@ implementation
     yesno := upCase( readkey ) = 'Y';
   end; { yesno }
 
- 
 end.
