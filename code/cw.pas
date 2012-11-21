@@ -119,9 +119,12 @@ implementation
 
   procedure cwcommand( cn : command; s : string );
     const digits = ['0','1','2','3','4','5','6','7','8','9'];
+    var n : integer;
+    procedure update_cur; begin;
+      cur.x := crt.wherex; cur.y := crt.wherey;
+    end;
   begin
-    cur.x := crt.wherex;
-    cur.y := crt.wherey;
+    update_cur;
     cur.bg := hi( crt.textattr );
     cur.fg := lo( crt.textattr );
     case cn of
@@ -129,17 +132,7 @@ implementation
 		       cur.fg := pos( s[ 1 ], ccolors ) - 1;
       cwbg : if s[ 1 ] in ccolset then
 		       cur.bg := pos( s[ 1 ], ccolors ) - 1;
-      cwCR	   : begin
-		       cur.x := 1;
-		       inc( cur.y );
-		       if cur.y > scr.h then
-		       begin
-			 //  scrollup1( scr.x, txmax, scr.y, tymax, writeto );
-			 cur.y := scr.h;
-			 cur.x := 1;
-			 cwrite( trg + '%' );
-		       end;
-		     end;
+      cwCR	   : begin writeln; update_cur end;
       cwBS	   : if cur.x <> 1 then
 		     begin
 		       colorxy( cur.x - 1, cur.y, cur.c, ' ' );
@@ -154,9 +147,9 @@ implementation
       cwsavecol	   : sav.c := crt.textattr;
       cwloadcol	   : crt.textattr := sav.c;
       cwchntimes   : begin
-		       if ( s[ 2 ] in digits ) and ( s[ 3 ] in digits ) then
-			 write( stri.chntimes( s[ 1 ], s2n( s[ 2 ] + s[ 3 ])) )
-		       else halt;
+		       n := length( s );
+		       write( stri.ntimes( copy( s, 1, n-2 ), s2n( copy( s, n-1, 2 ))));
+		       update_cur;
 		     end;
       cwgotoxy	   : begin
 		       if length( s ) <> 4 then exit;
@@ -311,7 +304,7 @@ implementation
     cur.y := y;
     stwrite( s );
   end;
-
+
 { ■ string formatting commands }
 
   function clength( s : string ) : integer;
