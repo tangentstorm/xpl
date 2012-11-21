@@ -107,15 +107,15 @@ type
     tlen,                 { max text length }
     dlen,                 { length of display }
     d1st,                 { first display char position }
-    cpos :   Byte;        { cursor position }
+    cpos :   integer;        { cursor position }
     back,                 { backup copy }
     strg :   String;      { actual string }
     escexits, tovr,       { type over toggle }
     frst,                 { first key to be pressed }
     isdone : Boolean;     { end-loop flag }
-    constructor create( a, b, tl, dl, tc, ac : Byte; esc : Boolean;
+    constructor create( a, b, tl, dl, tc, ac : integer; esc : Boolean;
                       start : String );
-    constructor default( a, b, tl, dl : Byte; start : String );
+    constructor default( a, b, tl, dl : integer; start : String );
     procedure reset;
     procedure fw_token;
     procedure bw_token;
@@ -127,7 +127,7 @@ type
     procedure show; virtual;
     procedure del;
     procedure backspace;
-    procedure movecursor( newpos : Byte );
+    procedure movecursor( newpos : integer );
     procedure Setovr( p : Boolean );
     procedure getkey( ch : Char );
     procedure handle( ch : Char ); virtual;
@@ -139,8 +139,8 @@ type
 
   zPassword = class ( zInput )
     pwchar : Char;
-    constructor create( a, b, tl, dl, tc, ac : Byte; pwc : Char; start : String );
-    constructor default( a, b, tl, dl : Byte; start : String );
+    constructor create( a, b, tl, dl, tc, ac : integer; pwc : Char; start : String );
+    constructor default( a, b, tl, dl : integer; start : String );
     procedure Show; override;
   end;
 

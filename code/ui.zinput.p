@@ -7,7 +7,7 @@ const bullets = [' ', '/', '\', '-'];
 
 
 constructor zinput.create(
-  a, b, tl, dl, tc, ac : Byte; esc : Boolean; start : String );
+  a, b, tl, dl, tc, ac : integer; esc : Boolean; start : String );
 begin
   inherited create( a, b, a, b );
   tlen     := tl;
@@ -19,7 +19,7 @@ begin
   self.reset;
 end;
 
-constructor zinput.default( a, b, tl, dl : Byte; start : String );
+constructor zinput.default( a, b, tl, dl : integer; start : String );
 begin
   create( a, b, tl, dl, $4E, $07, true, start );
 end;
@@ -94,26 +94,24 @@ end;
 procedure zinput.show;
 var v : String;
 begin
-  if tovr then //doscursorbig else //doscursoron;
+  //if tovr then //doscursorbig else //doscursoron;
 
   if length( strg ) > dlen
-  then colorxy( mX + dlen, mY, acol, '¯' )
-  else colorxy( mX + dlen, mY, acol, ' ' );
+    then colorxy( self.x + dlen, self.y, acol, '¯' )
+    else colorxy( self.x + dlen, self.y, acol, ' ' );
 
-  if cpos = tlen + 1 then //doscursoroff;
+  //if cpos = tlen + 1 then //doscursoroff;
 
-  while cpos > d1st + dlen do d1st := d1st + 1;
-  while cpos < d1st do d1st := d1st - 1;
+  while cpos > d1st + dlen do inc( d1st );
+  while cpos < d1st do dec( d1st );
 
-  v := copy( strg, d1st, dlen );
-  while length( v ) < dlen do v := v + ' ';
-
-  colorxy( mX, mY, tcol, v );
-  gotoxy( mX + cpos - d1st, mY );
+  v := pad( copy( strg, d1st, dlen ), dlen, ' ' );
+  colorxy( self.x, self.y, tcol, v );
+  gotoxy( self.x + cpos - d1st - 1 , self.y  - 1 );
 end;
 
 
-procedure zinput.movecursor( newpos : Byte );
+procedure zinput.movecursor( newpos : integer );
 begin
   if newpos = 0 then cpos := 1
   else if ( newpos <= tlen + 1 ) then
