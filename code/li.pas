@@ -5,18 +5,10 @@
 unit li;
 interface uses oo, xpc, ascii;
 
-  const
-    kStrLen =  128;
-
   type
     kinds = ( kINT, kSYM, kSTR, kREF, kNUL, kOBJ );
-    pNull = pointer;
-    pSym  = ^tSym;
-    pNode = ^tNode;
-    pCell = ^tCell;
-
-    tSym  = string [ kStrLen ];
-    tNode = record case kind : kinds of
+    sym  = string;
+    node = record case kind : kinds of
 	      kINT : ( int : integer );
 	      kSYM : ( sym : pSym );
 	      kSTR : ( str : pSym );
@@ -24,14 +16,14 @@ interface uses oo, xpc, ascii;
 	      kNUL : ( ptr : pNull );
 	      kOBJ : ( obj : oo.pObj );
 	    end;
-    tCell = record
-	      car, cdr : pNode; { lisp tradition }
+    cell = record
+	      car, cdr : node; { lisp tradition }
 	    end;
   var
-    null : pNode;
+    null : node;
 
-  function cons( car, cdr : pNode ) : pNode;
-  procedure print( value : pNode );
+  function cons( car, cdr : node ) : node;
+  procedure print( value : node );
   procedure repl;
 
 implementation
@@ -45,13 +37,13 @@ implementation
     prompt0 = 'li> ';
     prompt1 = '..> ';
 
-  function cons( car, cdr : pNode ) : pNode;
+  function cons( car, cdr : node ) : node;
   begin
     new( result );
-    result^.kind := kREF;
-    new( result^.ref );
-    result^.ref^.car := car;
-    result^.ref^.cdr := cdr;
+    result.kind := kREF;
+    new( result.ref );
+    result.ref.car := car;
+    result.ref.cdr := cdr;
   end; { cons }
 
 
@@ -102,7 +94,7 @@ implementation
     ch := line[ lx ];
   end; { read_ch }
 
-  function read_value : pNode;
+  function read_value : node;
     var
       i	  : integer = 0;
       buf : string[ kStrLen ];
@@ -118,17 +110,17 @@ implementation
       end;
     end; { bufch }
 
-    function unbuf( kind : kinds ): pNode;
+    function unbuf( kind : kinds ): node;
     begin
       new( result );
-      result^.kind := kind;
-      new( result^.sym );
-      result^.sym^  := buf;
+      result.kind := kind;
+      new( result.sym );
+      result.sym  := buf;
       i := 0;
       setlength( buf, 0 );
     end; { unbuf }
 
-    function read_string : pNode;
+    function read_string : node;
       var
 	esc : boolean = false;
 	eos : boolean = false;
@@ -149,7 +141,7 @@ implementation
       result := unbuf( kSTR );
     end; { read_string }
 
-    function read_integer : pNode;
+    function read_integer : node;
     var
       x      : integer = 0;
       base   : byte = 10;
@@ -186,11 +178,11 @@ implementation
 	read_ch
       end;
       new( result );
-      result^.kind := kINT;
-      result^.int  := x;
+      result.kind := kINT;
+      result.int  := x;
     end; { read_integer }
 
-    function read_list : pNode;
+    function read_list : node;
       const kSize = 64;
     begin
       { TODO : support reading dotted pairs }
@@ -200,7 +192,7 @@ implementation
 	result := cons( result, read_list );
     end; { read_list }
 
-    function read_symbol : pNode;
+    function read_symbol : node;
     begin
       while not ( ch in whitespace ) do
       begin
@@ -225,11 +217,11 @@ implementation
                    if ch in whitespace then
 		   begin
 		     new( result );
-		     result^.kind := kSYM;
-		     result^.sym  := @sym_minus;
+		     result.kind := kSYM;
+		     result.sym  := @sym_minus;
 		   end else begin
 		     result := read_integer;
-		     result^.int := -result^.int;
+		     result.int := -result.int;
 		   end
                  end;
       '('      : begin inc(depth); read_ch; result := read_list end;
@@ -241,23 +233,23 @@ implementation
 
 
   //  need to add if, lambda, etc
-  function evaluate( value : pNode ) : pNode;
+  function evaluate( value : node ) : node;
   begin
     result := value;
   end; { evaluate }
 
 
-  procedure print( value : pNode );
+  procedure print( value : node );
 
     procedure write_list( start_char : char; head : pCell );
-      var cdr : pNode;
+      var cdr : node;
     begin
       write( start_char );
-      print( head^.car );
-      cdr := head^.cdr;
-      case cdr^.kind of
+      print( head.car );
+      cdr := head.cdr;
+      case cdr.kind of
 	kNUL : write( ')' );
-	kREF : write_list( ' ', cdr^.ref );
+	kREF : write_list( ' ', cdr.ref );
 	else begin
 	  write(' . ');
 	  print( cdr );
@@ -266,19 +258,19 @@ implementation
     end; { print_cell }
 
   begin { print }
-    case value^.kind of
-      kINT : write( value^.int );
-      kSYM : write( value^.sym^ );
-      kSTR : write( '"', value^.sym^, '"' );
+    case value.kind of
+      kINT : write( value.int );
+      kSYM : write( value.sym );
+      kSTR : write( '"', value.sym, '"' );
       kNUL : write( 'null' );
-      kREF : write_list( '(', value^.ref );
+      kREF : write_list( '(', value.ref );
       else
-	writeln( '{ unknown value : ', ord( value^.kind ), ' }' );
+	writeln( '{ unknown value : ', ord( value.kind ), ' }' );
     end;
   end; { print }
 
   procedure repl;
-    var val : pNode;
+    var val : node;
   begin
     repeat
       { we can't inline the temp value because read_value
@@ -291,5 +283,5 @@ implementation
   end; { repl }
 
 begin
-  new( null ); null^.kind := kNUL; null^.ptr := nil;
+  new( null ); null.kind := kNUL; null.ptr := nil;
 end.
