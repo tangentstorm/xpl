@@ -4,12 +4,16 @@ so that i can write tests just by writing new
 procedures. ( it also generates the definitions )
 """
 import os
-topuse = open( 'run-tests.use', 'w' )
-toprun = open( 'run-tests.run', 'w' )
+import sys
+
+GEN = sys.argv[ 1 ] if len( sys.argv ) == 2 else '.'
+
+topuse = open( GEN + '/run-tests.use', 'w' )
+toprun = open( GEN + '/run-tests.run', 'w' )
 for path in map( str.strip, os.popen( 'ls test_*.pas' )):
     unit_name, _ = path.split( '.' )
     print >> topuse, ',', unit_name ,
-    subdef = open( unit_name + '.def', 'w' )
+    subdef = open( GEN + '/' + unit_name + '.def', 'w' )
     subdef.write( 'unit {0};\ninterface uses chk;\n'.format( unit_name ))
     has_setup = False
     for line in map( lambda s : s.lower().strip(), open( path )):
