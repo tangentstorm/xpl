@@ -66,10 +66,8 @@ begin
   end;
 
   for p in problems do begin
-    {c}writeln( {'|K',} '[ ',  { colors[ p.result ] + }
-	       p.test_name, {'|K',}  ' ] ');
-    writeln( {'|w',} p.error );
-    writeln;
+    cwriteln( '|K[ ' + colors[ p.result ] + p.test_name + ' |K]');
+    cwriteln( '|w' + p.error );
   end;
   cwriteln( '|K');
   writeln('----------------------------------------------' );
