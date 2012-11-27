@@ -9,20 +9,21 @@
 unit stacks;
 interface uses xpc;
 
-  type stack = object
-    sp   : integer;           // stack pointer
-    cell : array of int32;    // a standard forth term
+  type generic stack< A > = object
+    sp   : integer;  // stack pointer
+    cells : array of A;
     overflow, underflow : thunk;
+    show : function( x : A ) : string;
     constructor init( len:word );
-    procedure push( t : int32 );
-    function pop: int32;
-    procedure pop1( var t : int32 );
-    procedure push2( n, t : int32 );
-    procedure pop2( var t, n :  int32 );
-    procedure push3( x, n, t : int32 );
-    procedure pop3( var t, n, x : int32 );
-    function tos: int32;
-    function nos: int32;
+    procedure push( t : A );
+    function pop: A;
+    procedure pop1( var t : A );
+    procedure push2( n, t : A );
+    procedure pop2( var t, n : A );
+    procedure push3( x, n, t : A );
+    procedure pop3( var t, n, x : A );
+    function tos: A;
+    function nos: A;
     procedure dup;
     procedure swap;
     procedure drop;
@@ -30,7 +31,7 @@ interface uses xpc;
     procedure default_underflow;
     function dumps:string;
     procedure dump;
-    function limit : int32;
+    function limit : cardinal;
   end;
 
 implementation
@@ -38,63 +39,63 @@ implementation
   constructor stack.init( len: word );
   begin
     sp := 0;
-    setlength( cell, len );
+    setlength( cells, len );
     overflow := @default_overflow;
     underflow := @default_underflow;
   end; { stack.init }
 
-  procedure stack.push( t : int32 );
+  procedure stack.push( t : A );
   begin
     inc( sp );
-    if sp >= length( cell ) then overflow
-    else cell[ sp ] := t;
+    if sp >= length( cells ) then overflow
+    else cells[ sp ] := t;
   end; { stack.push }
 
-  function stack.pop : int32;
+  function stack.pop : A;
   begin
     result := tos;
     drop;
   end; { stack.pop }
 
-  procedure stack.pop1( var t : int32 );
+  procedure stack.pop1( var t : A );
   begin
     t := pop
   end; { stack.pop1 }
 
-  procedure stack.push2( n, t :  int32 );
+  procedure stack.push2( n, t :  A );
   begin
     self.push( n );
     self.push( t );
   end; { stack.push2 }
 
-  procedure stack.pop2( var t, n :  int32 );
+  procedure stack.pop2( var t, n :  A );
   begin
     t := self.pop;
     n := self.pop;
   end; { stack.pop2 }
 
-  procedure stack.push3( x, n, t :  int32 );
+  procedure stack.push3( x, n, t :  A );
   begin
     self.push( x );
     self.push( n );
     self.push( t );
   end; { stack.push3 }
 
-  procedure stack.pop3( var t, n, x :  int32 );
+  procedure stack.pop3( var t, n, x :  A );
   begin
     t := self.pop;
     n := self.pop;
     x := self.pop
   end; { stack.pop3 }
 
-  function stack.tos : int32;
+  function stack.tos : A;
   begin
-    result := cell[ sp ];
+    result := cells[ sp ];
   end; { stack.tos }
 
-  function stack.nos : int32;
+  function stack.nos : A;
   begin
-    result := cell[ sp - 1 ];
+    result := cells[ sp - 1 ];
   end; { stack.nos }
 
   procedure stack.dup;
@@ -103,13 +104,13 @@ implementation
   end; { stack.dup }
 
   procedure stack.swap;
-    var t : int32;
+    var t : A;
   begin
     if sp >= 2 then
       begin
         t := tos;
-        cell[ sp ] := nos;
-        cell[ sp - 1 ] := t;
+        cells[ sp ] := nos;
+        cells[ sp - 1 ] := t;
       end
     else underflow;
   end; { stack.swap }
@@ -133,19 +134,15 @@ implementation
   end;
 
   function stack.dumps : string;
-    var s: string;
-    var i: int32;
+    var i : word;
   begin
     result := '';
-    if sp > 0 then begin
-      for i := 1 to sp - 1 do
-        begin
-          str( cell[ i ], s );
-	  result += s + ' ';
-	end;
-      str( cell[ sp ], s );
-      result += s
-    end
+    if assigned( self.show ) then
+      if sp > 0 then begin
+	for i := 1 to sp - 1 do result += self.show( cells[ i ]) + ' ';
+	result += self.show( cells[ sp ]);
+      end
+      else result := '<stack.show not defined>';
   end; { stack.dumps }
 
   procedure stack.dump;
@@ -153,9 +150,9 @@ implementation
     writeln( dumps );
   end; { stack.dump }
 
-  function stack.limit : int32;
+  function stack.limit : cardinal;
   begin
-    result := length( cell );
+    result := length( cells );
   end;
 
 end.
