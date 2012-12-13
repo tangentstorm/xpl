@@ -3,65 +3,109 @@
 }
 {$i xpc.inc }
 unit li;
-interface uses oo, xpc, ascii;
-
+interface uses classes, xpc, ascii, ll, num;
+
   type
-    kinds = ( kINT, kSYM, kSTR, kREF, kNUL, kOBJ );
-    sym  = string;
-    node = record case kind : kinds of
-	      kINT : ( int : integer );
-	      kSYM : ( sym : pSym );
-	      kSTR : ( str : pSym );
-	      kREF : ( ref : pCell );
-	      kNUL : ( ptr : pNull );
-	      kOBJ : ( obj : oo.pObj );
-	    end;
-    cell = record
-	      car, cdr : node; { lisp tradition }
-	    end;
+    kinds = ( kINT, kSYM, kSTR, kLIS, kEND, kNUL, kOBJ );
+    {TODO: come back to this once I have syntax
+       for algebraic data types }
+    node = class kind : kinds end;
+    list = specialize ll.list< node >;
+    LisNode = class( node )
+      lis : list;
+      constructor create( _lis : list );
+    end;
+    IntNode = class( node )
+      int : integer;
+      constructor create( _int : integer );
+    end;
+    SymNode = class( node )
+      sym : String;
+      constructor create( _sym : string );
+    end;
+    StrNode = class( node )
+      str : String;
+      constructor create( _str : string  );
+    end;
+    ObjNode = class( node )
+      obj : TObject;
+      constructor create( _obj : TObject );
+    end;
   var
     null : node;
+    endl : node; // end of list marker. never actually assigned
 
-  function cons( car, cdr : node ) : node;
   procedure print( value : node );
   procedure repl;
+
 
 implementation
 
-  const NL = ascii.LF;
   const whitespace = [ #0 .. #32 ];
 
-  var done : boolean = false;
-  var sym_minus : tSym = '-';
+  var done       : boolean = false;
+  var sym_minus	 : string = '-';
   const
     prompt0 = 'li> ';
     prompt1 = '..> ';
 
-  function cons( car, cdr : node ) : node;
+  {$IFDEF DEBUG}
+  const debug_mode = true;
+  {$ELSE}
+  const debug_mode = false;
+  {$ENDIF}
+  procedure debug( msg : string ); inline;
   begin
-    new( result );
-    result.kind := kREF;
-    new( result.ref );
-    result.ref.car := car;
-    result.ref.cdr := cdr;
-  end; { cons }
+    if debug_mode then writeln( msg )
+  end;
 
 
-  var
-    ch	  : char = #0;
-    lx	  : integer = 1;
-    ly	  : integer = 1;
-    depth : integer = 0;
-
-  procedure error( const err : string );
+  constructor intnode.create( _int: integer );
   begin
-    write( 'error at line ', ly, ', column ', lx, ' : ' );
+    self.kind	       := kint;
+    self.int	       := _int;
+  end;
+
+  constructor symnode.create( _sym: string );
+  begin
+    self.kind	       := ksym;
+    self.sym	       := _sym;
+  end;
+
+  constructor strnode.create( _str: string  );
+  begin
+    self.kind	       := kstr;
+    self.str	       := _str;
+  end;
+
+  constructor lisnode.create( _lis: list );
+  begin
+    self.kind	       := klis;
+    self.lis	       := _lis;
+  end;
+
+  constructor objnode.create( _obj: TObject );
+  begin
+    self.kind	       := kobj;
+    self.obj	       := _obj;
+  end;
+
+  var
+    ch      : char = #0;    // lookahead character
+    lx      : integer = 0;  // line number
+    ly      : integer = 0;  // colunn number
+    depth   : integer = 0;  // to decide which prompt to show
+    line    : string;       // the last line read from input
+
+  procedure error( const err: string );
+  begin
+    write( 'error at line ', ly, ', column ', lx, ': ' );
     writeln( err );
     halt;
   end; { error }
 
 
-  var line : string[ 255 ] = '';
+
 
   { basically, we use this prompt to do our own buffering because
     the input from the shell is line-oriented. :/ I tried just using
@@ -89,20 +133,23 @@ implementation
 
   procedure read_ch;
   begin
-    while lx > length( line ) do prompt;
+    while lx + 1 > length( line ) do prompt;
     inc( lx );
     ch := line[ lx ];
+    debug( '[ line ' + n2s( ly ) + ', col ' + n2s( lx ) + ' : ' +  ch + ']' );
   end; { read_ch }
 
+{-- read_value ( recursive descent parser )  -- }
+
   function read_value : node;
     var
       i	  : integer = 0;
-      buf : string[ kStrLen ];
+      buf : string;
       esc : boolean = false;
 
     procedure bufch;
     begin
-      if ( i < kStrLen ) and ( not esc ) then
+      if not esc then
       begin
 	inc( i );
 	setlength( buf, i );
@@ -112,18 +159,25 @@ implementation
 
     function unbuf( kind : kinds ): node;
     begin
-      new( result );
-      result.kind := kind;
-      new( result.sym );
-      result.sym  := buf;
+      case kind of
+        kStr : result := StrNode.create( buf );
+        kSym : result := SymNode.create( buf );
+      else
+        begin
+          writeln('don''t know how to unbuf kind:', kind);
+          halt;
+        end
+      end;
       i := 0;
       setlength( buf, 0 );
     end; { unbuf }
 
+{-- read_value >> read_string --}
+
     function read_string : node;
       var
-	esc : boolean = false;
-	eos : boolean = false;
+      esc : boolean = false;
+      eos : boolean = false;
     begin
       inc( depth );
       repeat
@@ -137,12 +191,15 @@ implementation
 	  else bufch;
 	end;
       until eos;
+      read_ch;
       dec( depth );
       result := unbuf( kSTR );
     end; { read_string }
 
-    function read_integer : node;
-    var
+{-- read_value >> read_integer --}
+
+    function read_integer : integer;
+      var
       x      : integer = 0;
       base   : byte = 10;
       digits : set of char = [ '0' .. '9' ];
@@ -177,20 +234,34 @@ implementation
 	end; { case }
 	read_ch
       end;
-      new( result );
-      result.kind := kINT;
-      result.int  := x;
+      result := x
     end; { read_integer }
 
+{-- read_value >> read_list --}
+
     function read_list : node;
-      const kSize = 64;
+      var this : node; res : list;
     begin
-      { TODO : support reading dotted pairs }
-      new( result );
-      result := read_value;
-      if result <> null then
-	result := cons( result, read_list );
+      inc( depth );
+      debug('---read_list---');
+      this := read_value();
+      if this = endl then begin
+	result := null;
+	debug('-- result was null --');
+      end
+      else begin
+	res := list.create;
+	repeat
+	  res.append( this );
+	  this := read_value()
+	until this = endl;
+	result := lisnode.create( res );
+	debug('-- result was list of ' + n2s( res.count ) + ' items --')
+      end;
+      dec( depth );
     end; { read_list }
+
+{-- read_value >> read_symbol and main routine --}
 
     function read_symbol : node;
     begin
@@ -203,79 +274,75 @@ implementation
     end; { read_symbol }
 
   begin { read_value }
-    read_ch;
     while ch in whitespace do read_ch; { skip whitespace }
     case ch of
       ';'      : begin
-                   repeat read_ch until ch = NL;
-                   result := read_value;
+		   repeat read_ch until ch = ascii.lf;
+                   result := read_value(); // recurse
                  end;
-      '"'      : begin inc(depth); result := read_string; dec(depth) end;
-      '0'..'9' : result := read_integer;
+      '"'      : result := read_string;
+      '0'..'9' : result := IntNode.create( read_integer );
       '-'      : begin
                    read_ch;
-                   if ch in whitespace then
-		   begin
-		     new( result );
-		     result.kind := kSYM;
-		     result.sym  := @sym_minus;
-		   end else begin
-		     result := read_integer;
-		     result.int := -result.int;
-		   end
+                   if ch in whitespace then result := SymNode.create( sym_minus )
+		   else result := IntNode.create( read_integer * -1 )
                  end;
-      '('      : begin inc(depth); read_ch; result := read_list end;
-      ')'      : begin dec(depth); read_ch; result := null end;
+      '('      : begin read_ch; result := read_list() end;
+      ')'      : begin read_ch; result := endl end;
       EOT      : begin result := null; done := true; end;
       else result := read_symbol
     end; { case }
+    if debug_mode then writeln( 'read_value -> ', result.kind );
   end; { read_value }
 
 
-  //  need to add if, lambda, etc
+{-- expression evaluator --}
+
+  //  TODO : evaluate
   function evaluate( value : node ) : node;
   begin
     result := value;
   end; { evaluate }
 
 
+{-- printer --}
+
   procedure print( value : node );
 
-    procedure write_list( start_char : char; head : pCell );
-      var cdr : node;
+    procedure print_list( ln : lisnode );
+      var each : node; first : boolean = true;
     begin
-      write( start_char );
-      print( head.car );
-      cdr := head.cdr;
-      case cdr.kind of
-	kNUL : write( ')' );
-	kREF : write_list( ' ', cdr.ref );
-	else begin
-	  write(' . ');
-	  print( cdr );
-	end;
-      end; { case }
-    end; { print_cell }
+      write( '(' );
+      for each in ln.lis do begin
+	if first then first := false
+	else write( ' ' );
+	print( each )
+      end;
+      write( ')' );
+    end; { print_list }
 
   begin { print }
+    assert( assigned( value ));
     case value.kind of
-      kINT : write( value.int );
-      kSYM : write( value.sym );
-      kSTR : write( '"', value.sym, '"' );
+      kINT : write(( value as intnode ).int );
+      kSYM : write(( value as symnode ).sym );
+      kSTR : write( '"', ( value as strnode ).str, '"' );
       kNUL : write( 'null' );
-      kREF : write_list( '(', value.ref );
+      kLIS : print_list(( value as lisnode ));
       else
-	writeln( '{ unknown value : ', ord( value.kind ), ' }' );
+	writeln( '{ unknown kind : ', integer(value.kind), ' }' );
     end;
   end; { print }
 
+{-- main code ( repl and initialization block ) --}
+
   procedure repl;
     var val : node;
   begin
     repeat
-      { we can't inline the temp value because read_value
-	is also responsible for showing the prompt, and we
-	need to keep the prompt and reply outputs separate. }
+      { we can't inline the temp value ( val ) because read_value
+	is also responsible for showing the prompt, and we need to
+        keep the prompt and reply outputs separate. }
       val := read_value;
       print( evaluate( val ));
       writeln;
@@ -283,5 +350,8 @@ implementation
   end; { repl }
 
 begin
-  new( null ); null.kind := kNUL; null.ptr := nil;
+  null := node.create;
+  null.kind := kNUL;
+  endl := node.create;
+  null.kind := kEND;
 end.
