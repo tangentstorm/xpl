@@ -3,174 +3,220 @@ unit ll; { linked list support }
 interface uses xpc;
 
 type
-  base	     = class
-    constructor init; virtual;
-  end;
-
-  node	     = class( base )
-    next, prev : node;
-  end;
-  listaction = procedure( var n : node );
-
-  {$ifdef FPC}
-  predicate	     = function( n : node ) : boolean is nested;
-  {$else}
-  predicate	     = function( n : node ) : Boolean;
-  {$endif}
-
-
-  list	     = class( base )
+  generic list<T> = class
+  private type
+    link = class
+      next, prev : link;
+      value	 : T;
+    public
+      constructor create( val : T );
+    end;
+    tlist = specialize list<t>;
+    iter = class
+      private
+        _lis : tlist;
+        _cur : link;
+        function _value : T;
+      public
+        constructor create( lis : tlist );
+        function movenext : boolean;
+        property current : T read _value;
+    end;
+    listaction = procedure( var n : T );
+    predicate  = function( n : T ) : Boolean;
    protected
-    mLast, mFirst : node;
-    count : integer;
-   public constructor init; override;
-    procedure append( n : node );
-    procedure insert( n : node );
-    procedure remove( n : node );
+      _last, _head : link;
+      count : integer;
+   private
+      function addFirstOne( ln : link ) : boolean;
+   public constructor init;
+    procedure append( val : T );
+    procedure insert( val : T );
+    procedure remove( val : T );
     procedure foreach( what : listaction );
-    function find( pred : predicate ) : node;
+    function find( pred : predicate ) : T;
     function is_empty: boolean;
-    function first : node;
-    function last : node;
+    function first : T;
+    function last : T;
+    function getenumerator : iter;
 
     { -- old interface --}
-    function next( const n : node ) : node; deprecated;
-    function prev( const n : node ) : node; deprecated;
+    function next( const n : T ) : T; deprecated;
+    function prev( const n : T ) : T; deprecated;
     function empty: boolean; deprecated;
     procedure foreachdo( what : listaction ); deprecated;
     //  procedure killall; deprecated;
   end;
 
-  var NullNode : node;
+
 
 implementation
 
-  { empty base class }
-  constructor base.init;
+  { -- link ( internal type ) -- }
+
+  constructor list.link.create( val : t );
   begin
+    self.value := val;
   end;
+
+  { -- list iterator ( internal type ) -- }
+
+  constructor list.iter.create( lis : tlist );
+  begin
+    _lis := lis;
+    _cur := nil;
+  end;
+
+  function list.iter.movenext : boolean;
+  begin
+    if _cur = nil then _cur := _lis._head
+    else _cur := _cur.next;
+    result := ( _cur <> nil );
+  end;
+
+  function list.iter._value : t;
+  begin
+    result := _cur.value
+  end;
+
+  { this allows 'for .. in' in the fpc / delphi compilers }
+  function list.getenumerator: iter;
+  begin
+    result := iter.create( self );
+  end;
+
+
+{-- public 'list' type --}
 
   constructor list.init;
   begin
-    mFirst := nil; mLast := nil; count := 0;
+    _head := nil; _last := nil; count := 0;
   end;
 
-  function List.find( pred : Predicate ) : node;
+  function List.find( pred : Predicate ) : T;
+    var it : iter; found : boolean = false;
   begin
-    if not self.is_empty then
-    begin
-      result := self.mFirst;
-      repeat result := result.next;
-      until pred( result ) or ( result = nil )
-    end
-    else result := nil
+    it := iter.create( self );
+    repeat
+      found := pred( it.current )
+    until found or not it.movenext;
+    if found
+      then result := it.current
+      else result := nil
   end; { find }
 
   procedure list.foreachdo( what : listaction ); inline; deprecated;
   begin foreach( what )
   end;
 
+  // TODO: this should probably be deprecated too
   procedure list.foreach( what : listaction );
-    var p, q : node;
+    var p, q : link;
   begin
-    p := first;
+    p := self._head;
     while p <> nil do
     begin
       q := p;
       p := p.next;
-      what( q );
+      what( q.value );
     end;
   end;
 
 
 
-  function addFirstOne( self : list; n : node ) : boolean;
+  { helper routine for insert / append }
+  function list.addFirstOne( ln : link ) : boolean;
   begin
     inc( self.count );
-    if self.mFirst = nil then begin
-      self.mLast := n;
-      self.mFirst := n;
+    if self._head = nil then begin
+      self._last := ln;
+      self._head := ln;
       result := true;
     end
     else result := false;
   end;
 
-  procedure list.append( n: node );
-  begin
-    if not addFirstOne( self, n ) then
-    begin
-      n.prev := mLast;
-      mLast.next := n;
-      mLast := n;
-    end;
-  end; { append }
 
-
-  procedure List.insert(n: node);
+  procedure List.insert( val : T );
     { be sure to change zmenu.add IF you change this!!! }
+    var ln : link;
   begin
-    if not addFirstOne( self, n ) then
+    ln := link.create( val );
+    if not addFirstOne( ln ) then
     begin
-      n.next := mFirst;
-      mFirst.prev := n;
-      mFirst := n;
+      ln.next := _head;
+      _head.prev := ln;
+      _head := ln;
     end;
   end; { insert }
 
+  
+  procedure list.append( val : T );
+    var ln : link;
+  begin
+    ln := link.create( val );
+    if not addFirstOne( ln ) then
+    begin
+      ln.prev := _last;
+      _last.next := ln;
+      _last := ln;
+    end;
+  end; { append }
 
 
-  procedure List.remove(n: node);
-    var
-      p: node;
+  procedure List.remove( val : T );
+    var p : link;
   begin
-    if last <> nil then
-    begin
-      p := first;
-      while (p.next <> n) and (p.next <> last) do
+    if not self.is_empty then begin
+      p := self._head;
+      while ( p.next.value <> val )
+	and ( p.next <> _last ) do
 	p := p.next;
-      if p.next = n then
-      begin
-	p.next := n.next;
-	if last = n then
-	begin
-	  if p = n then
-	    mLast := nil
-	  else
-	    mLast := p;
-	end;
-      end;
-    end;
+
+      if p.next.value = val then begin
+	p.next := p.next.next;
+	if self.last = val then
+	  if p.value = val then _last := nil
+	  else _last := p
+      end
+    end
   end; { remove }
 
+  function list.is_empty : boolean;
+  begin result := _last = nil;
+  end;
+
+  function list.first: T;
+  begin
+    result := _head.value;
+  end; { first }
+
+  function list.last: T;
+  begin
+    result := _last.value;
+  end; { last }
+
+
+{-- deprecated list interface --}
+
+  { this on is bad because "empty" can be a verb }
   function list.empty : boolean; inline; deprecated;
   begin result := self.is_empty;
   end;
-  function list.is_empty : boolean;
-  begin result := mLast = nil;
-  end;
-
-  function list.first: node;
-  begin
-    result := mFirst;
-  end; { first }
-
-  function list.last: node;
-  begin
-    result := mLast;
-  end; { last }
-
 
   { i don't really see the point of these }
-  function list.next( const n: node ): node; inline; deprecated;
-  begin result := n.next;
+  function list.next( const n: T ): T; inline; deprecated;
+  begin
+    die('do i really need list.next? ');
+    result := nil
   end;
 
-
-  function list.prev( const n: node): node; inline; deprecated;
-  begin result := n.prev;
+  function list.prev( const n: T): T; inline; deprecated;
+  begin
+    die('do i really need list.prev? ');
+    result := nil
   end;
 
 
-begin
-  nullnode := node.create;
-end. { unit }
+initialization
+end.
