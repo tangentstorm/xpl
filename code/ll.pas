@@ -33,6 +33,7 @@ type
     procedure append( val : T );
     procedure insert( val : T );
     procedure remove( val : T );
+    procedure drop;
     procedure foreach( what : listaction );
     function find( pred : predicate ) : T;
     function is_empty: boolean;
@@ -181,6 +182,12 @@ implementation
       end
     end
   end; { remove }
+
+  procedure list.drop;
+  begin
+    self._last := self._last.prev;
+    self._last.next := nil;
+  end;
 
   function list.is_empty : boolean;
   begin result := _last = nil;
