@@ -30,19 +30,34 @@ end;
 
 
 
+// mostly taken from:
+// http://wiki.lazarus.freepascal.org/Logging_exceptions#Dump_current_call_stack
+function stacktrace( e :  exception ) : string;
+  var
+    i	   : integer;
+    frames : ppointer;
+begin
+  result := '|K';
+  if e <> nil then result := e.classname + ': |R' + e.message + lineending;
+  result += '|c' + backtracestrfunc( exceptaddr );
+  frames := exceptframes;
+  for i := 0 to exceptframecount - 1 do begin
+    if odd( i ) then result += '|c' else result += '|B';
+    result += lineending + backtracestrfunc( frames[ i ]);
+  end;
+end; { stacktrace }
+  
 procedure run( test_name : string; to_test : testcase );
 var result : outcome = pass;  p : problem;  e : exception;
 begin
   //  chk.reset;
   try to_test
   except
-    on Exception do begin
+    on exception do begin
       e := ExceptObject as exception;
       if e is EAssertionFailed then result := fail
       else result := err;
-      // setlength( p.error,
-      //   ExceptionErrorMessage( e, ExceptAddr, @p.error[1], 255 ));
-      p.error := e.message;
+      p.error := stacktrace( e );
       p.test_name := test_name;
       p.result := result;
       setlength( problems, length( problems ) + 1 );
