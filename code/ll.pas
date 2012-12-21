@@ -218,11 +218,13 @@ implementation
   function list.next( const n: T ): T; inline; deprecated;
   begin
     die('do i really need list.next? ');
+    result := n;
   end;
 
   function list.prev( const n: T): T; inline; deprecated;
   begin
     die('do i really need list.prev? ');
+    result := n;
   end;
 
 
