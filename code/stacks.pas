@@ -9,12 +9,13 @@
 unit stacks;
 interface uses xpc;
 
-  type generic stack< A > = object
+  type generic stack< A > = class
     sp   : integer;  // stack pointer
     cells : array of A;
     overflow, underflow : thunk;
     show : function( x : A ) : string;
-    constructor init( len:word );
+    constructor init( len:word ); deprecated;
+    constructor create( len:word );
     procedure push( t : A );
     function pop: A;
     procedure pop1( var t : A );
@@ -36,12 +37,17 @@ interface uses xpc;
 
 implementation
 
-  constructor stack.init( len: word );
+  constructor stack.create( len: word );
   begin
     sp := 0;
     setlength( cells, len );
     overflow := @default_overflow;
     underflow := @default_underflow;
+  end; { stack.create }
+
+  constructor stack.init( len: word );
+  begin
+    self.create( len )
   end; { stack.init }
 
   procedure stack.push( t : A );
