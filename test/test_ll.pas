@@ -2,12 +2,12 @@
 implementation uses ll, li, xpc;
 
   var
-    ls	 : specialize list<string>;
+    ls	 : stringlist;
     a, b : string;
 
   procedure setup;
   begin
-    ls := list.init;
+    ls := stringlist.create;
     a := 'a';
     b := 'b';
   end;

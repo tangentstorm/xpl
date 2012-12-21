@@ -30,7 +30,7 @@ type
     count : integer;
     function addFirstOne( ln : link ) : boolean;
   public
-    constructor init;
+    constructor create;
     procedure append( val : T );
     procedure insert( val : T );
     procedure remove( val : T );
@@ -90,7 +90,7 @@ implementation
 
 {-- public 'list' type --}
 
-  constructor list.init;
+  constructor list.create;
   begin
     _head := nil; _last := nil; count := 0;
   end;
