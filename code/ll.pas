@@ -1,18 +1,19 @@
 {$i xpc}
 unit ll; { linked list support }
-interface uses xpc;
+interface uses xpc, sysutils;
 
 type
   generic list<T> = class
-  private type
-    link = class
-      next, prev : link;
-      value	 : T;
-    public
-      constructor create( val : T );
-    end;
-    tlist = specialize list<t>;
-    iter = class
+  private
+    type
+      link       = class
+        next, prev : link;
+        value	 : T;
+      public
+        constructor create( val : T );
+      end;
+      tlist      = specialize list<t>;
+      iter       = class
       private
         _lis : tlist;
         _cur : link;
@@ -21,15 +22,15 @@ type
         constructor create( lis : tlist );
         function movenext : boolean;
         property current : T read _value;
-    end;
-    listaction = procedure( var n : T );
-    predicate  = function( n : T ) : Boolean;
-   protected
-      _last, _head : link;
-      count : integer;
-   private
-      function addFirstOne( ln : link ) : boolean;
-   public constructor init;
+      end;
+      listaction = procedure( var n : T );
+      predicate  = function( n : T ) : Boolean;
+  protected
+    _last, _head : link;
+    count : integer;
+    function addFirstOne( ln : link ) : boolean;
+  public
+    constructor init;
     procedure append( val : T );
     procedure insert( val : T );
     procedure remove( val : T );
@@ -48,7 +49,7 @@ type
     procedure foreachdo( what : listaction ); deprecated;
     //  procedure killall; deprecated;
   end;
-
+  stringlist = specialize list<string>;
 
 
 implementation
@@ -103,7 +104,7 @@ implementation
     until found or not it.movenext;
     if found
       then result := it.current
-      else result := nil
+      { else result := nil }
   end; { find }
 
   procedure list.foreachdo( what : listaction ); inline; deprecated;
@@ -151,7 +152,7 @@ implementation
     end;
   end; { insert }
 
-  
+
   procedure list.append( val : T );
     var ln : link;
   begin
@@ -193,14 +194,16 @@ implementation
   begin result := _last = nil;
   end;
 
-  function list.first: T;
+  function list.first : t;
   begin
-    result := _head.value;
+    if _head <> nil then result := _head.value
+    else raise Exception.create('empty list has no first member.');
   end; { first }
 
   function list.last: T;
   begin
-    result := _last.value;
+    if assigned( _last ) then result := _last.value
+    else raise Exception.create('empty list has no last member.');
   end; { last }
 
 
@@ -215,13 +218,11 @@ implementation
   function list.next( const n: T ): T; inline; deprecated;
   begin
     die('do i really need list.next? ');
-    result := nil
   end;
 
   function list.prev( const n: T): T; inline; deprecated;
   begin
     die('do i really need list.prev? ');
-    result := nil
   end;
 
 
