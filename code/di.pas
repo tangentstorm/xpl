@@ -9,24 +9,26 @@ unit di;
 interface uses xpc, li;
 
   type
-    dict = class
-    public
-      function get( const key : string ) : pnode;
-      procedure put( const key : string; var value : pnode );
-    private
-      items : array of record
-                         hash  : integer;
-                         key   : string;
-                         value : pnode;
-		       end;
-      function has_i( const k : string; var i: int32 ) : boolean;
+    generic dict<v> = class
+      public
+        function get( const key : string; default : v ) : v;
+        procedure put( const key : string; var value : v );
+      private
+        items : array of record
+                           hash  : integer;
+                           key   : string;
+                           value : v;
+		         end;
+      function has_i( const key : string; var i: int32 ) : boolean;
+      function hash( const s : string ): integer;
     end;
+    stringdict = specialize dict<string>;
 
 
 implementation
 
   { this is the algorithm java uses }
-  function hash( const s : string ) : integer;
+  function dict.hash( const s : string ) : integer;
     var i : integer;
   begin
     hash := 0;
@@ -34,14 +36,14 @@ implementation
   end;
 
   { lookup the string, leaving i := the index if found }
-  function dict.has_i( const k : string; var i : int32 ) : boolean;
+  function dict.has_i( const key : string; var i : int32 ) : boolean;
     var h, len : integer; found : boolean = false;
   begin
-    h := hash( k ); i := -1; len := length( self.items );
+    h := hash( key ); i := -1; len := length( self.items );
     repeat
       inc( i );
       found := ( self.items[ i ].hash = h ) and
-	       ( self.items[ i ].key = k );
+	       ( self.items[ i ].key = key );
     until found or ( i = len );
     result := found
   end;
@@ -49,14 +51,14 @@ implementation
 
   { public dict interface }
 
-  function dict.get( const key : string ) : pnode;
+  function dict.get( const key : string; default : v ) : v;
     var i : int32;
   begin
     if self.has_i( key, i ) then result := self.items[ i ].value
-    else result := null;
+    else result := default;
   end;
 
-  procedure dict.put( const key : string; var value : pnode );
+  procedure dict.put( const key : string; var value : v );
     var i : int32;
   begin
     if self.has_i( key, i ) then
@@ -71,5 +73,3 @@ implementation
 
 begin
 end. { unit }
-
-  
