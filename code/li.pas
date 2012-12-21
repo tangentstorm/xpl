@@ -10,10 +10,10 @@ interface uses classes, xpc, ascii, ll, num;
     {TODO: come back to this once I have syntax
        for algebraic data types }
     node = class kind : kinds end;
-    list = specialize ll.list< node >;
+    nodelist = specialize ll.list< node >;
     LisNode = class( node )
-      lis : list;
-      constructor create( _lis : list );
+      lis : nodelist;
+      constructor create( _lis : nodelist );
     end;
     IntNode = class( node )
       int : integer;
@@ -78,7 +78,7 @@ implementation
     self.str	       := _str;
   end;
 
-  constructor lisnode.create( _lis: list );
+  constructor lisnode.create( _lis: nodelist );
   begin
     self.kind	       := klis;
     self.lis	       := _lis;
@@ -240,7 +240,7 @@ implementation
 {-- read_value >> read_list --}
 
     function read_list : node;
-      var this : node; res : list;
+      var this : node; res : nodelist;
     begin
       inc( depth );
       debug('---read_list---');
@@ -250,7 +250,7 @@ implementation
 	debug('-- result was null --');
       end
       else begin
-	res := list.create;
+	res := nodelist.create;
 	repeat
 	  res.append( this );
 	  this := read_value()
