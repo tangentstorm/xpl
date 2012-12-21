@@ -15,6 +15,7 @@ interface uses xpc;
   function DnStr( s : string ) : String;
   function wordn( s : string; index : byte ) : string;
   function nwords( s : string ) : byte;
+  function startswith(const haystack, needle : string) : boolean;
 
 implementation
 
@@ -88,7 +89,7 @@ end; { dnstr }
 
 
 function wordn( s : string; index:  byte ) : string;
-  var c, c2, j : byte;
+  var c, j : byte;
 begin
   while ( s[ 1 ] = ' ' ) and ( length( s ) > 0 ) do delete( s, 1, 1 );
   s := s + ' ';
@@ -110,6 +111,17 @@ begin
     inc( n );
   end;
   nwords := n;
+end;
+
+function startswith(const haystack, needle : string) : boolean;
+  var i : cardinal = 1;
+begin
+  result := length( needle ) <= length( haystack );
+  while result and ( i < length( needle )) do
+  begin
+    result := haystack[ i ] = needle[ i ];
+    inc( i )
+  end
 end;
 
 end.
