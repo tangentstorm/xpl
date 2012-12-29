@@ -29,7 +29,7 @@ test: always run-tests
 	@bin/run-tests
 run-tests: test/*.pas code/*.pas
 	cd test; python gen-tests.py
-	@$(FPC) test/run-tests.pas
+	@$(FPC) -B test/run-tests.pas
 
 always:
 
