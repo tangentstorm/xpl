@@ -222,9 +222,13 @@ implementation
       if not cwcommandmode then
 	case ch of
 	  trg : cwcommandmode := true;
-	  #13,
-	  #10 : runcmd( cwcr );
-	  #08 : runcmd( cwbs );
+	  ^J,
+	  ^M  : runcmd( cwcr );
+	  ^G  : write( '␇' ); // 'bell'
+	  ^L  : begin
+		  write( ntimes( '- ', crt.windmaxx div 2 - 1 ));
+		end;
+	  ^H  : runcmd( cwbs );
 	  else write( uch );
 	end
       else
