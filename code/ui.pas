@@ -258,24 +258,24 @@ implementation
   end; { setpal }
 
 
-  
+
 
-  {$I ui.zobj.p }
-    {$I ui.zchoice.p }
-    {$I ui.zconfirmbox.p }
-      {$I ui.zinputbox.p }
-    {$I ui.zcounter.p }
-      {$I ui.zcolor.p }
-      {$I ui.zhexcounter.p }
-    {$I ui.zinput.p }
-      {$I ui.zpassword.p }
-    {$I ui.ztext.p }
-    {$I ui.ztoggle.p }
-      {$I ui.zyesno.p }
-    {$I ui.zvscroller.p }
-  {$I ui.zmenu.p }
-    {$I ui.zbouncemenu.p }
-    {$I ui.zmenubar.p }
+  {$I ui/zobj.inc }
+    {$I ui/zchoice.inc }
+    {$I ui/zconfirmbox.inc }
+      {$I ui/zinputbox.inc }
+    {$I ui/zcounter.inc }
+      {$I ui/zcolor.inc }
+      {$I ui/zhexcounter.inc }
+    {$I ui/zinput.inc }
+      {$I ui/zpassword.inc }
+    {$I ui/ztext.inc }
+    {$I ui/ztoggle.inc }
+      {$I ui/zyesno.inc }
+    {$I ui/zvscroller.inc }
+  {$I ui/zmenu.inc }
+    {$I ui/zbouncemenu.inc }
+    {$I ui/zmenubar.inc }
 
 
   function newChoiceXY(
