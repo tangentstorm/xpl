@@ -93,15 +93,16 @@ implementation
 
   function list.cursor.move_next : boolean;
   begin
+    result := _lis._first_link <> nil;
     if _cur = nil then begin
       _cur := _lis._first_link;
-      _idx := 1;
+      _idx := 1
     end
-    else begin
+    else if _cur.next <> nil then begin
       _cur := _cur.next;
       inc( _idx );
-    end;
-    result := ( _cur <> nil )
+    end
+    else result := false
   end;
 
   { this is only here to allow for..in loops }
