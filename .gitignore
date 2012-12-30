@@ -9,3 +9,6 @@
 *.gpi
 *.bak
 bin
+fp___.err
+fp___.out
+
