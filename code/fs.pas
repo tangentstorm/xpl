@@ -112,9 +112,11 @@ implementation
   end;
 
   procedure savestring ( var f : file; s : string );
+    var i : word;
   begin
-    blockwrite( f, s[0], 1 );
-    blockwrite( f, s[1], byte(s[0]));
+    i := length( s );
+    blockwrite( f, i, sizeof( i ));
+    blockwrite( f, s, length( s ));
   end;
 
   procedure savetext( var f : file; s : string );
@@ -224,8 +226,7 @@ implementation
       b	: byte;
   begin
     blockread( f, b, 1 );
-    blockread( f, n[1], b );
-    n[0] := chr(b);
+    blockread( f, n, b );
     nextstring := n;
   end;
 
