@@ -87,7 +87,7 @@ implementation
 
   function point.getc : byte;
   begin
-    result := (( bg and $0F ) << 4 ) + ( fg and $0F ); //  todo : make this << 8 so I can use 256 colors
+    result := (( bg and $0F ) shl 4 ) + ( fg and $0F ); //  todo : make this << 8 so I can use 256 colors
   end;
   procedure point.setc( value : byte );
   begin
