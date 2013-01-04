@@ -2,7 +2,7 @@
   extracted from crtstuff.pas and updated 2012 }
 {$i xpc.inc}
 unit stri; { string interface }
-interface uses xpc;
+interface uses xpc, sysutils;
 
   function pad( s : string; len : integer; ch : char ) : string;
   function unpad( s : string; ch : char ) : string;
@@ -13,8 +13,8 @@ interface uses xpc;
   function UpStr( s : string ) : String;
   function DnCase( ch : char ) : Char;
   function DnStr( s : string ) : String;
-  function wordn( s : string; index : byte ) : string;
-  function nwords( s : string ) : byte;
+  function wordn( const s : string; index : byte ) : string;
+  function nwords( const s : string ) : byte;
   function startswith(const haystack, needle : string) : boolean;
 
 implementation
@@ -88,19 +88,23 @@ end; { dnstr }
 
 
 
-function wordn( s : string; index:  byte ) : string;
-  var c, j : byte;
+function wordn( const s : string; index:  byte ) : string;
+  var i, j, len : cardinal;
 begin
-  while ( s[ 1 ] = ' ' ) and ( length( s ) > 0 ) do delete( s, 1, 1 );
-  s := s + ' ';
-  while ( pos('  ', S) > 0) do delete( s, Pos( '  ', s ), 1 );
-  for c := 1 to index - 1 do delete( s, 1, pos( ' ', s ) );
-  if ( pos( ' ', s ) > 0 ) then j := pos( ' ', s ) else j := length( s );
-  wordn := copy( s, 1, j-1 );
+  i := index;
+  len := length( s );
+  while (i <= len) and (ord(s[ i ]) > 32) do inc( i );
+  if ( i = len ) then
+    raise Exception.create('invalid token index')
+  else begin
+    j := i;
+    while (j <= len) and (ord(s[ j ]) > 32) do inc( j );
+    result := copy( s, i, j-i )
+  end
 end;
 
 
-function nwords( s : string ) : byte;
+function nwords( const s : string ) : byte;
   var c, n : byte;
 begin
   c := 1;
@@ -110,7 +114,7 @@ begin
     inc( c );
     inc( n );
   end;
-  nwords := n;
+  result := n;
 end;
 
 function startswith(const haystack, needle : string) : boolean;
