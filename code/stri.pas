@@ -10,9 +10,9 @@ interface uses xpc, sysutils;
   function ntimes( const s : string; n : byte ) : string;
   function flushrt( s : string; n : byte; ch : char ) : string;
   function trunc( s : string; len : byte ) : string;
-  function UpStr( s : string ) : String;
+  function UpStr( const s : string ) : String;
   function DnCase( ch : char ) : Char;
-  function DnStr( s : string ) : String;
+  function DnStr( const s : string ) : String;
   function wordn( const s : string; index : byte ) : string;
   function nwords( const s : string ) : byte;
   function startswith(const haystack, needle : string) : boolean;
@@ -63,12 +63,12 @@ begin
   result := s;
 end;
 
-function upstr( s : string ) : string;
-  var count : byte;
+function upstr( const s : string ) : string;
+  var count : cardinal;
 begin
+  setlength( result, length( s ));
   for count := 1 to length( s ) do
-    s[ count ] := upcase( s[ count ] );
-  upstr := s;
+    result[ count ] := upcase( s[ count ]);
 end;
 
 function dncase( ch: char ) :char;
@@ -77,12 +77,12 @@ begin
   else result := ch;
 end;
 
-function dnstr( s : string ) : string;
-  var count : integer;
+function dnstr( const s : string ) : string;
+  var count : cardinal;
 begin
+  setlength( result, length( s ));
   for count := 1 to length( s ) do
-    s[ count ] := dncase( s[ count ] );
-  dnstr := s;
+    result[ count ] := dncase( s[ count ] )
 end; { dnstr }
 
 
