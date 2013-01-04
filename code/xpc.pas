@@ -1,4 +1,4 @@
-{$i xpc.inc }
+{$i xpc.inc}
 unit xpc; { cross-platform compilation help }
 interface uses sysutils;
 

@@ -4,7 +4,7 @@
 // lookup is done with a simple linear search for now,
 // avoiding collisions by double-checking the cached string
 
-{$i xpc.inc }
+{$i xpc.inc}
 unit di;
 interface uses xpc, li;
 

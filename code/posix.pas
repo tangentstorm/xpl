@@ -3,7 +3,7 @@
   copyright (c) 2012 michal j. wallace. all rights reserved.
   available to the public under the ISC or MIT/X11 license.
 }
-{$i xpc.inc }
+{$i xpc.inc}
 unit posix;
 interface uses xpc, sysutils, dateutils;
 

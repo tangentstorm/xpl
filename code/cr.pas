@@ -1,4 +1,4 @@
-{$i xpc.inc }
+{$i xpc.inc}
 unit cr; { cursors }
 interface uses xpc, sq, ll, stacks;
 
