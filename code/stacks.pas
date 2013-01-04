@@ -5,7 +5,7 @@
   license : MIT / ngaro
 
 }
-{$i xpc.inc }
+{$i xpc.inc}
 unit stacks;
 interface uses xpc;
 

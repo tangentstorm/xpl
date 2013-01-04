@@ -2,7 +2,7 @@
    copyright (c) 2012 michal j. wallace. all rights reserved.
    license: mit / isc
 }
-{$i xpc.inc }
+{$i xpc.inc}
 unit kvm;
 interface uses xpc, keyboard;
 

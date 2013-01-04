@@ -1,4 +1,4 @@
-{$i xpc.inc }
+{$i xpc.inc}
 unit sq;{ sequences }
 interface uses xpc, ll;
 
