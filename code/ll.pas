@@ -42,7 +42,7 @@ type
 
    protected
     _first_link, _last_link : link;
-    count : integer;
+    _count : cardinal;
     function is_first_insert( ln : link ) : boolean;
    public
     constructor create;
@@ -55,17 +55,22 @@ type
     function is_empty: boolean;
     function first : T;
     function last : T;
-    function make_cursor : list.cursor;
-   public { -- interface for for..in loops --}
-    function getenumerator : list.cursor;
-   public { -- ancient deprecated interface --}
+    function make_cursor : cursor;
+    property count : cardinal read _count;
+
+   { -- interface for for..in loops --}
+   public
+    function getenumerator : cursor;
+
+   { -- ancient deprecated interface --}
+   public
     function next( const n : T ) : T; deprecated;
     function prev( const n : T ) : T; deprecated;
     function empty: boolean; deprecated;
     procedure foreachdo( what : listaction ); deprecated;
     //  procedure killall; deprecated;
   end;
-  stringlist = specialize list<string>;
+  stringlist= specialize list<string>;
 
 
 implementation
@@ -177,7 +182,7 @@ implementation
 
   constructor list.create;
   begin
-    _first_link := nil; _last_link := nil; count := 0;
+    _first_link := nil; _last_link := nil; _count := 0;
   end;
 
   function List.find( pred : Predicate ) : t;
@@ -212,7 +217,7 @@ implementation
   { helper routine for insert / append }
   function list.is_first_insert( ln : link ) : boolean;
   begin
-    inc( self.count );
+    inc( self._count );
     if _first_link = nil then begin
       _last_link := ln;
       _first_link := ln;
