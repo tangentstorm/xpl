@@ -87,7 +87,7 @@ procedure zMenu.show;
 var
   oldIsMV :   Boolean;
   p, q    : zchoice;
-  node    : ll.node;
+  node    : li.node;
   choice  : ui.zChoice;
 begin
   node := mChoices.first;

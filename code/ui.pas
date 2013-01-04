@@ -1,13 +1,13 @@
 {$IFDEF FPC}{$mode objfpc}{$modeswitch nestedprocvars}{$ENDIF}
 
 unit ui;
-interface uses xpc, cw, ll, crt, kvm, mou, kbd, stri, fx, num, cli;
+interface uses xpc, cw, li, ll, crt, kvm, mou, kbd, stri, fx, num, cli;
 
 { note : this module considers (0,0) to be the top left corner! }
 
 type
   { a clickable rectangle onscreen }
-  ZObj  = class ( ll.Node )
+  ZObj  = class ( li.Node )
     x, y, x2, y2 : Byte; { TODO : mX, mY, etc }
     constructor create( a, b, a2, b2 : Byte );
     procedure showNormal; virtual;
@@ -71,8 +71,8 @@ type
     function value : Byte;
     function get : Byte;
   protected
-    mChoices : ll.List;
     mCurrent : zChoice;
+    mChoices : specialize ll.List<zChoice>;
   public
     function firstChoice : zChoice;
     function lastChoice : zChoice;
@@ -211,7 +211,7 @@ type
   end;
 
 { module level functions }
-  
+
   function newSepBar( tail : zChoice ) : zChoice;
   function newChoiceXY(
     x, y : Byte; s1, s2 : String; on : Boolean;
