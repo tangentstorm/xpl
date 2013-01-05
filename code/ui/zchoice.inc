@@ -14,7 +14,7 @@ begin
     self.sub := nil
   else
     self.sub := submen;
-  self.next := tail;
+  (* self.next := tail; *)
 end;
 
 constructor zchoice.create(

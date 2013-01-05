@@ -41,7 +41,7 @@ end;
 
 function zMenu.thisChoice : zChoice;
 begin
-  result := zChoice( mCurrent );
+  result := mCurrent.value
 end;
 
 procedure zMenu.insert( z : zchoice );
@@ -85,26 +85,16 @@ end;
 
 procedure zMenu.show;
 var
-  oldIsMV :   Boolean;
-  p, q    : zchoice;
-  node    : li.node;
+  oldIsMV : Boolean;
+  p, q	  : zchoice;
   choice  : ui.zChoice;
+  cur	  : choicelist.cursor;
+  done	  : boolean;
 begin
-  node := mChoices.first;
-  repeat
-    choice := node as zChoice;
-    choice.draw( mCurrent = choice );
-    node := node.next;
-  until node = mChoices.last;
-
-  {
-  p := zchoice( mChoices.first.value );
-  while p <> nil do begin
-    q := p;
-    p := zchoice( mChoices.next( p ) );
-    q.draw( q = mCurrent );
+  cur  := mChoices.make_cursor;
+  while cur.next( choice ) do begin
+    choice.draw( mCurrent.index = cur.index );
   end;
-  }
 
   if submenu <> nil then submenu.show;
   begin
@@ -138,11 +128,8 @@ procedure zMenu.setonfirst;
 begin
  if not mChoices.is_empty then
  begin
-   mCurrent := zChoice( mChoices.first );
-   repeat
-      if ( mCurrent <> nil) and (thisChoice.on) then
-         mCurrent := zChoice( mCurrent.Next );
-    until ( mCurrent = zChoice( mChoices.last )) or ( thisChoice.on );
+   mCurrent.reset;
+   repeat until thischoice.on or not mcurrent.move_next;
  end;
 end;
 
@@ -200,12 +187,9 @@ begin
     case Ch of
       kbd.UP :
         begin
-          repeat
-            if ( mCurrent = zChoice( mChoices.First )) then
-              mCurrent := zChoice( mChoices.Last )
-            else
-              mCurrent := zChoice( mCurrent.prev )
-          until ( thisChoice.enabled ) or ( mCurrent = zChoice( mChoices.First ));
+          // TODO: this used to wrap around, but it should be in cursor, not here.
+          repeat mCurrent.move_prev
+          until thisChoice.enabled or mCurrent.at_top;
           show;
         end;
 
@@ -215,18 +199,13 @@ begin
             submenu.handlestripped( ch )
           else begin
               subactive := no;
-              submenu.mCurrent := nil
+              submenu.mCurrent.reset;
             end;
 
       kbd.DOWN :
         begin
-          repeat
-            if ( mCurrent = zChoice( mChoices.Last )) then
-              mCurrent := zChoice( mChoices.First )
-            else if mCurrent <> nil then
-              mCurrent := zChoice( mCurrent.next )
-          until ( thisChoice.enabled ) or ( mCurrent = zChoice( mChoices.Last ));
-          if mCurrent = nil then halt;
+          repeat mCurrent.move_next
+          until thisChoice.enabled or mCurrent.at_end;
           show;
         end;
 
@@ -240,14 +219,14 @@ begin
 
       #71, #73 : { home }
         begin
-          mCurrent := zChoice( mChoices.First );
+          mCurrent.to_top;
           if not thisChoice.enabled then
              handlestripped( kbd.DOWN );
         end;
 
       #79, #81 : { end }
         begin
-          mCurrent := zChoice( mChoices.Last );
+          mCurrent.to_end;
           if not thisChoice.enabled then
              handlestripped( kbd.UP );
         end;
@@ -262,9 +241,9 @@ begin
   begin
     setonfirst;
     repeat
-      mCurrent := zChoice( mCurrent.next );
-    if thisChoice.sub <> nil then submenu.Reset
-    until mCurrent = zChoice( mChoices.last );
+      mCurrent.move_next;
+      if thisChoice.sub <> nil then submenu.Reset
+    until mCurrent.at_end;
     setonfirst;
     subactive := submenu <> nil;
     endloop   := false;
@@ -272,7 +251,7 @@ begin
 end;
 
 procedure zMenu.domousestuff;
-var node : ll.node; choice : zchoice;
+var cur : choicelist.cursor; choice : zchoice;
 begin
   if not mpresent then exit;
   getmpos;
@@ -293,14 +272,12 @@ begin
   end
   else { no right click, procede as usual }
   begin
-    node := mChoices.first;
-    while node <> nil do
+    cur.reset;
+    while cur.next( choice ) do
     begin
-      choice := zChoice( node );
-      node := node.next;
       if ( choice.on ) and ( choice.pressed ) then
       begin
-        setto( choice );
+        self.setto( choice );
         if choice.click then handle( kbd.ENTER );
       end;
       show;
@@ -346,9 +323,9 @@ end;
 
 
 function zMenu.shortcut( ch : Char ) : zchoice;
-  function match_shortcut( node : ll.node ): boolean;
+  function match_shortcut( choice : zchoice ): boolean;
   begin
-    result := zchoice( node ).sc = ch
+    result := choice.sc = ch
   end;
 begin
   { TODO : find should return the content, not the node }
@@ -359,7 +336,7 @@ begin
 end;
 
 function zMenu.valuecut( v : Word ) : zChoice;
-  function match_valcut( node : ll.node ): boolean;
+  function match_valcut( node : zchoice ): boolean;
   begin
     result := zchoice( node ).v = v;
   end;
@@ -398,8 +375,7 @@ begin
       if mv then mou.show;
       endloop := false;
       Reset;
-      if mCurrent = nil then
-        mCurrent := zChoice( mChoices.First );
+      if mCurrent.value = nil then mCurrent.to_top;
       show;
       repeat
         dowhilelooping;
