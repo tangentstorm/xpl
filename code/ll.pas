@@ -23,6 +23,8 @@ type
         procedure reset;
         procedure to_top;
         procedure to_end;
+        function at_top : boolean;
+        function at_end : boolean;
         procedure move_to( other : cursor );
         function move_next : boolean;
         function move_prev : boolean;
@@ -134,6 +136,17 @@ implementation
   procedure list.cursor.to_end;
   begin
     _cur := _lis._last_link;
+  end;
+
+
+  function list.cursor.at_top : boolean;
+  begin
+    result := _cur = _lis._first_link;
+  end;
+
+  function list.cursor.at_end : boolean;
+  begin
+    result := _cur =  _lis._last_link;
   end;
 
   procedure list.cursor.move_to( other : cursor );
