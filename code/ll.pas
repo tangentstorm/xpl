@@ -40,8 +40,7 @@ type
           read _get_value;
     end;
     type listaction = procedure( var n : T );
-    type predicate  = function( n : T ) : Boolean;
-    type predicate_n= function( n : T ) : Boolean is nested;
+    type predicate = function( n : T ) : Boolean is nested;
 
    protected
     _first_link, _last_link : link;
@@ -55,7 +54,6 @@ type
     procedure drop;
     procedure foreach( what : listaction );
     function find( pred : predicate ) : T;
-    function find( pred : predicate_n ) : T;
     function is_empty: boolean;
     function first : T;
     function last : T;
@@ -209,19 +207,6 @@ implementation
     until found or not cur.move_next;
     if found then result := cur.value
   end; { find }
-
-  // same thing but allow nested :/
-  // TODO: find a way to not duplicate this code
-  function List.find( pred : Predicate_N ) : t;
-    var cur : cursor; found : boolean = false;
-  begin
-    cur := cursor.create( self );
-    repeat
-      found := pred( cur.value )
-    until found or not cur.move_next;
-    if found then result := cur.value
-  end; { find }
-
 
   procedure list.foreachdo( what : listaction ); inline; deprecated;
   begin foreach( what )
