@@ -16,7 +16,7 @@ procedure ztoggle.show;
 begin
   if value
     then colorxy( mX, mY, tcol, truestr )
-  else colorxy( mX, mY, tcol, falsestr )
+    else colorxy( mX, mY, tcol, falsestr )
 end;
 
   
@@ -29,11 +29,12 @@ begin
   case ch of
     kbd.ENTER : endloop := true;
     kbd.ESC : begin
-            value   := start;
-            endloop := true
-          end;
-  otherwise if ch = ts then value := true
-  else if ch = fs then value := false
+		value   := start;
+		endloop := true
+	      end;
+    otherwise
+      if ch = ts then value := true
+      else if ch = fs then value := false
   end;
   show;
 end;

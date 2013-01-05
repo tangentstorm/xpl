@@ -1,5 +1,4 @@
-{$IFDEF FPC}{$mode objfpc}{$modeswitch nestedprocvars}{$ENDIF}
-
+{$i xpc.inc}
 unit ui;
 interface uses xpc, cw, li, ll, crt, kvm, mou, kbd, stri, fx, num, cli;
 
@@ -70,9 +69,10 @@ type
     function valuecut( v : Word ) : zchoice;
     function value : Byte;
     function get : Byte;
+  protected type choicelist = specialize ll.List<zChoice>;
   protected
-    mCurrent : zChoice;
-    mChoices : specialize ll.List<zChoice>;
+    mChoices : choicelist;
+    mCurrent : choicelist.cursor;
   public
     function firstChoice : zChoice;
     function lastChoice : zChoice;
