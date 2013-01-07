@@ -17,7 +17,7 @@ procedure zPassword.show;
 var temp : String;
 begin
   temp := value;
-  FillChar( strg[1], length( self.strg ), self.pwchar );
+  FillChar( work, length( self.work ), self.pwchar );
   inherited show;
-  strg := temp;
+  work := temp;
 end;
