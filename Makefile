@@ -44,7 +44,7 @@ clean:
 	@rm -f $(GEN)/*
 
 # we use always here, else it'll see the test directory and assume we're done.
-test: always test-runner tidy
+test: always init test-runner tidy
 	@bin/run-tests
 test-runner: test/*.pas code/*.pas
 	cd test; python gen-tests.py ../$(GEN)
