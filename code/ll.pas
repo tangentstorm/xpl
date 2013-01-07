@@ -61,6 +61,7 @@ type
     constructor create;
     procedure append( val : T );
     procedure insert( val : T );
+    procedure insert_at( val : T;  at_index : cardinal = 0 );
     procedure remove( val : T );
     procedure drop;
     procedure foreach( what : listaction );
@@ -265,6 +266,18 @@ implementation
     end
   end; { insert }
 
+  procedure list.insert_at( val	: T; at_index : cardinal );
+    var cur : cursor; ln : link;
+  begin
+    cur := self.make_cursor;
+    if at_index >= _count then cur.to_end
+    else while cur.index < at_index do cur.move_next;
+    inc(self._count);
+    ln := link.create( val );
+    ln.next := cur._lnk;
+    ln.prev := cur._lnk.prev;
+    cur._lnk.prev := ln;
+  end; { insert_at }
 
 
   procedure list.append( val : T );
