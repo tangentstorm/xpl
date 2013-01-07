@@ -150,8 +150,9 @@ implementation
   procedure list.cursor.to_end;
   begin
     _lnk := _lis._last_link;
+    if _lis.count = 0 then _idx := 0
+    else _idx := _lis._count;
   end;
-
 
   function list.cursor.at_top : boolean;
   begin
