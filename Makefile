@@ -31,7 +31,7 @@ always:
 
 bin/%: demo/%.pas tidy
 	rm -f $@
-	$(FPC) -gl $<
+	$(FPC) $<
 
 # tidy just moves all the units and whatnot to the gen directory
 tidy:
