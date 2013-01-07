@@ -13,7 +13,7 @@ constructor zinput.create(
   a, b, tl, dl, tc, ac : integer; esc : Boolean; start : String );
 begin
   inherited create( a, b, a, b );
-  tlen     := tl;
+  maxlen   := tl;
   dlen     := dl;
   tcol     := tc;
   acol     := ac;
@@ -103,7 +103,7 @@ begin
     then colorxy( self.x + dlen, self.y, acol, '¯' )
     else colorxy( self.x + dlen, self.y, acol, ' ' );
 
-  //if cpos = tlen + 1 then //doscursoroff;
+  //if cpos = maxlen + 1 then //doscursoroff;
 
   while cpos > d1st + dlen do inc( d1st );
   while cpos < d1st do dec( d1st );
@@ -117,13 +117,9 @@ end;
 procedure zinput.movecursor( newpos : integer );
 begin
   if newpos = 0 then cpos := 1
-  else if ( newpos <= tlen + 1 ) then
-    begin
-      if ( newpos <= length( work ) + 1 )
-      then cpos := newpos
-      else cpos := length( work ) + 1
-    end
-  else cpos := tlen;
+  else if (maxlen = 0) or ( newpos <= maxlen + 1 ) then
+    cpos := min( newpos, length( work ) + 1 )
+  else cpos := maxlen;
   show
 end;
 
@@ -168,7 +164,7 @@ begin
       else work := work + ch;
       movecursor( cpos + 1 );
     end
-  else if length( work ) < tlen then
+  else if (maxlen=0) or (length( work ) < maxlen) then
     begin
       insert( ch, work, cpos );
       movecursor( cpos + 1 );
