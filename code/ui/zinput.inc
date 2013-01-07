@@ -120,7 +120,7 @@ begin
   else if (maxlen = 0) or ( newpos <= maxlen + 1 ) then
     cpos := min( newpos, length( work ) + 1 )
   else cpos := maxlen;
-  show
+  smudge
 end;
 
 
@@ -130,7 +130,7 @@ begin
     to call the global one in gpc. }
   // {$ifdef FPC}System.delete( work, cpos, 1 );{$endif}
   delete( work, cpos, 1 );
-  show;
+  smudge;
 end;
 
 
@@ -147,7 +147,7 @@ end;
 procedure zinput.setovr( p : Boolean );
 begin
   tovr := p;
-  show;
+  smudge;
 end;
 
 
@@ -156,7 +156,7 @@ begin
   if frst then begin
       work := ch;
       cpos := 2;
-      show;
+      smudge;
     end
   else if tovr then
     begin
@@ -169,7 +169,7 @@ begin
       system.insert( ch, work, cpos + 1 );
       movecursor( cpos + 1 );
     end;
-  show
+  smudge
 end;
 
 procedure zinput.handle( ch : Char );
@@ -186,7 +186,7 @@ begin
     ^I : ;
     ^J : ;
     ^K : del_to_end;
-    ^L : show;
+    ^L : smudge;
     ^M : ;
     ^N : ;
     ^O : ;

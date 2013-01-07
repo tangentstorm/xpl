@@ -8,8 +8,11 @@ type
   { a clickable rectangle onscreen }
   ZObj  = class ( li.Node )
     x, y, x2, y2 : Byte; { TODO : mX, mY, etc }
+    is_dirty : boolean;
     constructor create; virtual;
     constructor create( a, b, a2, b2 : Byte );
+    procedure smudge; // mark for redraw
+    procedure show; virtual;
     procedure showNormal; virtual;
     procedure showInvert; virtual;
     function mouseover : Boolean; virtual;
