@@ -1,11 +1,12 @@
 unit chk;
-interface uses sysutils;
+interface uses sysutils, num;
 type int = integer;
 type str = string[ 255 ];
 
 procedure fail( const msg : str );
 procedure that( pred : boolean; const msg : str );
 procedure equal( a, b : str );
+procedure equal( a, b : integer );
 procedure report;
 
 implementation
@@ -37,6 +38,12 @@ procedure equal( a, b : str );
 begin
   if not peek( a = b ) then
     fail( 'strings did not match: "' + a + '" <> "' + b + '"' );
+end;
+
+procedure equal( a, b : integer );
+begin
+  if not peek( a = b ) then
+    fail( 'numbers did not match: ' + n2s(a) + ' <> '+ n2s(b) );
 end;
 
 procedure report;
