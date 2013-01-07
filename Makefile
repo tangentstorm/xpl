@@ -1,5 +1,11 @@
-XPL = ~/x/code
-FPC = fpc -Mobjfpc  -FE./bin -Fu./code -Fi./code -gl
+# Makefile for XPL
+# ---------------------------------------------------------
+# GEN: Where to put generated intermediate files.
+# warning: gen directory gets wiped out, so use a temp dir!
+GEN = ./.gen
+# BIN: where to put the final executables
+BIN = ./bin
+FPC = fpc -Mobjfpc -FE$(BIN) -Fu$(GEN) -Fi$(GEN) -Fu./code -Fi./code -gl
 
 targets:
 	@echo
@@ -8,32 +14,48 @@ targets:
 	@echo '  test    : run test cases'
 	@echo '  clean   : delete compiled binaries and backup files'
 	@echo
+	@echo '  repl    : simple lisp-like RPL [like a REPL but no "eval" yet :)]'
+	@echo '  xt256   : 256 color console demo for term'
+	@echo
 	@echo 'also:'
-	@echo '   bin/%   : compiles demo/%.pas'
+	@echo '   bin/%   : compiles demo/%.pas to bin/%'
 	@echo
 
-bin/%.ppu: /%.pas
-	@mkdir -p bin
-	$(FPC) $<
+# init contains all the stuff that has to run up front
+init:
+	@mkdir -p $(GEN)
+	@mkdir -p $(BIN)
 
-bin/%: demo/%.pas
-	@mkdir -p bin
-	$(FPC) -gl $<
-
-clean:
-	@rm -f *~ *.gpi *.o *.pyc
-	@rm -f bin/*
-
-
-test: always run-tests
-	@bin/run-tests
-run-tests: test/*.pas code/*.pas
-	cd test; python gen-tests.py
-	@$(FPC) -B test/run-tests.pas
-
+# 'always' is just a dummy thing that always runs
 always:
 
+bin/%: demo/%.pas tidy
+	rm -f $@
+	$(FPC) -gl $<
+
+# tidy just moves all the units and whatnot to the gen directory
+tidy:
+	mv $(BIN)/*.o $(GEN) || true
+	mv $(BIN)/*.ppu $(GEN) || true
+
+# clean removes all the generated files
+clean:
+	@rm -f *~ *.gpi *.o *.pyc
+	@rm -f $(GEN)/*
+
+# we use always here, else it'll see the test directory and assume we're done.
+test: always test-runner tidy
+	@bin/run-tests
+test-runner: test/*.pas code/*.pas
+	cd test; python gen-tests.py ../$(GEN)
+	$(FPC) -B test/run-tests.pas
+
+
 #-- units -------------------------------------
+
+gen/%.ppu: /%.pas
+	make init
+	$(FPC) $<
 
 ll:   bin/ll.ppu
 cw:   bin/cw.ppu
@@ -41,4 +63,8 @@ fs:   bin/fs.ppu    stri
 stri: bin/stri.ppu
 num:  bin/num.ppu
 
-#-- demos -------------------------------------
+#-- demos --------------------------------------
+repl: bin/repl
+	$(BIN)/repl
+xt256: bin/xterm256color
+	$(BIN)/xterm256color
