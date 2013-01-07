@@ -4,13 +4,25 @@ interface uses xpc, sysutils;
 
 type
   generic list<T> = class
+
+    { -- inner types -------------------------------------------------------- }
+
+    { list.link : adds the forward and backward links to the base type }
     private type link = class
       next, prev : link;
       value	 : T;
       public
       constructor create( val : T );
     end;
+
+    { list.specialized : just an internal name for this same generic type }
     private type specialized  = specialize list<t>;
+
+    public { procedure types used by foreach, find }
+      type listaction = procedure( var n : T ) is nested;
+      type predicate  = function( n : T ) : Boolean is nested;
+
+    { list.cursor : tracks a position in the list, even through inserts/deletes }
     public type cursor = class
       private
         _lis : specialized;
@@ -39,9 +51,8 @@ type
         property current  : t
           read _get_value;
     end;
-    type listaction = procedure( var n : T );
-    type predicate = function( n : T ) : Boolean is nested;
-
+
+   { -- interface for the main list<t> type --------------------------------- }
    protected
     _first_link, _last_link : link;
     _count : cardinal;
@@ -60,11 +71,11 @@ type
     function make_cursor : cursor;
     property count : cardinal read _count;
 
-   { -- interface for for..in loops --}
+   { -- interface for for..in loops -- }
    public
     function getenumerator : cursor;
 
-   { -- ancient deprecated interface --}
+   { -- ancient deprecated interface -- }
    public
     function next( const n : T ) : T; deprecated;
     function prev( const n : T ) : T; deprecated;
@@ -72,8 +83,10 @@ type
     procedure foreachdo( what : listaction ); deprecated;
     //  procedure killall; deprecated;
   end;
-  stringlist= specialize list<string>;
-
+
+  { -- specialized types, just for convenience ------------------------------ }
+  type
+    stringlist = specialize list<string>;
 
 implementation
 
@@ -97,7 +110,7 @@ implementation
     _lnk := nil;
     _idx := 0;
   end;
-
+
   function list.cursor.move_next : boolean;
   begin
     result := _lis._first_link <> nil;
@@ -155,7 +168,7 @@ implementation
     _idx := other._idx;
     _lis := other._lis;
   end;
-
+
   function list.cursor.next( out t : t ) : boolean;
   begin
     result := self.move_next;
@@ -198,10 +211,10 @@ implementation
     _first_link := nil; _last_link := nil; _count := 0;
   end;
 
-  function List.find( pred : Predicate ) : t;
+  function list.find( pred : Predicate ) : t;
     var cur : cursor; found : boolean = false;
   begin
-    cur := cursor.create( self );
+    cur := self.make_cursor;
     repeat
       found := pred( cur.value )
     until found or not cur.move_next;
@@ -239,7 +252,6 @@ implementation
     else result := false;
   end;
 
-
   procedure List.insert( val : T );
     { be sure to change zmenu.add IF you change this!!! }
     var ln : link;
@@ -250,10 +262,11 @@ implementation
       ln.next := _first_link;
       _first_link.prev := ln;
       _first_link := ln;
-    end;
+    end
   end; { insert }
 
 
+
   procedure list.append( val : T );
     var ln : link;
   begin
