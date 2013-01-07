@@ -14,7 +14,7 @@ type
     public type cursor = class
       private
         _lis : specialized;
-        _cur : link;
+        _lnk : link;
         _idx : cardinal;
         function _get_value : T;
         function _get_index : cardinal;
@@ -94,19 +94,19 @@ implementation
 
   procedure list.cursor.reset;
   begin
-    _cur := nil;
+    _lnk := nil;
     _idx := 0;
   end;
 
   function list.cursor.move_next : boolean;
   begin
     result := _lis._first_link <> nil;
-    if _cur = nil then begin
-      _cur := _lis._first_link;
+    if _lnk = nil then begin
+      _lnk := _lis._first_link;
       _idx := 1
     end
-    else if _cur.next <> nil then begin
-      _cur := _cur.next;
+    else if _lnk.next <> nil then begin
+      _lnk := _lnk.next;
       inc( _idx );
     end
     else result := false
@@ -118,14 +118,14 @@ implementation
 
   function list.cursor.move_prev : boolean;
   begin
-    if _cur = nil then result := false
+    if _lnk = nil then result := false
     else begin
-      _cur := _cur.prev;
+      _lnk := _lnk.prev;
       dec( _idx );
-      result := ( _cur <> nil );
+      result := ( _lnk <> nil );
     end
   end;
-
+
   procedure list.cursor.to_top;
   begin
     self.reset;
@@ -135,23 +135,23 @@ implementation
 
   procedure list.cursor.to_end;
   begin
-    _cur := _lis._last_link;
+    _lnk := _lis._last_link;
   end;
 
 
   function list.cursor.at_top : boolean;
   begin
-    result := _cur = _lis._first_link;
+    result := _lnk = _lis._first_link;
   end;
 
   function list.cursor.at_end : boolean;
   begin
-    result := _cur =  _lis._last_link;
+    result := _lnk =  _lis._last_link;
   end;
 
   procedure list.cursor.move_to( other : cursor );
   begin
-    _cur := other._cur;
+    _lnk := other._lnk;
     _idx := other._idx;
     _lis := other._lis;
   end;
@@ -159,19 +159,19 @@ implementation
   function list.cursor.next( out t : t ) : boolean;
   begin
     result := self.move_next;
-    if result then t := _cur.value;
+    if result then t := _lnk.value;
   end;
 
   function list.cursor.prev( out t : t ) : boolean;
   begin
     result := self.move_prev;
-    if result then t := _cur.value;
+    if result then t := _lnk.value;
   end;
 
   function list.cursor._get_value : t;
   begin
-    if _cur = nil then raise Exception.create( 'the list is empty' )
-    else result := _cur.value
+    if _lnk = nil then raise Exception.create( 'the list is empty' )
+    else result := _lnk.value
   end;
 
   function list.cursor._get_index : cardinal;
