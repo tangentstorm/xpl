@@ -4,7 +4,7 @@
 
 {$i xpc.inc }
 program xterm256color;
-  uses xpc, kvm;
+  uses xpc, kvm, stri;
 
   procedure resetcolor;
   begin
