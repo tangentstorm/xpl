@@ -25,4 +25,15 @@ implementation uses xpc, ui;
     chk.equal( inp.value, 'ab' );
   end;
 
+  procedure test_str_to_end;
+  begin
+    //  movecursor should probably be renamed to 'setcursor' (or just use a property)
+    inp.work := 'hello world';
+    chk.equal( inp.str_to_end, 'hello world' );
+    inp.movecursor( 6 );
+    chk.equal( inp.str_to_end, 'world' );
+    inp.movecursor( 1 );
+    chk.equal( inp.str_to_end, 'ello world' );
+  end;
+  
 end.
