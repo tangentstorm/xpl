@@ -108,7 +108,7 @@ type
     maxlen,               { max text length }
     dlen,                 { length of display }
     d1st,                 { first display char position }
-    cpos :   integer;        { cursor position }
+    cpos :   cardinal;    { cursor position }
     back,                 { backup copy }
     work :   String;      { actual string }
     escexits, tovr,       { type over toggle }
