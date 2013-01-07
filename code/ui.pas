@@ -105,7 +105,7 @@ type
   zInput = class ( ZObj )
     tcol,                 { text color  }
     acol,                 { arrow color (scroller) }
-    tlen,                 { max text length }
+    maxlen,               { max text length }
     dlen,                 { length of display }
     d1st,                 { first display char position }
     cpos :   integer;        { cursor position }
