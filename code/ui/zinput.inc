@@ -66,7 +66,7 @@ begin
 end;
 
 
-procedure zinput.del_this_token;
+procedure zinput.fw_del_token;
 begin
   while ( cpos > 1 )
     and not ( work[cpos - 1] in bullets )
@@ -110,7 +110,7 @@ begin
 
   v := pad( copy( work, d1st, dlen ), dlen, ' ' );
   colorxy( self.x, self.y, tcol, v );
-  gotoxy( self.x + cpos - d1st - 1 , self.y  - 1 );
+  gotoxy( self.x + cpos - d1st - 2, self.y  - 1 );
 end;
 
 
@@ -174,26 +174,77 @@ end;
 
 procedure zinput.handle( ch : Char );
 begin
-  if ch in [ #6, #8, kbd.ENTER, #20, #24, kbd.ESC, #127 ] then
-    handlestripped( ch )
-  else if ch = #0 then
-    handleStripped( ReadKey )
-  else getkey( ch );
+  case ch of
+    ^A : to_start;
+    ^B : left;
+    ^C : ;
+    ^D : del;
+    ^E : to_end;
+    ^F : right;
+    ^G : ;
+    ^H : backspace;
+    ^I : ;
+    ^J : ;
+    ^K : del_to_end;
+    ^L : show;
+    ^M : ;
+    ^N : ;
+    ^O : ;
+    ^P : ;
+    ^Q : ;
+    ^R : ;
+    ^S : ;
+    ^T : ;
+    ^U : fw_del_token;
+    ^V : ;
+    ^W : bw_del_token;
+    ^X : ;
+    ^Y : ;
+    ^Z : ;
+    { special characters }
+    ^@ : ; // #0 ( null )
+    ^[ : ;
+    ^\ : ; // file separator
+    ^] : ; // group separator
+    ^^ : ; // record separator
+    ^_ : ; // unit separator
+    ^? : backspace;
+    else if ch = #0 then handleStripped( ReadKey )
+    else getkey( ch )
+  end;
   frst := false;
 end;
 
+
+procedure zinput.to_start;
+begin
+  movecursor( 1 );
+end;
+
+procedure zinput.to_end;
+begin movecursor( length( work ) + 1 );
+end;
+
+procedure zinput.left;
+begin movecursor( cpos - 1 );
+end;
+
+procedure zinput.right;
+begin movecursor( cpos + 1 );
+end;
+
 procedure zinput.handlestripped( ch : Char );
 begin
   case ch of
-    #6, ^T      : del_this_token; { ^Del <-doesn't seem to work!!,^T }
+    #6, ^T      : fw_del_token; { ^Del <-doesn't seem to work!!,^T }
     kbd.BKSP    : backspace;
     kbd.ENTER   : accept;
-    ^x	        : while ( cpos > 1 ) do backspace;
+    ^x		: while ( cpos > 1 ) do backspace;
     kbd.ESC     : if escexits then cancel;
-    kbd.HOME    : movecursor( 1 );
-    kbd.LEFT    : movecursor( cpos - 1 );
-    kbd.RIGHT   : movecursor( cpos + 1 );
-    kbd.END_    : movecursor( length( work ) + 1 ); { end }
+    kbd.HOME    : to_start;
+    kbd.LEFT    : left;
+    kbd.RIGHT   : right;
+    kbd.END_    : to_end;
     kbd.INS     : setovr( not tovr );
     kbd.DEL     : self.del;
     kbd.C_LEFT  : bw_token;
@@ -223,4 +274,4 @@ begin
   result := work;
 end;
 
-{ end of input.p }
+{ eof }
