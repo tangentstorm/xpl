@@ -2,10 +2,13 @@
 ------------------------------------------------------------------}
 
 const bullets = [' ', '/', '\', '-'];
-
-
-
 
+
+constructor zinput.create;
+begin
+  inherited create;
+end;
+
 constructor zinput.create(
   a, b, tl, dl, tc, ac : integer; esc : Boolean; start : String );
 begin

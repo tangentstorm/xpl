@@ -1,3 +1,11 @@
+constructor zObj.create;
+begin
+  x := 0;
+  y := 0;
+  x2 := 1;
+  y2 := 1;
+end;
+
 constructor ZObj.create( a, b, a2, b2 : Byte );
 begin
   x  := a;
