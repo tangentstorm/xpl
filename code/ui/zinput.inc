@@ -29,7 +29,7 @@ end;
 
 procedure zinput.reset;
 begin
-  strg := back;
+  work := back;
   frst := true;
   cpos := 1;
   d1st := 1;
@@ -40,28 +40,28 @@ end;
 
 procedure zinput.fw_token;
 begin
-  while ( cpos <= length( strg ))
-    and not ( strg[cpos] in bullets )
+  while ( cpos <= length( work ))
+    and not ( work[cpos] in bullets )
     do handlestripped( kbd.RIGHT );
-  while ( cpos < length( strg ))
-    and ( not ( strg[ cpos - 1 ] in bullets ))
+  while ( cpos < length( work ))
+    and ( not ( work[ cpos - 1 ] in bullets ))
     do handlestripped( kbd.RIGHT )
 end;
 
 procedure zinput.bw_token;
 begin
   while ( cpos > 1 )
-    and ( strg[cpos - 1] in bullets )
+    and ( work[cpos - 1] in bullets )
     do handlestripped( kbd.LEFT );
   while ( cpos > 1 )
-    and ( not ( strg[cpos - 1] in bullets ) )
+    and ( not ( work[cpos - 1] in bullets ) )
     do handlestripped( kbd.LEFT );
 end;
 
 procedure zinput.bw_del_token;
 begin
   while ( cpos > 1 )
-    and not ( strg[ cpos - 1 ] in bullets ) do
+    and not ( work[ cpos - 1 ] in bullets ) do
     backspace;
 end;
 
@@ -69,28 +69,28 @@ end;
 procedure zinput.del_this_token;
 begin
   while ( cpos > 1 )
-    and not ( strg[cpos - 1] in bullets )
+    and not ( work[cpos - 1] in bullets )
     do handlestripped( kbd.LEFT );
-  while ( cpos <= length( strg ))
-    and ( not ( strg[cpos] in bullets ))
+  while ( cpos <= length( work ))
+    and ( not ( work[cpos] in bullets ))
     do self.del;
   self.del;
 end;
 
 procedure zinput.del_to_end;
 begin
-  while cpos <= Length( strg ) do self.del;
+  while cpos <= Length( work ) do self.del;
 end;
 
 procedure zinput.accept;
 begin
-  back := strg;
+  back := work;
   finish;
 end;
 
 procedure zinput.cancel;
 begin
-  strg := back;
+  work := back;
   finish;
 end;
 
@@ -99,7 +99,7 @@ var v : String;
 begin
   //if tovr then //doscursorbig else //doscursoron;
 
-  if length( strg ) > dlen
+  if length( work ) > dlen
     then colorxy( self.x + dlen, self.y, acol, '¯' )
     else colorxy( self.x + dlen, self.y, acol, ' ' );
 
@@ -108,7 +108,7 @@ begin
   while cpos > d1st + dlen do inc( d1st );
   while cpos < d1st do dec( d1st );
 
-  v := pad( copy( strg, d1st, dlen ), dlen, ' ' );
+  v := pad( copy( work, d1st, dlen ), dlen, ' ' );
   colorxy( self.x, self.y, tcol, v );
   gotoxy( self.x + cpos - d1st - 1 , self.y  - 1 );
 end;
@@ -119,9 +119,9 @@ begin
   if newpos = 0 then cpos := 1
   else if ( newpos <= tlen + 1 ) then
     begin
-      if ( newpos <= length( strg ) + 1 )
+      if ( newpos <= length( work ) + 1 )
       then cpos := newpos
-      else cpos := length( strg ) + 1
+      else cpos := length( work ) + 1
     end
   else cpos := tlen;
   show
@@ -132,8 +132,8 @@ procedure zinput.del;
 begin
   { renamed from delete because I couldn't figure out
     to call the global one in gpc. }
-  // {$ifdef FPC}System.delete( strg, cpos, 1 );{$endif}
-  delete( strg, cpos, 1 );
+  // {$ifdef FPC}System.delete( work, cpos, 1 );{$endif}
+  delete( work, cpos, 1 );
   show;
 end;
 
@@ -158,19 +158,19 @@ end;
 procedure zinput.getkey( ch : Char );
 begin
   if frst then begin
-      strg := ch;
+      work := ch;
       cpos := 2;
       show;
     end
   else if tovr then
     begin
-      if cpos <= length( strg ) then strg[cpos] := ch
-      else strg := strg + ch;
+      if cpos <= length( work ) then work[cpos] := ch
+      else work := work + ch;
       movecursor( cpos + 1 );
     end
-  else if length( strg ) < tlen then
+  else if length( work ) < tlen then
     begin
-      insert( ch, strg, cpos );
+      insert( ch, work, cpos );
       movecursor( cpos + 1 );
     end;
   show
@@ -197,7 +197,7 @@ begin
     kbd.HOME    : movecursor( 1 );
     kbd.LEFT    : movecursor( cpos - 1 );
     kbd.RIGHT   : movecursor( cpos + 1 );
-    kbd.END_    : movecursor( length( strg ) + 1 ); { end }
+    kbd.END_    : movecursor( length( work ) + 1 ); { end }
     kbd.INS     : setovr( not tovr );
     kbd.DEL     : self.del;
     kbd.C_LEFT  : bw_token;
@@ -217,14 +217,14 @@ end;
 
 function zinput.value : String;
 begin
-  result:= strg;
+  result:= work;
 end;
 
 function zinput.get : String;
 begin
   Reset;
   repeat handle( readkey ) until isDone;
-  result := strg;
+  result := work;
 end;
 
 { end of input.p }

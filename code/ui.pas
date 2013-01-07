@@ -110,7 +110,7 @@ type
     d1st,                 { first display char position }
     cpos :   integer;        { cursor position }
     back,                 { backup copy }
-    strg :   String;      { actual string }
+    work :   String;      { actual string }
     escexits, tovr,       { type over toggle }
     frst,                 { first key to be pressed }
     isdone : Boolean;     { end-loop flag }
