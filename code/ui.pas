@@ -119,24 +119,29 @@ type
                       start : String );
     constructor default( a, b, tl, dl : integer; start : String='' );
     procedure reset;
+    procedure show; virtual;
+    procedure handle( ch : Char ); virtual;
+    procedure handlestripped( ch : Char ); virtual;
+    function value : String;
+    function get : String;
+   private
     procedure fw_token;
     procedure bw_token;
     procedure bw_del_token;
-    procedure del_this_token;
+    procedure fw_del_token;
     procedure del_to_end;
     procedure accept;
     procedure cancel;
-    procedure show; virtual;
     procedure del;
     procedure backspace;
     procedure movecursor( newpos : integer );
     procedure Setovr( p : Boolean );
     procedure getkey( ch : Char );
-    procedure handle( ch : Char ); virtual;
-    procedure handlestripped( ch : Char ); virtual;
     procedure finish;
-    function value : String;
-    function get : String;
+    procedure to_start;
+    procedure to_end;
+    procedure left;
+    procedure right;
   end;
 
   zPassword = class ( zInput )
