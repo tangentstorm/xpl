@@ -47,9 +47,7 @@ interface
 
 implementation uses cw, dos;
 
-var
-  regs : registers;
-
+  (* var regs : registers; *)
 
   function mousethere : BOOLEAN;
     {>> var dOff, DSEG : INTEGER; <<}
