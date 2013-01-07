@@ -124,7 +124,7 @@ type
     procedure handlestripped( ch : Char ); virtual;
     function value : String;
     function get : String;
-   private
+   public
     procedure fw_token;
     procedure bw_token;
     procedure bw_del_token;
@@ -136,7 +136,7 @@ type
     procedure backspace;
     procedure movecursor( newpos : integer );
     procedure Setovr( p : Boolean );
-    procedure getkey( ch : Char );
+    procedure insert( ch : Char );
     procedure finish;
     procedure to_start;
     procedure to_end;

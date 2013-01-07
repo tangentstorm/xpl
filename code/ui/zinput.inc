@@ -151,7 +151,7 @@ begin
 end;
 
 
-procedure zinput.getkey( ch : Char );
+procedure zinput.insert( ch : char );
 begin
   if frst then begin
       work := ch;
@@ -166,7 +166,7 @@ begin
     end
   else if (maxlen=0) or (length( work ) < maxlen) then
     begin
-      insert( ch, work, cpos );
+      system.insert( ch, work, cpos + 1 );
       movecursor( cpos + 1 );
     end;
   show
@@ -210,7 +210,7 @@ begin
     ^_ : ; // unit separator
     ^? : backspace;
     else if ch = #0 then handleStripped( ReadKey )
-    else getkey( ch )
+    else self.insert( ch )
   end;
   frst := false;
 end;
