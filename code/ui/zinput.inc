@@ -82,6 +82,11 @@ begin
   while cpos <= Length( work ) do self.del;
 end;
 
+function zinput.str_to_end : string;
+begin
+  result := rightstr( work, length(work) - cpos );
+end;
+
 procedure zinput.accept;
 begin
   back := work;

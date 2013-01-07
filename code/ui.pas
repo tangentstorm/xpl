@@ -1,6 +1,6 @@
 {$i xpc.inc}
 unit ui;
-interface uses xpc, cw, li, ll, crt, kvm, mou, kbd, stri, fx, num, cli;
+interface uses xpc, cw, li, ll, crt, kvm, mou, kbd, stri, fx, num, cli, sysutils;
 
 { note : this module considers (0,0) to be the top left corner! }
 
@@ -133,6 +133,7 @@ type
     procedure bw_del_token;
     procedure fw_del_token;
     procedure del_to_end;
+    function str_to_end : string;
     procedure accept;
     procedure cancel;
     procedure del;
