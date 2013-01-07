@@ -8,6 +8,7 @@ type
   { a clickable rectangle onscreen }
   ZObj  = class ( li.Node )
     x, y, x2, y2 : Byte; { TODO : mX, mY, etc }
+    constructor create; virtual;
     constructor create( a, b, a2, b2 : Byte );
     procedure showNormal; virtual;
     procedure showInvert; virtual;
@@ -113,9 +114,10 @@ type
     escexits, tovr,       { type over toggle }
     frst,                 { first key to be pressed }
     isdone : Boolean;     { end-loop flag }
+    constructor create; override;
     constructor create( a, b, tl, dl, tc, ac : integer; esc : Boolean;
                       start : String );
-    constructor default( a, b, tl, dl : integer; start : String );
+    constructor default( a, b, tl, dl : integer; start : String='' );
     procedure reset;
     procedure fw_token;
     procedure bw_token;
