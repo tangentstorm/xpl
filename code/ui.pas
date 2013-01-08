@@ -119,7 +119,7 @@ type
     isdone : Boolean;     { end-loop flag }
     constructor create; override;
     constructor create( a, b, tl, dl, tc, ac : integer; esc : Boolean;
-                      start : String );
+		       start : String );
     constructor default( a, b, tl, dl : integer; start : String='' );
     procedure reset;
     procedure show; virtual;
@@ -146,6 +146,7 @@ type
     procedure to_end;
     procedure left;
     procedure right;
+    function at_end : boolean;
   end;
 
   zPassword = class ( zInput )

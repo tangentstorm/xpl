@@ -230,6 +230,11 @@ procedure zinput.to_end;
 begin movecursor( length( work ) + 1 );
 end;
 
+function zinput.at_end : boolean;
+begin
+  result := cpos >= length( work ) + 1;
+end;
+
 procedure zinput.left;
 begin movecursor( cpos - 1 );
 end;
