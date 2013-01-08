@@ -44,6 +44,7 @@ type
         function prev( out t : T ) : boolean;
         procedure inject_prev( const val : T );
         procedure inject_next( const val : T );
+        procedure delete_next;
         property value : T
           read _get_value;
         property index : cardinal
@@ -229,7 +230,21 @@ implementation
     self._lnk.next.prev := ln;
     self._lnk.next := ln;
   end; { list.cursor.inject_next }
-
+
+  //  this is probably leaking memory. how to deal with pointers?
+  procedure list.cursor.delete_next;
+    var temp : link;
+  begin
+    temp := self._lnk.next;
+    if temp <> self._lis._clasp then
+    begin
+      self._lnk.next := temp.next;
+      self._lnk.next.prev := self._lnk;
+      temp.next := nil;
+      temp.prev := nil;
+      // todo: temp.free
+    end
+  end;
 
   function list.make_cursor : cursor;
   begin
@@ -339,7 +354,7 @@ implementation
       temp.free;
     end
   end;
-
+
   function list.is_empty : boolean;
   begin result := count = 0
   end;
