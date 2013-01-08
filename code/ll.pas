@@ -42,6 +42,8 @@ type
         function move_prev : boolean;
         function next( out t : T ) : boolean;
         function prev( out t : T ) : boolean;
+        procedure inject_prev( const val : T );
+        procedure inject_next( const val : T );
         property value : T
           read _get_value;
         property index : cardinal
@@ -54,9 +56,8 @@ type
 
    { -- interface for the main list<t> type --------------------------------- }
    protected
-    _first_link, _last_link : link;
+    _clasp : link; // special empty link that holds the two ends together
     _count : cardinal;
-    function is_first_insert( ln : link ) : boolean;
    public
     constructor create;
     procedure append( val : T );
@@ -64,7 +65,7 @@ type
     procedure insert_at( val : T;  at_index : cardinal = 0 );
     procedure remove( val : T );
     procedure drop;
-    procedure foreach( what : listaction );
+    procedure foreach( action : listaction );
     function find( pred : predicate ) : T;
     function is_empty: boolean;
     function first : T;
@@ -96,11 +97,14 @@ implementation
   constructor list.link.create( val : t );
   begin
     self.value := val;
+    self.next := nil;
+    self.prev := nil;
   end;
 
   { -- list cursor ( internal type ) -- }
 
   constructor list.cursor.create( lis : specialized );
+    var len : cardinal;
   begin
     _lis := lis;
     self.reset;
@@ -108,60 +112,75 @@ implementation
 
   procedure list.cursor.reset;
   begin
-    _lnk := nil;
+    _lnk := _lis._clasp;
     _idx := 0;
   end;
 
   function list.cursor.move_next : boolean;
   begin
-    result := _lis._first_link <> nil;
-    if _lnk = nil then begin
-      _lnk := _lis._first_link;
-      _idx := 1
-    end
-    else if _lnk.next <> nil then begin
+    if _lis.is_empty then result := false
+    else begin
       _lnk := _lnk.next;
       inc( _idx );
+      result := ( _lnk <> _lis._clasp );
     end
-    else result := false
+  end;
+
+  function list.cursor.next( out t : t ) : boolean;
+  begin
+    result := self.move_next;
+    if result then t := _lnk.value;
   end;
 
   { this is only here to allow for..in loops }
   function list.cursor.movenext : boolean; inline;
-  begin result := self.move_next end;
+  begin result := self.move_next
+  end;
 
+
   function list.cursor.move_prev : boolean;
   begin
-    if _lnk = nil then result := false
+    if _lis.is_empty then result := false
     else begin
       _lnk := _lnk.prev;
-      dec( _idx );
-      result := ( _lnk <> nil );
+      if _idx = 0 then _idx := _lis.count else dec( _idx );
+      result := ( _lnk <> _lis._clasp );
     end
-  end;
+  end; { list.cursor.move_prev }
+
+  function list.cursor.prev( out t : t ) : boolean;
+  begin
+    result := self.move_prev;
+    if result then t := _lnk.value;
+  end; { list.cursor.prev }
+
 
   procedure list.cursor.to_top;
   begin
-    self.reset;
-    if not self.move_next then
-      raise Exception.create('no top item to go to');
+    if _lis.is_empty then raise Exception.create('no top item to go to')
+    else begin
+      self.reset;
+      self.move_next
+    end
   end;
 
   procedure list.cursor.to_end;
   begin
-    _lnk := _lis._last_link;
-    if _lis.count = 0 then _idx := 0
-    else _idx := _lis._count;
+    if _lis.is_empty then raise Exception.create('no end item to go to')
+    else begin
+      self.reset;
+      self.move_prev
+    end
   end;
 
   function list.cursor.at_top : boolean;
   begin
-    result := _lnk = _lis._first_link;
+    result := (_lnk.prev = _lis._clasp) and not _lis.is_empty;
   end;
 
   function list.cursor.at_end : boolean;
   begin
-    result := _lnk =  _lis._last_link;
+    result := (_lnk.next =  _lis._clasp) and not _lis.is_empty;
   end;
 
   procedure list.cursor.move_to( other : cursor );
@@ -171,21 +190,14 @@ implementation
     _lis := other._lis;
   end;
 
-  function list.cursor.next( out t : t ) : boolean;
-  begin
-    result := self.move_next;
-    if result then t := _lnk.value;
-  end;
-
-  function list.cursor.prev( out t : t ) : boolean;
-  begin
-    result := self.move_prev;
-    if result then t := _lnk.value;
-  end;
 
   function list.cursor._get_value : t;
   begin
-    if _lnk = nil then raise Exception.create( 'the list is empty' )
+    if _lnk = _lis._clasp then begin
+      writeln( int64( _lnk ));
+      writeln( int64( _lis._clasp ));
+      raise Exception.create( 'index outside of list' )
+    end
     else result := _lnk.value
   end;
 
@@ -193,7 +205,32 @@ implementation
   begin
     result := _idx;
   end;
+
+  procedure list.cursor.inject_prev( const val : T );
+    var ln : link;
+  begin
+    inc( self._lis._count );
+    inc( self._idx );
+    ln := link.create( val );
+    ln.next := self._lnk;
+    ln.prev := self._lnk.prev;
+    self._lnk.prev.next := ln;
+    self._lnk.prev := ln;
+  end; { list.cursor.inject_prev }
 
+  procedure list.cursor.inject_next( const val : T );
+    var ln : link;
+  begin
+    // we don't increase the index here because we're injecting *after*
+    inc( self._lis._count );
+    ln := link.create( val );
+    ln.prev := self._lnk;
+    ln.next := self._lnk.next;
+    self._lnk.next.prev := ln;
+    self._lnk.next := ln;
+  end; { list.cursor.inject_next }
+
+
   function list.make_cursor : cursor;
   begin
     result := cursor.create( self )
@@ -210,7 +247,10 @@ implementation
 
   constructor list.create;
   begin
-    _first_link := nil; _last_link := nil; _count := 0;
+    _clasp := link.create( default( t ));
+    _clasp.next := _clasp;
+    _clasp.prev := _clasp;
+    _count := 0;
   end;
 
   function list.find( pred : Predicate ) : t;
@@ -227,70 +267,44 @@ implementation
   begin foreach( what )
   end;
 
-  // TODO: this should probably be deprecated too
-  procedure list.foreach( what : listaction );
-    var p, q : link;
+  procedure list.foreach( action : listaction );
+    var item : T;
   begin
-    p := self._first_link;
-    while p <> nil do
-    begin
-      q := p;
-      p := p.next;
-      what( q.value );
-    end;
+    for item in self do action( item );
   end;
 
 
-
-  { helper routine for insert / append }
-  function list.is_first_insert( ln : link ) : boolean;
-  begin
-    inc( self._count );
-    if _first_link = nil then begin
-      _last_link := ln;
-      _first_link := ln;
-      result := true;
-    end
-    else result := false;
-  end;
-
-  procedure List.insert( val : T );
-    { be sure to change zmenu.add IF you change this!!! }
+  { insert : add to the start of the list, right after the clasp }
+  procedure list.insert( val : T );
     var ln : link;
   begin
+    inc(_count);
     ln := link.create( val );
-    if not is_first_insert( ln ) then
-    begin
-      ln.next := _first_link;
-      _first_link.prev := ln;
-      _first_link := ln;
-    end
+    ln.prev := _clasp;
+    ln.next := _clasp.next;
+    _clasp.next.prev := ln;
+    _clasp.next := ln;
   end; { insert }
 
   procedure list.insert_at( val	: T; at_index : cardinal );
-    var cur : cursor; ln : link;
+    var cur : cursor;
   begin
     cur := self.make_cursor;
     if at_index >= _count then cur.to_end
     else while cur.index < at_index do cur.move_next;
-    inc(self._count);
-    ln := link.create( val );
-    ln.next := cur._lnk;
-    ln.prev := cur._lnk.prev;
-    cur._lnk.prev := ln;
+    cur.inject_next( val );
   end; { insert_at }
 
-
+  { append : add to the end of the list, right before the clasp }
   procedure list.append( val : T );
     var ln : link;
   begin
+    inc(_count);
     ln := link.create( val );
-    if not is_first_insert( ln ) then
-    begin
-      ln.prev := _last_link;
-      _last_link.next := ln;
-      _last_link := ln;
-    end;
+    ln.next := _clasp;
+    ln.prev := _clasp.prev;
+    _clasp.prev.next := ln;
+    _clasp.prev := ln;
   end; { append }
 
 
@@ -298,40 +312,48 @@ implementation
     var p : link;
   begin
     if not self.is_empty then begin
-      p := _first_link;
+      p := _clasp;
       while ( p.next.value <> val )
-        and ( p.next <> _last_link ) do
+        and ( p.next <> _clasp ) do
 	p := p.next;
 
       if p.next.value = val then begin
 	p.next := p.next.next;
+	//  ERROR
 	if self.last = val then
-          if p.value = val then _last_link := nil
-          else _last_link := p
+          if p.value = val then _clasp := nil
+          else _clasp := p
       end
     end
   end; { remove }
 
   procedure list.drop;
+    var temp : link;
   begin
-    self._last_link := self._last_link.prev;
-    self._last_link.next := nil;
+    if is_empty then raise Exception.create('attempted to drop from empty list')
+    else begin
+      temp := _clasp.prev;
+      _clasp.prev := _clasp.prev.prev;
+      temp.prev := nil;
+      temp.next := nil;
+      temp.free;
+    end
   end;
 
   function list.is_empty : boolean;
-  begin result := _last_link = nil;
+  begin result := count = 0
   end;
 
   function list.first : t;
   begin
-    if _first_link <> nil then result := _first_link.value
-    else raise Exception.create('empty list has no first member.');
+    if is_empty then raise Exception.create('empty list has no first member.')
+    else result := _clasp.next.value
   end; { first }
 
   function list.last: T;
   begin
-    if assigned( _last_link ) then result := _last_link.value
-    else raise Exception.create('empty list has no last member.');
+    if is_empty then raise Exception.create('empty list has no last member.')
+    else result := _clasp.prev.value
   end; { last }
 
 
