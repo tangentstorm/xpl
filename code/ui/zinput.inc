@@ -115,15 +115,14 @@ begin
 
   v := pad( copy( work, d1st, dlen ), dlen, ' ' );
   colorxy( self.x, self.y, tcol, v );
-  gotoxy( self.x + cpos - d1st - 2, self.y  - 1 );
+  gotoxy( self.x + cpos - d1st - 1, self.y  - 1 );
 end;
 
 
-procedure zinput.movecursor( newpos : integer );
+procedure zinput.movecursor( newpos : cardinal );
 begin
-  if newpos = 0 then cpos := 1
-  else if (maxlen = 0) or ( newpos <= maxlen + 1 ) then
-    cpos := min( newpos, length( work ) + 1 )
+  if (maxlen = 0) or ( newpos <= maxlen ) then
+    cpos := min( newpos, length( work ))
   else cpos := maxlen;
   smudge
 end;
@@ -134,16 +133,16 @@ begin
   { renamed from delete because I couldn't figure out
     to call the global one in gpc. }
   // {$ifdef FPC}System.delete( work, cpos, 1 );{$endif}
-  delete( work, cpos, 1 );
+  delete( work, cpos + 1, 1 );
   smudge;
 end;
 
 
 procedure zinput.backspace;
 begin
-  if cpos <> 1 then
+  if cpos > 0 then
     begin
-      self.movecursor( cpos - 1 );
+      self.left;
       self.del;
     end;
 end;
@@ -223,7 +222,7 @@ end;
 
 procedure zinput.to_start;
 begin
-  movecursor( 1 );
+  movecursor( 0 );
 end;
 
 procedure zinput.to_end;
