@@ -272,7 +272,7 @@ begin
   end
   else { no right click, procede as usual }
   begin
-    cur.reset;
+    cur := mchoices.make_cursor;
     while cur.next( choice ) do
     begin
       if ( choice.on ) and ( choice.pressed ) then
@@ -360,11 +360,8 @@ end;
 
 
 function zMenu.get : Byte;
-var
-  ta : Byte;
-  mv : Boolean;
+var mv : Boolean;
 begin
-  ta := crt.textattr;
   if mChoices.is_empty then
     result := 0
   else
@@ -382,15 +379,14 @@ begin
         if (( shiftstate and altpressed ) <> 0 ) then
         begin
           repeat until ( shiftstate and altpressed ) = 0;
-          if ( altexits ) and ( not keypressed ) then handle( kbd.ESC );
+	  if ( altexits ) and ( not kbd.keypressed ) then handle( kbd.ESC );
         end;
-        if keypressed then handle( readkey ) else domousestuff
+	if kbd.keypressed then handle( readkey ) else domousestuff
       until endloop;
       get     := value;
       topmenu := false;
       mv      := mvisible;
       if mv then mou.hide;
       if mv then mou.show;
-      crt.textAttr := ta;
   end;
 end;

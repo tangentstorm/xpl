@@ -59,7 +59,7 @@ procedure zcounter.domousestuff;
 begin
   if pressed then
     begin
-      delay( 50 );
+      sleep( 50 );
       if mou.mx = x then handle( kbd.LEFT );
       if mou.mx = x2 then handle( kbd.RIGHT );
     end;

@@ -2,17 +2,48 @@
 // My main interest is exploring the UTF-8 encoding system
 // as compression for instructions in retropascal.
 unit utf8;
+interface
+
 implementation
 
   procedure control; begin end;
   procedure ascii;   begin end;
   procedure invalid; begin end;
   procedure offset;  begin end;
-  procedure read2;   begin end;
-  procedure read3;   begin end;
-  procedure read4;   begin end;
 
-  procedure decode;
+  function nextbyte : byte;
+  begin
+  end;
+
+  var a,b,c,d : byte;
+  procedure read1;
+  begin a := nextbyte;
+  end;
+  procedure read2;
+  begin a := nextbyte; b:= nextbyte;
+  end;
+  procedure read3;
+  begin a := nextbyte; b:= nextbyte; c:= nextbyte;
+  end;
+  procedure read4;
+  begin a := nextbyte; b:= nextbyte; c:= nextbyte; d := nextbyte;
+  end;
+
+  
+  procedure emit1( const a: byte);
+  begin write(chr(a))
+  end;
+  procedure emit2( const a, b : byte);
+  begin write(chr(a), chr(b))
+  end;
+  procedure emit3( const a, b, c : byte);
+  begin write(chr(a), chr(b), chr(c))
+  end;
+  procedure emit4( const a, b, c, d : byte);
+  begin write(chr(a), chr(b), chr(c), chr(d))
+  end;
+
+  procedure decode( code : byte );
   begin
     case code of
       $00 .. $1F : control;

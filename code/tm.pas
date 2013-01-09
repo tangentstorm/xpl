@@ -9,6 +9,7 @@ interface uses dos, stri, num;
   function stardate : string;
 
 implementation
+  
   function time : string;
     var
       h, m, s, n : word;
@@ -20,7 +21,7 @@ implementation
     if h = 0 then h := 12;
     time := flushrt( n2s( h ), 2, '0' ) + ':' +
 	    flushrt( n2s( m ), 2, '0') + ampm + 'm';
-  end;
+  end; { time }
 
   function stardate : string;  { Sat 1218.93 21:40 }
     var

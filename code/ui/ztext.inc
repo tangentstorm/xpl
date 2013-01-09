@@ -13,7 +13,7 @@ begin
   cwritexy( mX, mY, st1 );
   if mv then mou.show;
 end;
-
+  
 procedure zText.showInvert;
 var mv : Boolean;
 begin  
