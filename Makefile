@@ -41,6 +41,7 @@ tidy:
 # clean removes all the generated files
 clean:
 	@rm -f *~ *.gpi *.o *.pyc
+	@delp $(BIN)
 	@rm -f $(GEN)/*
 
 # we use always here, else it'll see the test directory and assume we're done.
