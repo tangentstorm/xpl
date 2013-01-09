@@ -105,7 +105,7 @@ begin
   //if tovr then //doscursorbig else //doscursoron;
 
   if length( work ) > dlen
-    then colorxy( self.x + dlen, self.y, acol, '¯' )
+    then colorxy( self.x + dlen, self.y, acol, 'Â»' )
     else colorxy( self.x + dlen, self.y, acol, ' ' );
 
   //if cpos = maxlen + 1 then //doscursoroff;
