@@ -138,7 +138,7 @@ type
     procedure cancel;
     procedure del;
     procedure backspace;
-    procedure movecursor( newpos : integer );
+    procedure movecursor( newpos : cardinal );
     procedure Setovr( p : Boolean );
     procedure insert( ch : Char );
     procedure finish;
