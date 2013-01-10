@@ -112,6 +112,7 @@ implementation
     end;
   end;
 
+  { centered colorxy }
   procedure colorxyc( x, y, c : byte; s : string );
   begin
     colorxy( x + 1 - length( s ) div 2, y, c, s );

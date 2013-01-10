@@ -2,7 +2,6 @@
 unit xpc; { cross-platform compilation help }
 interface uses sysutils;
 
-
   const { Boolean synonyms }
     Yes	 = true;
     No	 = false;
@@ -22,6 +21,7 @@ interface uses sysutils;
   function hex( x :  int32 ) : string;
   function min( a, b : int32 ): int32;
   function max( a, b : int32 ): int32;
+  function paramline : string;
 
   type thunk = procedure of object;
   type logger = object
@@ -120,6 +120,18 @@ implementation
   function max( a, b :  int32 ) : int32;
   begin
     if a > b then result := a else result := b;
+  end;
+
+
+  function paramline : string;
+    var
+      i	: byte;
+      s	: string;
+  begin
+    s := '';
+    for i := 1 to paramcount do
+      s := s + paramstr( i )+ ' ';
+    result := s;
   end;
 
 

@@ -1,19 +1,23 @@
 {$i test_ll.def }
+{ see also test_ll_cur for cursor tests }
 implementation uses ll, li, xpc;
 
   var
-    ls	 : stringlist;
-    a, b : string;
+    ls	    : stringlist;
+    a, b, c : string;
 
   procedure setup;
   begin
     ls := stringlist.create;
     a := 'a';
     b := 'b';
+    c := 'c';
   end;
 
   procedure test_init;
   begin
+    chk.that( ls.is_empty, 'new list should be empty' );
+    chk.that( ls.count = 0, 'new list should have count of 0' );
     try
       ls.first; chk.fail('.first should throw exception for empty list' )
     except pass end;
@@ -35,5 +39,17 @@ implementation uses ll, li, xpc;
     chk.that( ls.last = b,
 	     'appending second item should change last' );
   end;
+
 
+  procedure test_insertion;
+    var cur : stringlist.cursor;
+  begin
+    ls.append( b );
+    ls.append( c );
+    cur := ls.make_cursor;
+    cur.to_end;
+    chk.equal( ls.count, 2 );
+    chk.equal( cur.index, 2 );
+  end;
+
 end.

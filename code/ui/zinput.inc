@@ -82,6 +82,11 @@ begin
   while cpos <= Length( work ) do self.del;
 end;
 
+function zinput.str_to_end : string;
+begin
+  result := rightstr( work, length(work) - cpos );
+end;
+
 procedure zinput.accept;
 begin
   back := work;
@@ -100,7 +105,7 @@ begin
   //if tovr then //doscursorbig else //doscursoron;
 
   if length( work ) > dlen
-    then colorxy( self.x + dlen, self.y, acol, '¯' )
+    then colorxy( self.x + dlen, self.y, acol, 'Â»' )
     else colorxy( self.x + dlen, self.y, acol, ' ' );
 
   //if cpos = maxlen + 1 then //doscursoroff;
@@ -110,17 +115,16 @@ begin
 
   v := pad( copy( work, d1st, dlen ), dlen, ' ' );
   colorxy( self.x, self.y, tcol, v );
-  gotoxy( self.x + cpos - d1st - 2, self.y  - 1 );
+  gotoxy( self.x + cpos - d1st - 1, self.y  - 1 );
 end;
 
 
-procedure zinput.movecursor( newpos : integer );
+procedure zinput.movecursor( newpos : cardinal );
 begin
-  if newpos = 0 then cpos := 1
-  else if (maxlen = 0) or ( newpos <= maxlen + 1 ) then
-    cpos := min( newpos, length( work ) + 1 )
+  if (maxlen = 0) or ( newpos <= maxlen ) then
+    cpos := min( newpos, length( work ))
   else cpos := maxlen;
-  show
+  smudge
 end;
 
 
@@ -129,16 +133,16 @@ begin
   { renamed from delete because I couldn't figure out
     to call the global one in gpc. }
   // {$ifdef FPC}System.delete( work, cpos, 1 );{$endif}
-  delete( work, cpos, 1 );
-  show;
+  delete( work, cpos + 1, 1 );
+  smudge;
 end;
 
 
 procedure zinput.backspace;
 begin
-  if cpos <> 1 then
+  if cpos > 0 then
     begin
-      self.movecursor( cpos - 1 );
+      self.left;
       self.del;
     end;
 end;
@@ -147,16 +151,16 @@ end;
 procedure zinput.setovr( p : Boolean );
 begin
   tovr := p;
-  show;
+  smudge;
 end;
 
 
-procedure zinput.getkey( ch : Char );
+procedure zinput.insert( ch : char );
 begin
   if frst then begin
       work := ch;
       cpos := 2;
-      show;
+      smudge;
     end
   else if tovr then
     begin
@@ -166,10 +170,10 @@ begin
     end
   else if (maxlen=0) or (length( work ) < maxlen) then
     begin
-      insert( ch, work, cpos );
+      system.insert( ch, work, cpos + 1 );
       movecursor( cpos + 1 );
     end;
-  show
+  smudge
 end;
 
 procedure zinput.handle( ch : Char );
@@ -186,7 +190,7 @@ begin
     ^I : ;
     ^J : ;
     ^K : del_to_end;
-    ^L : show;
+    ^L : smudge;
     ^M : ;
     ^N : ;
     ^O : ;
@@ -210,7 +214,7 @@ begin
     ^_ : ; // unit separator
     ^? : backspace;
     else if ch = #0 then handleStripped( ReadKey )
-    else getkey( ch )
+    else self.insert( ch )
   end;
   frst := false;
 end;
@@ -218,11 +222,16 @@ end;
 
 procedure zinput.to_start;
 begin
-  movecursor( 1 );
+  movecursor( 0 );
 end;
 
 procedure zinput.to_end;
 begin movecursor( length( work ) + 1 );
+end;
+
+function zinput.at_end : boolean;
+begin
+  result := cpos >= length( work ) + 1;
 end;
 
 procedure zinput.left;

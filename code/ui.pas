@@ -1,6 +1,6 @@
 {$i xpc.inc}
 unit ui;
-interface uses xpc, cw, li, ll, crt, kvm, mou, kbd, stri, fx, num, cli;
+interface uses xpc, cw, li, ll, crt, kvm, mou, kbd, stri, fx, num, cli, sysutils;
 
 { note : this module considers (0,0) to be the top left corner! }
 
@@ -8,8 +8,11 @@ type
   { a clickable rectangle onscreen }
   ZObj  = class ( li.Node )
     x, y, x2, y2 : Byte; { TODO : mX, mY, etc }
+    is_dirty : boolean;
     constructor create; virtual;
     constructor create( a, b, a2, b2 : Byte );
+    procedure smudge; // mark for redraw
+    procedure show; virtual;
     procedure showNormal; virtual;
     procedure showInvert; virtual;
     function mouseover : Boolean; virtual;
@@ -116,7 +119,7 @@ type
     isdone : Boolean;     { end-loop flag }
     constructor create; override;
     constructor create( a, b, tl, dl, tc, ac : integer; esc : Boolean;
-                      start : String );
+		       start : String );
     constructor default( a, b, tl, dl : integer; start : String='' );
     procedure reset;
     procedure show; virtual;
@@ -124,24 +127,26 @@ type
     procedure handlestripped( ch : Char ); virtual;
     function value : String;
     function get : String;
-   private
+   public
     procedure fw_token;
     procedure bw_token;
     procedure bw_del_token;
     procedure fw_del_token;
     procedure del_to_end;
+    function str_to_end : string;
     procedure accept;
     procedure cancel;
     procedure del;
     procedure backspace;
-    procedure movecursor( newpos : integer );
+    procedure movecursor( newpos : cardinal );
     procedure Setovr( p : Boolean );
-    procedure getkey( ch : Char );
+    procedure insert( ch : Char );
     procedure finish;
     procedure to_start;
     procedure to_end;
     procedure left;
     procedure right;
+    function at_end : boolean;
   end;
 
   zPassword = class ( zInput )

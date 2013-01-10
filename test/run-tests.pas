@@ -18,7 +18,6 @@ var
   passed,
   failed,
   broken    : integer;
-  unit_name : string;
   problems  : array of problem;
 
 procedure setup;
@@ -47,7 +46,7 @@ begin
   end;
 end; { stacktrace }
   
-procedure run( test_name : string; to_test : testcase );
+procedure run( unit_name, test_name : string; to_test : testcase );
 var result : outcome = pass;  p : problem;  e : exception;
 begin
   //  chk.reset;
@@ -58,7 +57,7 @@ begin
       if e is EAssertionFailed then result := fail
       else result := err;
       p.error := stacktrace( e );
-      p.test_name := test_name;
+      p.test_name := unit_name + '.' + test_name;
       p.result := result;
       setlength( problems, length( problems ) + 1 );
       problems[ length( problems ) - 1 ] := p;
