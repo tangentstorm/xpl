@@ -9,5 +9,8 @@
   {$objectchecks on}
   {$overflowchecks on}
   {$rangechecks on}
+  {$macro on}
 
+  {$writeableconst off}
+  {$typedaddress on}
 {$ENDIF}
