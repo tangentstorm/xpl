@@ -105,7 +105,6 @@ implementation
   { -- list cursor ( internal type ) -- }
 
   constructor list.cursor.create( lis : specialized );
-    var len : cardinal;
   begin
     _lis := lis;
     self.reset;
