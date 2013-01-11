@@ -55,31 +55,30 @@ type brx = class
 
   public type
 
-    {$ifdef brx_stacks}
     stack    = specialize stacks.stack<brx_t>;
-    {$endif}
-    {$ifdef brx_lists}
     list     = specialize ll.list<brx_t>;
-    {$endif}
 
+    {-- user-configurable generic types ----------}
     {$ifdef brx_custom}
-    {$define brx_section := functags}
-    {$i brx_custom.def}
+      {$define brx_section := functags}
+      {$i brx_custom.def}
     {$else}
-    type brx_sigtype = ( _vo, _ru, _na, _ti );
+      {$ifndef brx_vorunati}
+        type brx_sigtype = vorunati;
+      {$endif}
     {$endif}
 
     dynarray = array of brx_t;
     func     = record
-		 case brx_sigtype of
+		 case sig : brx_sigtype of
 		   {$ifdef brx_custom}
-		   {$define brx_section := funcsigs}
-		   {$i brx_custom.def}
+                     {$define brx_section := funcsigs}
+		     {$i brx_custom.def}
 		   {$else}
-		   _vo : ( vo : procedure is nested );
-		   _ru : ( ru : function( obj : brx_t ) : brx_t is nested );
-		   _na : ( na : procedure( obj : brx_t ) is nested );
-		   _ti : ( ti : function : brx_t is nested );
+		     vo : ( vo : procedure is nested );
+		     ru : ( ru : function( obj : brx_t ) : brx_t is nested );
+		     na : ( na : procedure( obj : brx_t ) is nested );
+		     ti : ( ti : function : brx_t is nested );
 		   {$endif}
 	       end;
 end;
