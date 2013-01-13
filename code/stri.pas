@@ -13,8 +13,8 @@ interface uses xpc, sysutils;
   function UpStr( const s : string ) : String;
   function DnCase( ch : char ) : Char;
   function DnStr( const s : string ) : String;
-  function wordn( const s : string; index : byte ) : string;
-  function nwords( const s : string ) : byte;
+  function wordn( const s : string; index : cardinal ) : string;
+  function nwords( const s : string ) : cardinal;
   function startswith(const haystack, needle : string) : boolean;
 
 implementation
@@ -87,8 +87,7 @@ end; { dnstr }
 
 
 
-
-function wordn( const s : string; index:  byte ) : string;
+function wordn( const s : string; index:  cardinal ) : string;
   var i, j, len : cardinal;
 begin
   i := index;
@@ -104,16 +103,21 @@ begin
 end;
 
 
-function nwords( const s : string ) : byte;
-  var c, n : byte;
+function nwords( const s : string ) : cardinal;
+  var c, n, len : cardinal; in_word : boolean = false;
 begin
   c := 1;
   n := 0;
-  while wordn( s, c ) <> '' do
-  begin
+  len := length( s );
+  if len = 0 then result := 0
+  else repeat
+    if in_word and ( ord( s[ c ]) <= 32 ) then in_word := false;
+    if not in_word and ( ord( s[ c ]) > 32 ) then begin
+      inc( n );
+      in_word := true;
+    end;
     inc( c );
-    inc( n );
-  end;
+  until c = len;
   result := n;
 end;
 

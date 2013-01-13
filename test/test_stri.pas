@@ -9,4 +9,9 @@ implementation uses stri;
 	     'a shouldn''t start with apple.');
   end;
 
+  procedure test_nwords;
+  begin
+    chk.equal( stri.nwords('once upon a time' ), 4 );
+  end;
+
 end.
