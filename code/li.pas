@@ -31,10 +31,12 @@ interface uses classes, xpc, ascii, ll, num;
       obj : TObject;
       constructor create( _obj : TObject );
     end;
+  type chargen = procedure( var ch : char ) is nested;
   var
     null : node;
     endl : node; // end of list marker. never actually assigned
 
+  function read_value( const  next : chargen ) : node;
   procedure print( value : node );
   procedure repl;
 
@@ -56,7 +58,9 @@ implementation
   {$ENDIF}
   procedure debug( msg : string ); inline;
   begin
+    {$IFDEF DEBUG}
     if debug_mode then writeln( msg )
+    {$ENDIF}
   end;
 
 
@@ -91,7 +95,6 @@ implementation
   end;
 
   var
-    ch      : char = #0;    // lookahead character
     lx      : integer = 0;  // line number
     ly      : integer = 0;  // colunn number
     depth   : integer = 0;  // to decide which prompt to show
@@ -107,45 +110,47 @@ implementation
 
 
 
-  { basically, we use this prompt to do our own buffering because
+  procedure from_prompt( var ch : char );
+
+    { basically, we use this prompt to do our own buffering because
     the input from the shell is line-oriented. :/ I tried just using
     read, but couldn't get more than two of [ eof, eoln, read ]
     working at any given time. :/ So... if i just go with readln,
     it handles eoln, and I can just test for eof. }
-  procedure prompt;
-  begin
-    { write the prompt first, because eof() blocks. }
-    if depth > 0 then write( prompt1 ) else write( prompt0 );
-    if eof then begin
-      ch := ascii.EOT;
-      line := ch;
-      done := true;
-      if depth > 0 then error( 'unexpected end of file' );
-      writeln;
-      halt; { todo : remove this once depth-checking works correctly }
-    end else begin
-      readln( line );
-      line := line + ascii.LF; { so we can do proper lookahead. }
-      inc( ly );
-      lx := 0;
-    end
-  end;
+    procedure prompt;
+    begin
+      { write the prompt first, because eof() blocks. }
+      if depth > 0 then write( prompt1 ) else write( prompt0 );
+      if eof then begin
+        ch := ascii.EOT;
+        line := ch;
+        done := true;
+        if depth > 0 then error( 'unexpected end of file' );
+        writeln;
+        halt; { todo : remove this once depth-checking works correctly }
+      end else begin
+        readln( line );
+        line := line + ascii.LF; { so we can do proper lookahead. }
+        inc( ly );
+        lx := 0;
+      end
+    end;
 
-  procedure read_ch;
   begin
     while lx + 1 > length( line ) do prompt;
     inc( lx );
     ch := line[ lx ];
     debug( '[ line ' + n2s( ly ) + ', col ' + n2s( lx ) + ' : ' +  ch + ']' );
-  end; { read_ch }
+  end; { next( ch ) }
 
 {-- read_value ( recursive descent parser )  -- }
 
-  function read_value : node;
+  function read_value( const next : chargen ) : node;
     var
       i	  : integer = 0;
       buf : string;
       esc : boolean = false;
+      ch  : char = #0;
 
     procedure bufch;
     begin
@@ -181,7 +186,7 @@ implementation
     begin
       inc( depth );
       repeat
-	read_ch;
+	next( ch );
 	if esc then begin
 	  bufch;
 	  esc := false;
@@ -191,7 +196,7 @@ implementation
 	  else bufch;
 	end;
       until eos;
-      read_ch;
+      next( ch );
       dec( depth );
       result := unbuf( kSTR );
     end; { read_string }
@@ -206,7 +211,7 @@ implementation
     begin
       if ch = '0' then
         begin
-          read_ch; { consuming the 0 }
+          next( ch ); { consuming the 0 }
           case ch of
             'x'	: begin
                     base := 16;
@@ -232,7 +237,7 @@ implementation
 	  '7' : x := x + $7;  'F', 'f' : x := x + $F;
 	  else error( 'unexpected character in number: ' + ch )
 	end; { case }
-	read_ch
+	next( ch )
       end;
       result := x
     end; { read_integer }
@@ -244,7 +249,7 @@ implementation
     begin
       inc( depth );
       debug('---read_list---');
-      this := read_value();
+      this := read_value( next );
       if this = endl then begin
 	result := null;
 	debug('-- result was null --');
@@ -253,7 +258,7 @@ implementation
 	res := nodelist.create;
 	repeat
 	  res.append( this );
-	  this := read_value()
+	  this := read_value( next )
 	until this = endl;
 	result := lisnode.create( res );
 	debug('-- result was list of ' + n2s( res.count ) + ' items --')
@@ -268,27 +273,27 @@ implementation
       while not ( ch in whitespace ) do
       begin
 	bufch;
-	read_ch;
+	next( ch );
       end;
       result := unbuf( kSYM )
     end; { read_symbol }
 
   begin { read_value }
-    while ch in whitespace do read_ch; { skip whitespace }
+    while ch in whitespace do next( ch ); { skip whitespace }
     case ch of
       ';'      : begin
-		   repeat read_ch until ch = ascii.lf;
-                   result := read_value(); // recurse
+		   repeat next( ch ) until ch = ascii.lf;
+                   result := read_value( next ); // recurse
                  end;
       '"'      : result := read_string;
       '0'..'9' : result := IntNode.create( read_integer );
       '-'      : begin
-                   read_ch;
+                   next( ch );
                    if ch in whitespace then result := SymNode.create( sym_minus )
 		   else result := IntNode.create( read_integer * -1 )
                  end;
-      '('      : begin read_ch; result := read_list() end;
-      ')'      : begin read_ch; result := endl end;
+      '('      : begin next( ch ); result := read_list() end;
+      ')'      : begin next( ch ); result := endl end;
       EOT      : begin result := null; done := true; end;
       else result := read_symbol
     end; { case }
@@ -343,7 +348,7 @@ implementation
       { we can't inline the temp value ( val ) because read_value
 	is also responsible for showing the prompt, and we need to
         keep the prompt and reply outputs separate. }
-      val := read_value;
+      val := read_value( @from_prompt );
       print( evaluate( val ));
       writeln;
     until done;
