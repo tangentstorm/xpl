@@ -2,7 +2,7 @@
   extracted from crtstuff.pas and updated 2012 }
 {$i xpc.inc}
 unit stri; { string interface }
-interface uses xpc, sysutils;
+interface uses xpc, sysutils, strutils;
 
   function pad( s : string; len : integer; ch : char ) : string;
   function unpad( s : string; ch : char ) : string;
@@ -13,7 +13,7 @@ interface uses xpc, sysutils;
   function UpStr( const s : string ) : String;
   function DnCase( ch : char ) : Char;
   function DnStr( const s : string ) : String;
-  function wordn( const s : string; index : cardinal ) : string;
+  function wordn( const s : string; n : cardinal ) : string;
   function nwords( const s : string ) : cardinal;
   function startswith(const haystack, needle : string) : boolean;
 
@@ -87,38 +87,48 @@ end; { dnstr }
 
 
 
-function wordn( const s : string; index:  cardinal ) : string;
-  var i, j, len : cardinal;
+type
+  tokenhandler = procedure( num, pos, len : cardinal; var stop : boolean ) is nested;
+
+procedure foreach_wordloc( s : string; start : cardinal;
+			  callback : tokenhandler );
+  var pos, tok_end, len, count : cardinal;
+  var stop : boolean = false;
 begin
-  i := index;
-  len := length( s );
-  while (i <= len) and (ord(s[ i ]) > 32) do inc( i );
-  if ( i = len ) then
-    raise Exception.create('invalid token index')
-  else begin
-    j := i;
-    while (j <= len) and (ord(s[ j ]) > 32) do inc( j );
-    result := copy( s, i, j-i )
+  pos := start; len := length( s ); count := 0;
+  while pos < len do begin
+    if ord( s[ pos ]) <= 32 then inc( pos )
+    else begin
+      tok_end := pos;
+      repeat inc( tok_end )
+      until ( tok_end = len ) or ( ord( s[ tok_end ]) <= 32 );
+      inc( count );
+      callback( count, pos, tok_end - pos, stop );
+      if stop then pos := len else pos := tok_end;
+    end;
   end
 end;
 
+function wordn( const s : string; n : cardinal ) : string;
+  var r : string = '';
+  procedure nth_word( num, pos, len : cardinal; var stop : boolean );
+  begin
+    if num = n then begin
+      r := strutils.midstr( s, pos, len );
+      stop := true;
+    end
+  end;
+begin
+  foreach_wordloc( s, 1, @nth_word );
+  result := r;
+end;
 
 function nwords( const s : string ) : cardinal;
-  var c, n, len : cardinal; in_word : boolean = false;
+  procedure count_word_handler( num, pos, len : cardinal; var stop : boolean );
+  begin result := num;
+  end;
 begin
-  c := 1;
-  n := 0;
-  len := length( s );
-  if len = 0 then result := 0
-  else repeat
-    if in_word and ( ord( s[ c ]) <= 32 ) then in_word := false;
-    if not in_word and ( ord( s[ c ]) > 32 ) then begin
-      inc( n );
-      in_word := true;
-    end;
-    inc( c );
-  until c = len;
-  result := n;
+  foreach_wordloc( s, 1, @count_word_handler );
 end;
 
 function startswith(const haystack, needle : string) : boolean;

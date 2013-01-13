@@ -10,8 +10,10 @@ implementation uses stri;
   end;
 
   procedure test_nwords;
+    const s = 'once upon a time';
   begin
-    chk.equal( stri.nwords('once upon a time' ), 4 );
+    chk.equal( stri.nwords( s ), 4 );
+    chk.equal( stri.wordn( s, 1 ), 'once' );
   end;
 
 end.
