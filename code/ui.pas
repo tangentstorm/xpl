@@ -243,7 +243,7 @@ type
 
 implementation
 
-  const
+  var
     zbmb : Char = 'k';
     zbmf : Char = 'K';
     zbmt : Char = 'w';
