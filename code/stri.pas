@@ -102,6 +102,7 @@ begin
       tok_end := pos;
       repeat inc( tok_end )
       until ( tok_end = len ) or ( ord( s[ tok_end ]) <= 32 );
+      if ( tok_end = len ) then inc( tok_end );
       inc( count );
       callback( count, pos, tok_end - pos, stop );
       if stop then pos := len else pos := tok_end;
