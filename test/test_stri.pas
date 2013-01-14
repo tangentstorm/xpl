@@ -14,6 +14,9 @@ implementation uses stri;
   begin
     chk.equal( stri.nwords( s ), 4 );
     chk.equal( stri.wordn( s, 1 ), 'once' );
+    chk.equal( stri.wordn( s, 4 ), 'time' );
+    chk.equal( stri.nwords( '' ), 0 );
+    chk.equal( stri.nwords( ' ' ), 0 );
   end;
 
 end.
