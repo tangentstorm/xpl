@@ -6,6 +6,7 @@ interface uses xpc, cr, stacks;
     function get_at( index : idx ) : t;
     procedure set_at( index : idx; value : t );
     property at[ i : idx ] : t read get_at write set_at; default;
+    function length : idx;
   end;
 
   { abstract sequence class.
@@ -16,13 +17,15 @@ interface uses xpc, cr, stacks;
   type generic sequence<t,idx> =
     class( specialize isequence<t,idx> )
 
+      // abstract part
       function get_at( index : idx ) : t;	  virtual; abstract;
       procedure set_at( index : idx; value : t ); virtual; abstract;
       property at[ i : idx ] : t read get_at write set_at; default;
+      function length : idx; virtual; abstract;
 
       { --- begin nested type ----------------------------------- }
       protected type seqcursor = class( specialize cr.cursor<t> )
-        private type tseq = specialize sequence<t, cardinal>;
+        private type tseq = specialize sequence<t, idx>;
       public
 	constructor create( seq : tseq );
 
@@ -39,23 +42,23 @@ interface uses xpc, cr, stacks;
 
         // enumerator<t>
         procedure reset;
-        function get_index : cardinal;
+        function get_index : idx;
 
         // slider<t>
         function prev( out val : t ) : boolean;
         function prev : t;                     virtual;
-        procedure set_index( idx : cardinal );
-        property index : cardinal read get_index write set_index;
+        procedure set_index( idx : idx );
+        property index : idx read get_index write set_index;
 
         procedure mark;
         procedure back;
 
       private
-        type cardinalstack = specialize stacks.stack<cardinal>;
+        type idxstack = specialize stacks.stack<idx>;
       private
         _seq  : tseq;
-        _idx  : cardinal;
-        marks : cardinalstack;
+        _idx  : idx;
+        marks : idxstack;
       end;
       { --- end nested type ----------------------------------- }
 
@@ -112,7 +115,7 @@ implementation
     _idx := 0;
   end;
 
-  function sequence.seqcursor.get_index : cardinal;
+  function sequence.seqcursor.get_index : idx;
   begin
     result := _idx;
   end;
@@ -133,7 +136,7 @@ implementation
     result := self.value;
   end;
 
-  procedure sequence.seqcursor.set_index( idx : cardinal );
+  procedure sequence.seqcursor.set_index( idx : idx );
   begin
     _idx := idx;
   end;
