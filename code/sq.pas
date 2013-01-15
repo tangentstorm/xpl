@@ -1,117 +1,158 @@
-{
- status: sq.pas does not compile.
- experimental translation of a coffeescript module i wrote.
-}
 {$i xpc.inc}
 unit sq;{ sequences }
-interface uses xpc, ll, stacks, li; { todo: gn}
+interface uses xpc, cr, stacks;
 
-  type
-      (* iter is a base class for iterable objects. *)
-    generic iter<t> = class
-      type tarray = array of t;
-    public
-      function first : t; virtual;
-      function after( item : t ): t; virtual;
-      function as_array : tarray;
-    end;
-  
-    (* Seq is like an Iter but allows moving forward or backward. *)
-    generic seq<t> = class ( specialize iter<t> )
-      function final : t;
-      function prior( item : t) : t; virtual;
-      function offset( item : t; k : integer ) : t;
-      function keyed( key : integer ) : t;
-      function length : integer;
-    end;
+  type generic isequence<t, idx> = interface
+    function get_at( index : idx ) : t;
+    procedure set_at( index : idx; value : t );
+    property at[ i : idx ] : t read get_at write set_at; default;
+  end;
 
-    (* IterSeq wraps an Iter, and can itself be iterated over. *)
-    generic iterseq<t> = class ( specialize seq<t> )
-    private
-      type t_iter = specialize iter<t>;
-    public
-      constructor create( it : t_iter );
-      function first  : t; override;
-      function after( item : t ): t; override;
-      function final  : t; virtual;
-      function prior( item : t ) : t; override;
-      function offset( item : t; k : integer ) : t; virtual;
-      function keyed( key : integer ) : t; virtual;
-    end;
+  { abstract sequence class.
+    the following lines are here only to declare
+    that sequences provide a cursor, specialized to the
+    same type. :/
+  }
+  type generic sequence<t,idx> =
+    class( specialize isequence<t,idx> )
 
+      function get_at( index : idx ) : t;	  virtual; abstract;
+      procedure set_at( index : idx; value : t ); virtual; abstract;
+      property at[ i : idx ] : t read get_at write set_at; default;
+
+      { --- begin nested type ----------------------------------- }
+      protected type seqcursor = class( specialize cr.cursor<t> )
+        private type tseq = specialize sequence<t, cardinal>;
+      public
+	constructor create( seq : tseq );
+
+	// reference<t>
+	function get_value : t;
+        procedure set_value( v : t );
+        function is_readable : boolean;        virtual;
+        function is_writable : boolean;        virtual;
+        property value : t read get_value write set_value;
+
+        // iterator<t>
+        function next( out val : t ) : boolean;
+        function next : t;                     virtual;
+
+        // enumerator<t>
+        procedure reset;
+        function get_index : cardinal;
+
+        // slider<t>
+        function prev( out val : t ) : boolean;
+        function prev : t;                     virtual;
+        procedure set_index( idx : cardinal );
+        property index : cardinal read get_index write set_index;
+
+        procedure mark;
+        procedure back;
+
+      private
+        type cardinalstack = specialize stacks.stack<cardinal>;
+      private
+        _seq  : tseq;
+        _idx  : cardinal;
+        marks : cardinalstack;
+      end;
+      { --- end nested type ----------------------------------- }
+
+    function make_cursor : seqcursor; virtual;
+  end;
+
 implementation
-
-
-  function seq.final : t;
+
+  constructor sequence.seqcursor.create( seq : tseq );
   begin
-    writeln( ' error! seq.final not defined in sq.pas' );
-    result := nil; {  TODO }
+    _seq := seq;
+    _idx := 0;
   end;
 
-  function seq.prior( item : t ): t;
+ // reference<t>
+  function sequence.seqcursor.get_value : t;
   begin
-    writeln( ' error! seq.prior not defined in sq.pas' );
-    result := nil; {  TODO }
+    result := _seq[ _idx ];
   end;
 
-  function seq.offset( item : t;  k : integer ): t;
+  procedure sequence.seqcursor.set_value( v : t );
   begin
-    writeln( ' error! seq.offset not defined in sq.pas' );
-    result := nil; {  TODO }
+    _seq[ _idx ] := t;
+  end;
+  function sequence.seqcursor.is_readable : boolean;
+  begin
+    result := true;
   end;
 
-  function seq.keyed( key : integer ) : t;
+  function sequence.seqcursor.is_writable : boolean;
   begin
-    writeln( ' error! seq.keyed not defined in sq.pas' );
-    result := nil; {  TODO }
+    result := true;
+  end;
+
+  // iterator<t>
+  function sequence.seqcursor.next( out val : t ) : boolean;
+  begin
+    try val := self.next;
+      result := true;
+    except
+      result := false
+    end;
   end;
 
-  function seq.length : integer;
+  function sequence.seqcursor.next : t;
   begin
-    writeln( ' error! seq.keyed not defined in sq.pas' );
-    result := 0; {  TODO }
+    inc( _idx );
+    result := self.value;
+  end;
+
+  // enumerator<t>
+  procedure sequence.seqcursor.reset;
+  begin
+    _idx := 0;
   end;
 
-  constructor iterseq.create( it : iter );
+  function sequence.seqcursor.get_index : cardinal;
   begin
-    self.data := it.to_array;
+    result := _idx;
+  end;
+
+  // slider<t>
+  function sequence.seqcursor.prev( out val : t ) : boolean;
+  begin
+    try val := self.prev;
+      result := true;
+    except
+      result := false
+    end;
   end;
 
-{  function iterseq.to_gen : gen;
-  begin new Iter(self.data)
-  end; }
-
-  function iterseq.first: t;
+  function sequence.seqcursor.prev : t;
   begin
-    result := self.data[ 0 ]
+    dec( _idx );
+    result := self.value;
   end;
 
-  function iterseq.final: t;
+  procedure sequence.seqcursor.set_index( idx : cardinal );
   begin
-    result := self.data[ system.length( self.data ) - 1 ];
+    _idx := idx;
+  end;
+
+  // cursor<t>
+  procedure sequence.seqcursor.mark;
+  begin
+    self.marks.push( self.index )
   end;
 
-  function iterseq.after( item : t ): t;
+  procedure sequence.seqcursor.back;
   begin
-    writeln( ' iterseq.after not implemented' );
-    result := self.data[ 0 ];
+    self.index := self.marks.pop;
   end;
-
-  function iterseq.prior( item : t ): t;
+
+  function sequence.make_cursor : seqcursor;
+    type tseqcur = specialize seqcursor<t>;
   begin
-    writeln( ' iterseq.prior not implemented' );
-    result := self.data[ 0 { item - 1 } ];
-  end;
-
-  function iterseq.offset( item	: t; k :integer ) : t;
-  begin
-    writeln( ' iterseq.offset not implemented' );
-    result := nil ; { self.data.at (self.data.indexOf item) + k }
-  end;
-
-  function iterseq.keyed( key : integer ) : t;
-  begin
-    result := self.data[ key ];
+    result := tseqcur.create( self );
   end;
 
 end.
