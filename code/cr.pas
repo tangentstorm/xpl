@@ -1,73 +1,49 @@
 {$i xpc.inc}
-unit cr; { cursors }
-interface uses xpc, sq, ll, stacks;
+unit cr; { cursor interfaces }
+interface
 
+  { here we describe a number of interfaces for traversing data types,
+    independend of the data types themselves.
+  
+    A Cursor does the actual work of navigating back and
+    forth along a Sequence. A Sequence can have any number
+    of cursors moving around on it.
+  }
   type
+    generic reference<t> = interface
+      function get_value : t;
+      procedure set_value( v : t );
+      property value : t read get_value write set_value;
+      function is_readable : boolean;
+      function is_writable : boolean;
+    end;
 
-    (**
-      * A Cursor does the actual work of navigating back and
-      * forth along a Sequence. A Sequence can have any number
-      * of cursors moving around on it.
-      *
-      * TODO: cur.py  needs self.key and self.val to match cur.cf and cr.pas
-     *)
-    cursor = class
-      seq : sq.seq;
-      focus : node;
-      constructor create( aseq : seq );
-      procedure to_head;
-      procedure to_next;
-      procedure to_prev;
-      procedure to_foot;
+    { iterator : 1-dimensional, but no index (ex: network streams) }
+    generic iterator<t> = interface( specialize reference<t> )
+      function next( out val : t ) : boolean; { true result = success }
+      function next : t; { raises exception on failure }
+    end;
+
+    { enumerator : 1-dimensional, indexed by number }
+    generic enumerator<t> = interface ( specialize iterator<t> )
+      procedure reset;
+      function get_index : cardinal;
+      property index : cardinal read get_index;
+    end;
+
+    { slider : 1-dimensinon, can move back and forth from origin }
+    generic slider<t> = interface( specialize enumerator<t> )
+      function prev( out val : t ) : boolean;
+      function prev : t;
+      procedure set_index( idx : cardinal );
+      property index : cardinal read get_index write set_index;
+    end;
+
+    { abstract cursor : adds support for remembering positions }
+    generic cursor<t> = interface( specialize slider<t> )
       procedure mark;
       procedure back;
-    private
-      marks : Stack;
-      pos   : integer;
     end;
 
 implementation
-
-  constructor cursor.create( aseq : sq.seq );
-  begin
-    self.seq := aseq;
-    self.to_head()
-  end;
-
-  procedure cursor.to_head;
-  begin
-    self.focus := self.seq.first();
-    self.pos := 0;
-  end;
-
-  procedure cursor.to_next;
-  begin
-    self.focus := self.seq.after( self.focus );
-    inc( self.pos );
-  end;
-
-  procedure cursor.to_prev;
-  begin
-    self.focus := self.seq.prior( self.focus );
-    dec( self.pos );
-  end;
-
-  procedure cursor.to_foot;
-  begin
-    self.focus := self.seq.final;
-    self.pos := self.seq.length - 1;
-  end;
-
-  procedure cursor.mark;
-  begin
-    self.marks.push( self.pos )
-  end;
-
-  procedure cursor.back;
-  begin
-    self.pos := self.marks.pop;
-    self.focus := self.seq.keyed( self.pos );
-  end;
-
-begin
 end.
