@@ -1,22 +1,39 @@
 {$i xpc}
-unit ll; { linked list support }
-interface uses xpc, sysutils;
+unit ll; { link list support }
+interface uses xpc, sysutils, sq, stacks;
 
 type
   generic list<T> = class
 
     { -- inner types -------------------------------------------------------- }
 
-    { list.link : adds the forward and backward links to the base type }
-    private type link = class
-      next, prev : link;
-      value	 : T;
-      public
-      constructor create( val : T );
-    end;
+    { list.specialized : just an internal name for this generic type }
+   private type
+     specialized = specialize list<t>;
 
-    { list.specialized : just an internal name for this same generic type }
-    private type specialized  = specialize list<t>;
+    { list.link : adds the forward and backward links to the base type }
+   private type
+     link = class
+       nextlink, prevlink : link;
+       constructor create;
+       function length : cardinal; virtual;
+     end;
+     cell = class( link )
+     protected
+       _val : t;
+       procedure _set( v : t );
+       function _get : T;
+      public
+       property value : T read _get write _set;
+       constructor create;
+       constructor create( v : t );
+       function length : cardinal; override;
+     end;
+     child = class( link )
+       items : specialized;
+       constructor create;
+       function length : cardinal; override;
+     end;
 
     public { procedure types used by foreach, find }
       type listaction = procedure( var n : T ) is nested;
@@ -24,13 +41,18 @@ type
 
     { list.cursor : tracks a position in the list, even through inserts/deletes }
     public type cursor = class
+      private type linkstack = specialize stacks.stack<link>;
       private
-        _lis : specialized;
-        _lnk : link;
-        _idx : cardinal;
+        _lis  : specialized;
+        _cel  : cell;
+        _idx  : cardinal;
+        _path : linkstack;
         function _get_value : T;
+        procedure _set_value( v : T );
         function _get_index : cardinal;
-      public
+        function nextcell : cell; virtual;
+        function prevcell : cell; virtual;
+      public  
         constructor create( lis : specialized );
         procedure reset;
         procedure to_top;
@@ -46,47 +68,50 @@ type
         procedure inject_next( const val : T );
         procedure delete_next;
         property value : T
-          read _get_value;
+          read _get_value write _set_value;
         property index : cardinal
           read _get_index;
       public  { for..in loop interface }
         function movenext : boolean;
         property current  : t
           read _get_value;
-    end;
-
+    end;      
+	      
    { -- interface for the main list<t> type --------------------------------- }
-   protected
-    _clasp : link; // special empty link that holds the two ends together
-    _count : cardinal;
-   public
-    constructor create;
-    procedure append( val : T );
-    procedure insert( val : T );
-    procedure insert_at( val : T;  at_index : cardinal = 0 );
-    procedure remove( val : T );
-    procedure drop;
-    procedure foreach( action : listaction );
-    function find( pred : predicate ) : T;
-    function is_empty: boolean;
-    function first : T;
-    function last : T;
-    function make_cursor : cursor;
-    property count : cardinal read _count;
-
-   { -- interface for for..in loops -- }
-   public
-    function getenumerator : cursor;
-
-   { -- ancient deprecated interface -- }
-   public
-    function next( const n : T ) : T; deprecated;
-    function prev( const n : T ) : T; deprecated;
-    function empty: boolean; deprecated;
+   protected						
+     _clasp : cell; // holds the two ends together	
+     _count : cardinal;					
+     function findfirstcell( out v : cell ) : boolean;
+     function firstcell: cell;
+     function lastcell: cell;				
+   public						
+     constructor create;				
+     procedure append( val : T );			
+     procedure insert( val : T );			
+     procedure insert_at( val : T;  at_index : cardinal	= 0 );
+     procedure remove( val : T );			
+     procedure drop;					
+     procedure foreach( action : listaction );		
+     function find( pred : predicate ) : T;		
+     function is_empty: boolean;			
+     function first : T;				
+     function last : T;					
+     function make_cursor : cursor;			
+     function length : cardinal;			
+							
+   { -- interface for for..in loops -- }		
+   public						
+    function getenumerator : cursor;			
+							
+   { -- ancient deprecated interface -- }		
+   public						
+    function next( const n : T ) : T; deprecated;	
+    function prev( const n : T ) : T; deprecated;	
+    function empty: boolean; deprecated;		
     procedure foreachdo( what : listaction ); deprecated;
-    //  procedure killall; deprecated;
-  end;
-
+    //  procedure killall; deprecated;		
+  end;							
+							
   { -- specialized types, just for convenience ------------------------------ }
   type
     stringlist = specialize list<string>;
@@ -95,13 +120,53 @@ implementation
 
   { -- link ( internal type ) -- }
 
-  constructor list.link.create( val : t );
+  constructor list.link.create;
   begin
-    self.value := val;
-    self.next := nil;
-    self.prev := nil;
+    self.nextlink := nil;
+    self.prevlink := nil;
   end;
 
+  function list.link.length : cardinal;
+  begin
+    result := 0;
+  end;
+
+  constructor list.cell.create;
+  begin
+    inherited create;
+  end;
+  
+  constructor list.cell.create( v : t );
+  begin
+    inherited create;
+    self.value := v;
+  end;
+
+  procedure list.cell._set( v : T );
+  begin self.value := v;
+  end;
+
+  function list.cell._get : T;
+  begin result := self.value;
+  end;
+
+  function list.cell.length : cardinal;
+  begin
+    result := 1;
+  end;
+
+  constructor list.child.create;
+  begin
+    inherited create;
+    items := specialized.create;
+  end;
+  
+  function list.child.length : cardinal;
+  begin
+    result := items.length;
+  end;
+
+
   { -- list cursor ( internal type ) -- }
 
   constructor list.cursor.create( lis : specialized );
@@ -112,24 +177,39 @@ implementation
 
   procedure list.cursor.reset;
   begin
-    _lnk := _lis._clasp;
+    _cel := _lis._clasp;
     _idx := 0;
+  end;
+
+  // default implementation does a depth-first walk of the tree
+
+
+  function list.cursor.nextcell : cell;
+    var ln : link;
+  begin
+    ln := _cel;
+    _cel := ln as cell;
+  end;
+  
+  function list.cursor.prevcell : cell;
+    var ln : link;
+  begin
   end;
 
   function list.cursor.move_next : boolean;
   begin
     if _lis.is_empty then result := false
     else begin
-      _lnk := _lnk.next;
+      _cel := self.nextcell;
       inc( _idx );
-      result := ( _lnk <> _lis._clasp );
+      result := ( _cel <> _lis._clasp );
     end
   end;
 
   function list.cursor.next( out t : t ) : boolean;
   begin
     result := self.move_next;
-    if result then t := _lnk.value;
+    if result then t := _cel.value;
   end;
 
   { this is only here to allow for..in loops }
@@ -142,16 +222,16 @@ implementation
   begin
     if _lis.is_empty then result := false
     else begin
-      _lnk := _lnk.prev;
-      if _idx = 0 then _idx := _lis.count else dec( _idx );
-      result := ( _lnk <> _lis._clasp );
+      _cel := self.prevcell;
+      // if _idx = 0 then _idx := _lis.count else dec( _idx );
+      result := ( _cel <> _lis._clasp );
     end
   end; { list.cursor.move_prev }
 
   function list.cursor.prev( out t : t ) : boolean;
   begin
     result := self.move_prev;
-    if result then t := _lnk.value;
+    if result then t := _cel.value;
   end; { list.cursor.prev }
 
 
@@ -175,17 +255,17 @@ implementation
 
   function list.cursor.at_top : boolean;
   begin
-    result := (_lnk.prev = _lis._clasp) and not _lis.is_empty;
+    result := (self.prevcell = _lis._clasp) and not _lis.is_empty;
   end;
 
   function list.cursor.at_end : boolean;
   begin
-    result := (_lnk.next =  _lis._clasp) and not _lis.is_empty;
+    result := (self.nextcell = _lis._clasp) and not _lis.is_empty;
   end;
 
   procedure list.cursor.move_to( other : cursor );
   begin
-    _lnk := other._lnk;
+    _cel := other._cel;
     _idx := other._idx;
     _lis := other._lis;
   end;
@@ -193,12 +273,18 @@ implementation
 
   function list.cursor._get_value : t;
   begin
-    if _lnk = _lis._clasp then begin
-      writeln( int64( _lnk ));
-      writeln( int64( _lis._clasp ));
-      raise Exception.create( 'index outside of list' )
-    end
-    else result := _lnk.value
+    if _cel = _lis._clasp then
+      raise Exception.create(
+	      'can''t get value at the clasp. move the cursor.' )
+    else result := _cel.value
+  end;
+  
+  procedure list.cursor._set_value( v : t );
+  begin
+    if _cel = _lis._clasp then 
+      raise Exception.create(
+	      'can''t set value at the clasp. move the cursor.' )
+    else _cel.value := v
   end;
 
   function list.cursor._get_index : cardinal;
@@ -211,11 +297,11 @@ implementation
   begin
     inc( self._lis._count );
     inc( self._idx );
-    ln := link.create( val );
-    ln.next := self._lnk;
-    ln.prev := self._lnk.prev;
-    self._lnk.prev.next := ln;
-    self._lnk.prev := ln;
+    ln := cell.create( val );
+    ln.nextlink := self._cel;
+    ln.prevlink := self._cel.prevlink;
+    self._cel.prevlink.nextlink := ln;
+    self._cel.prevlink := ln;
   end; { list.cursor.inject_prev }
 
   procedure list.cursor.inject_next( const val : T );
@@ -223,24 +309,24 @@ implementation
   begin
     // we don't increase the index here because we're injecting *after*
     inc( self._lis._count );
-    ln := link.create( val );
-    ln.prev := self._lnk;
-    ln.next := self._lnk.next;
-    self._lnk.next.prev := ln;
-    self._lnk.next := ln;
+    ln := cell.create( val );
+    ln.prevlink := self._cel;
+    ln.nextlink := self._cel.nextlink;
+    self._cel.nextlink.prevlink := ln;
+    self._cel.nextlink := ln;
   end; { list.cursor.inject_next }
 
   //  this is probably leaking memory. how to deal with pointers?
   procedure list.cursor.delete_next;
     var temp : link;
   begin
-    temp := self._lnk.next;
+    temp := self._cel.nextlink;
     if temp <> self._lis._clasp then
     begin
-      self._lnk.next := temp.next;
-      self._lnk.next.prev := self._lnk;
-      temp.next := nil;
-      temp.prev := nil;
+      self._cel.nextlink := temp.nextlink;
+      self._cel.nextlink.prevlink := self._cel;
+      temp.nextlink := nil;
+      temp.prevlink := nil;
       // todo: temp.free
     end
   end;
@@ -248,6 +334,17 @@ implementation
   function list.make_cursor : cursor;
   begin
     result := cursor.create( self )
+  end;
+
+  function list.length : cardinal;
+    var ln : link;
+  begin
+    result := 0;
+    ln := _clasp;
+    repeat
+      inc( result, ln.length );
+      ln := ln.nextlink;
+    until ln = _clasp;
   end;
 
   { this allows 'for .. in' in the fpc / delphi compilers }
@@ -261,9 +358,9 @@ implementation
 
   constructor list.create;
   begin
-    _clasp := link.create( default( t ));
-    _clasp.next := _clasp;
-    _clasp.prev := _clasp;
+    _clasp := cell.create;
+    _clasp.nextlink := _clasp;
+    _clasp.prevlink := _clasp;
     _count := 0;
   end;
 
@@ -293,18 +390,18 @@ implementation
     var ln : link;
   begin
     inc(_count);
-    ln := link.create( val );
-    ln.prev := _clasp;
-    ln.next := _clasp.next;
-    _clasp.next.prev := ln;
-    _clasp.next := ln;
+    ln := cell.create( val );
+    ln.prevlink := _clasp;
+    ln.nextlink := _clasp.nextlink;
+    _clasp.nextlink.prevlink := ln;
+    _clasp.nextlink := ln;
   end; { insert }
 
   procedure list.insert_at( val	: T; at_index : cardinal );
     var cur : cursor;
   begin
     cur := self.make_cursor;
-    if at_index >= _count then cur.to_end
+    if at_index >= length then cur.to_end
     else while cur.index < at_index do cur.move_next;
     cur.inject_next( val );
   end; { insert_at }
@@ -314,29 +411,27 @@ implementation
     var ln : link;
   begin
     inc(_count);
-    ln := link.create( val );
-    ln.next := _clasp;
-    ln.prev := _clasp.prev;
-    _clasp.prev.next := ln;
-    _clasp.prev := ln;
+    ln := cell.create( val );
+    ln.nextlink := _clasp;
+    ln.prevlink := _clasp.prevlink;
+    _clasp.prevlink.nextlink := ln;
+    _clasp.prevlink := ln;
   end; { append }
 
 
   procedure List.remove( val : T );
-    var p : link;
+    var c : cursor; found : boolean = false;
   begin
-    if not self.is_empty then begin
-      p := _clasp;
-      while ( p.next.value <> val )
-        and ( p.next <> _clasp ) do
-	p := p.next;
-
-      if p.next.value = val then begin
-	p.next := p.next.next;
-	//  ERROR
-	if self.last = val then
-          if p.value = val then _clasp := nil
-          else _clasp := p
+    if not self.is_empty then pass
+    else begin
+      c := self.make_cursor;
+      repeat
+	c.move_next;
+	found := c.value = val;
+      until found or c.at_end;
+      if found then begin
+	c.move_prev;
+	c.delete_next
       end
     end
   end; { remove }
@@ -346,28 +441,59 @@ implementation
   begin
     if is_empty then raise Exception.create('attempted to drop from empty list')
     else begin
-      temp := _clasp.prev;
-      _clasp.prev := _clasp.prev.prev;
-      temp.prev := nil;
-      temp.next := nil;
+      temp := _clasp.prevlink;
+      _clasp.prevlink := _clasp.prevlink.prevlink;
+      temp.prevlink := nil;
+      temp.nextlink := nil;
       temp.free;
     end
   end;
 
   function list.is_empty : boolean;
-  begin result := count = 0
+  begin result := _count = 0
   end;
 
-  function list.first : t;
+  function list.findfirstcell( out v : cell ) : boolean;
+    var ln : link;
   begin
-    if is_empty then raise Exception.create('empty list has no first member.')
-    else result := _clasp.next.value
-  end; { first }
+    result := false;
+    ln := _clasp;
+    repeat
+      ln := ln.nextlink;
+      if ( ln is child ) then
+	if (( ln as child).items.length = 0 ) then ln := ln.nextlink
+	else result := ( ln as child).items.findfirstcell( v )
+      else if ln is cell then begin
+	result := ln <> _clasp;
+	  if result then v := ln as cell
+      end
+    until result or ( ln = _clasp );
+  end;
+  
+  function list.firstcell : cell;
+  begin
+    if self.is_empty then
+      raise Exception.create('empty list has no first member.')
+    else begin
+      if not self.findfirstcell( result ) then
+	raise Exception.create('nested empty list has no first member.')
+    end
+  end;
 
-  function list.last: T;
+  function list.first: t;
+  begin
+    result := self.firstcell.value;
+  end;
+
+  function list.lastcell : cell;
   begin
     if is_empty then raise Exception.create('empty list has no last member.')
-    else result := _clasp.prev.value
+    else result := self.make_cursor.prevcell
+  end;
+  
+  function list.last: T;
+  begin
+    result := self.lastcell.value;
   end; { last }
 
 
@@ -381,7 +507,7 @@ implementation
   { i don't really see the point of these }
   function list.next( const n: T ): T; inline; deprecated;
   begin
-    die('do i really need list.next? ');
+    die('do i really need list.nextn? ');
     result := n;
   end;
 

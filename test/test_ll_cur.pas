@@ -31,7 +31,7 @@ implementation uses ll, li, xpc;
     chk.equal( as_string, '' );
     add_chars;
     chk.that( not ls.is_empty, 'added chars so should not be empty!');
-    chk.equal( 6, ls.count );
+    chk.equal( 6, ls.length );
     chk.equal( as_string, 'abcxyz' )
   end;
 
@@ -63,7 +63,7 @@ implementation uses ll, li, xpc;
     add_chars;
     cur.to_end;
     chk.equal( cur.value, 'z' );
-    chk.equal( cur.index, ls.count );
+    chk.equal( cur.index, ls.length );
     chk.equal( cur.index, 6 ); // abcxyz
   end;
 
