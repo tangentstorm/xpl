@@ -143,11 +143,11 @@ implementation
   end;
 
   procedure list.cell._set( v : T );
-  begin self.value := v;
+  begin self._val := v;
   end;
 
   function list.cell._get : T;
-  begin result := self.value;
+  begin result := self._val;
   end;
 
   function list.cell.length : cardinal;
