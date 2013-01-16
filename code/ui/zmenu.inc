@@ -1,25 +1,8 @@
 
 constructor zMenu.create( esc, alt, usetemp : Boolean; head : zchoice );
-var i : integer;
 begin
   mChoices.create;
   mChoices.insert( head );
-{
-  for i := 0 to high( choices ) do
-    begin
-      add( choices[ i ]);
-      format( choices[ i ]);
-    end;
-
-  assert( menu <> nil, 'menu must not be nil' );
-  add( menu );
-  each := zchoice( mChoices.first );
-  // post-setformat
-  while ( each <> nil ) do begin
-    format( each );
-    each := zchoice( each.next );
-  end;
-}
   setonfirst;
   escexits  := esc;
   altexits  := esc;
@@ -45,51 +28,23 @@ begin
 end;
 
 procedure zMenu.insert( z : zchoice );
-var
-  l : zchoice;
 begin
   mChoices.insert( z );
-{
-  if z = nil then exit;
-  l := z;
-  while l.next <> nil do l := zchoice( l.next );
-  if mChoices.Last = nil then mLast := l
-  else l.next := mLast.next;
-  last.next := z;
-}
 end;
 
 
 procedure zMenu.add( z : zchoice );
-// var l, t : zchoice;
 begin
   if z = nil then exit;  { has to add in all the nexts! }
   insert( z );
-{
-    l := z;
-    while l.next <> nil do
-begin
-      t := l;
-      l := zchoice( l.next );
-      if l <> nil then l.prev := t;
-end;
-    if self.last = nil then self.last := l
-    else l.next := self.last.next;
-    first().prev := l;
-    last.next := z;
-    z.prev := last;
-    last := l;
-    }
 end;
 
 
 procedure zMenu.show;
 var
   oldIsMV : Boolean;
-  p, q	  : zchoice;
   choice  : ui.zChoice;
   cur	  : choicelist.cursor;
-  done	  : boolean;
 begin
   cur  := mChoices.make_cursor;
   while cur.next( choice ) do begin
@@ -107,8 +62,6 @@ end;
 
 procedure zMenu.seton( z : zChoice );
 begin
-{  if ( z <> nil ) and ( z.on ) then  }
-{    mCurrent := mChoices.first.find( z ) as ll.Node;}
   subactive := submenu <> nil;
   if subactive then
     begin
@@ -179,7 +132,6 @@ end; { handle }
 
 
 procedure ZMenu.Handlestripped( ch : Char );
-var l : zchoice;
 begin
   if ( subactive ) and ( ch in sArrows ) then
     submenu.handlestripped( ch )
@@ -272,7 +224,7 @@ begin
   end
   else { no right click, procede as usual }
   begin
-    cur.reset;
+    cur := mchoices.make_cursor;
     while cur.next( choice ) do
     begin
       if ( choice.on ) and ( choice.pressed ) then
