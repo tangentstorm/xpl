@@ -261,7 +261,7 @@ implementation
 	  this := read_value( next )
 	until this = endl;
 	result := lisnode.create( res );
-	debug('-- result was list of ' + n2s( res.count ) + ' items --')
+	debug('-- result was list of ' + n2s( res.length ) + ' items --')
       end;
       dec( depth );
     end; { read_list }

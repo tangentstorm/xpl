@@ -17,7 +17,7 @@ implementation uses ll, li, xpc;
   procedure test_init;
   begin
     chk.that( ls.is_empty, 'new list should be empty' );
-    chk.that( ls.count = 0, 'new list should have count of 0' );
+    chk.that( ls.length = 0, 'new list should have length of 0' );
     try
       ls.first; chk.fail('.first should throw exception for empty list' )
     except pass end;
@@ -48,7 +48,7 @@ implementation uses ll, li, xpc;
     ls.append( c );
     cur := ls.make_cursor;
     cur.to_end;
-    chk.equal( ls.count, 2 );
+    chk.equal( ls.length, 2 );
     chk.equal( cur.index, 2 );
   end;
 
