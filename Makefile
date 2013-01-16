@@ -46,7 +46,7 @@ clean:
 
 # we use always here, else it'll see the test directory and assume we're done.
 test: always init clean test-runner
-	@bin/run-tests
+	@bin/run-tests $(paramline)
 test-runner: test/*.pas code/*.pas
 	cd test; python gen-tests.py ../$(GEN)
 	$(FPC) -B test/run-tests.pas
