@@ -14,14 +14,17 @@ const
   colors : array[ outcome ] of string[ 2 ] = ( '|g', '|y', '|r' );
 
 var
-  overall   : outcome;
-  passed,
-  failed,
-  broken    : integer;
-  problems  : array of problem;
-
+  overall  : outcome;
+  passed,  
+  failed,  
+  broken   : integer;
+  problems : array of problem;
+  trace	   : boolean = false;
+	   
 procedure setup;
 begin
+  if (paramstr( 1 ) = '--trace')
+  or (paramstr( 1 ) = '-t') then trace := true;
   setlength( problems, 0 );
   writeln( 'running tests' );
   writeln;
@@ -33,6 +36,7 @@ procedure run( unit_name, test_name : string; to_test : testcase );
 var result : outcome = pass;  p : problem;  e : exception;
 begin
   //  chk.reset;
+  if trace then cwrite( '|K' + unit_name + '.|w' + test_name + '|K: ' );
   try to_test
   except
     on exception do begin
@@ -50,7 +54,8 @@ begin
     pass : begin inc( passed ); cwrite( '|g.' ) end;
     fail : begin inc( failed ); cwrite( '|y!' ) end;
     err  : begin inc( broken ); cwrite( '|rX' ) end;
-  end;
+  end; { case }
+  if trace then writeln;
 end;
 
 procedure report;
