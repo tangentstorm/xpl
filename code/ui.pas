@@ -9,7 +9,7 @@ type
   ZObj  = class ( li.Node )
     x, y, x2, y2 : Byte; { TODO : mX, mY, etc }
     is_dirty : boolean;
-    constructor create; virtual;
+    constructor create;
     constructor create( a, b, a2, b2 : Byte );
     procedure smudge; // mark for redraw
     procedure show; virtual;
@@ -54,7 +54,7 @@ type
     constructor create( esc, alt, usetemp : Boolean; head : zChoice );
     procedure insert( z : zchoice ); virtual;
     procedure add( z : zchoice ); virtual;
-    procedure show; virtual;
+    procedure show; override;
     { TODO: what's the seton/setto difference? clarify or eliminate! }
     procedure seton( z : zchoice );
     procedure setto( z : zchoice );
@@ -117,12 +117,12 @@ type
     escexits, tovr,       { type over toggle }
     frst,                 { first key to be pressed }
     isdone : Boolean;     { end-loop flag }
-    constructor create; override;
+    constructor create;
     constructor create( a, b, tl, dl, tc, ac : integer; esc : Boolean;
 		       start : String );
     constructor default( a, b, tl, dl : integer; start : String='' );
     procedure reset;
-    procedure show; virtual;
+    procedure show; override;
     procedure handle( ch : Char ); virtual;
     procedure handlestripped( ch : Char ); virtual;
     function value : String;
@@ -161,7 +161,7 @@ type
     value, start, min, max : Word;
     endloop :    Boolean;
     constructor create( a, b, tc, ac : Byte; minVal, maxVal, strt : Word );
-    procedure show;
+    procedure show; override;
     procedure handle( ch : Char );
     procedure domousestuff;
     function get : Word;
@@ -185,7 +185,7 @@ type
     start, value, endloop : Boolean;
     truestr, falsestr : String;
     constructor Create( a, b, tc : Byte; ts, fs : String; startval : Boolean );
-    procedure Show;
+    procedure Show; override;
     procedure Handle( ch : Char );
     function Toggle : Boolean;
     function Get : boolean;
@@ -218,7 +218,7 @@ type
                       bc, hc : Char; ba, ha : Byte );
     constructor default( a, b, _min, _max, strt : Byte );
     procedure domousestuff;
-    procedure show; virtual;
+    procedure show; override;
     procedure handle( ch : Char );
   end;
 
