@@ -25,6 +25,7 @@ interface uses sysutils;
 
   type thunk = procedure of object;
   type logger = object
+    procedure debug( arg : string );
     procedure debug( args : array of const );
   end;
   var log : logger;
@@ -95,6 +96,10 @@ implementation
     writeln( ')' );
   end;
 
+  procedure logger.debug( arg : string );
+  begin
+    debug([arg]);
+  end;
 
   function hex( x : int32 ) : string;
     const digits = '0123456789ABCDEF';
