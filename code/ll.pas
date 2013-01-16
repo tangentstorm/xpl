@@ -7,17 +7,18 @@ type
 
     { -- inner types -------------------------------------------------------- }
 
-    { list.specialized : just an internal name for this generic type }
    private type
+     { list.specialized : just an internal name for this type }
      specialized = specialize list<t>;
 
-    { list.link : adds the forward and backward links to the base type }
-   private type
+     { list.link : abstract link class with .nextlink, .prevlink }
      link = class
        nextlink, prevlink : link;
        constructor create;
        function length : cardinal; virtual;
      end;
+
+     { list.cell : contains values }
      cell = class( link )
      protected
        _val : t;
@@ -25,10 +26,19 @@ type
        function _get : T;
       public
        property value : T read _get write _set;
-       constructor create;
        constructor create( v : t );
        function length : cardinal; override;
+       function is_clasp : boolean; virtual;
      end;
+
+     { list.cell : a special cell that joins the ends of the list }
+     clasp = class( cell )
+       constructor create;
+       function length : cardinal; override;
+       function is_clasp : boolean; override;
+     end;
+
+     { list.child : allows creation of nested lists (trees) }
      child = class( link )
        items : specialized;
        constructor create;
@@ -52,7 +62,7 @@ type
         function _get_index : cardinal;
         function nextcell : cell; virtual;
         function prevcell : cell; virtual;
-      public  
+      public
         constructor create( lis : specialized );
         procedure reset;
         procedure to_top;
@@ -75,43 +85,44 @@ type
         function movenext : boolean;
         property current  : t
           read _get_value;
-    end;      
-	      
+    end;
+
    { -- interface for the main list<t> type --------------------------------- }
-   protected						
-     _clasp : cell; // holds the two ends together	
-     _count : cardinal;					
+   protected
+     _clasp : cell; // holds the two ends together
+     _count : cardinal;
      function findfirstcell( out v : cell ) : boolean;
+     function findlastcell( out v : cell ) : boolean;
      function firstcell: cell;
-     function lastcell: cell;				
-   public						
-     constructor create;				
-     procedure append( val : T );			
-     procedure insert( val : T );			
+     function lastcell: cell;
+   public
+     constructor create;
+     procedure append( val : T );
+     procedure insert( val : T );
      procedure insert_at( val : T;  at_index : cardinal	= 0 );
-     procedure remove( val : T );			
-     procedure drop;					
-     procedure foreach( action : listaction );		
-     function find( pred : predicate ) : T;		
-     function is_empty: boolean;			
-     function first : T;				
-     function last : T;					
-     function make_cursor : cursor;			
-     function length : cardinal;			
-							
-   { -- interface for for..in loops -- }		
-   public						
-    function getenumerator : cursor;			
-							
-   { -- ancient deprecated interface -- }		
-   public						
-    function next( const n : T ) : T; deprecated;	
-    function prev( const n : T ) : T; deprecated;	
-    function empty: boolean; deprecated;		
+     procedure remove( val : T );
+     procedure drop;
+     procedure foreach( action : listaction );
+     function find( pred : predicate ) : T;
+     function is_empty: boolean;
+     function first : T;
+     function last : T;
+     function make_cursor : cursor;
+     function length : cardinal;
+
+   { -- interface for for..in loops -- }
+   public
+    function getenumerator : cursor;
+
+   { -- ancient deprecated interface -- }
+   public
+    function next( const n : T ) : T; deprecated;
+    function prev( const n : T ) : T; deprecated;
+    function empty: boolean; deprecated;
     procedure foreachdo( what : listaction ); deprecated;
-    //  procedure killall; deprecated;		
-  end;							
-							
+    //  procedure killall; deprecated;
+  end;
+
   { -- specialized types, just for convenience ------------------------------ }
   type
     stringlist = specialize list<string>;
@@ -131,11 +142,7 @@ implementation
     result := 0;
   end;
 
-  constructor list.cell.create;
-  begin
-    inherited create;
-  end;
-  
+
   constructor list.cell.create( v : t );
   begin
     inherited create;
@@ -150,17 +157,39 @@ implementation
   begin result := self._val;
   end;
 
+  function list.cell.is_clasp : boolean;
+  begin
+    result := false;
+  end;
+
   function list.cell.length : cardinal;
   begin
     result := 1;
   end;
+
+  constructor list.clasp.create;
+  begin
+    self.nextlink := self;
+    self.prevlink := self;
+  end;
+
+  function list.clasp.is_clasp : boolean;
+  begin
+    result := true;
+  end;
+
+  function list.clasp.length : cardinal;
+  begin
+    result := 0;
+  end;
+
 
   constructor list.child.create;
   begin
     inherited create;
     items := specialized.create;
   end;
-  
+
   function list.child.length : cardinal;
   begin
     result := items.length;
@@ -190,7 +219,7 @@ implementation
     ln := _cel;
     _cel := ln as cell;
   end;
-  
+
   function list.cursor.prevcell : cell;
     var ln : link;
   begin
@@ -223,7 +252,7 @@ implementation
     if _lis.is_empty then result := false
     else begin
       _cel := self.prevcell;
-      // if _idx = 0 then _idx := _lis.count else dec( _idx );
+      if _idx = 0 then _idx := _lis.length else dec( _idx );
       result := ( _cel <> _lis._clasp );
     end
   end; { list.cursor.move_prev }
@@ -278,10 +307,10 @@ implementation
 	      'can''t get value at the clasp. move the cursor.' )
     else result := _cel.value
   end;
-  
+
   procedure list.cursor._set_value( v : t );
   begin
-    if _cel = _lis._clasp then 
+    if _cel = _lis._clasp then
       raise Exception.create(
 	      'can''t set value at the clasp. move the cursor.' )
     else _cel.value := v
@@ -358,9 +387,7 @@ implementation
 
   constructor list.create;
   begin
-    _clasp := cell.create;
-    _clasp.nextlink := _clasp;
-    _clasp.prevlink := _clasp;
+    _clasp := clasp.create;
     _count := 0;
   end;
 
@@ -469,15 +496,31 @@ implementation
       end
     until result or ( ln = _clasp );
   end;
-  
+
+  { should be exactly the same as above but s/next/prev/g }
+  function list.findlastcell( out v : cell ) : boolean;
+    var ln : link;
+  begin
+    result := false;
+    ln := _clasp;
+    repeat
+      ln := ln.prevlink;
+      if ( ln is child ) then
+	if (( ln as child).items.length = 0 ) then ln := ln.prevlink
+	else result := ( ln as child).items.findfirstcell( v )
+      else if ln is cell then begin
+	result := ln <> _clasp;
+	  if result then v := ln as cell
+      end
+    until result or ( ln = _clasp );
+  end;
+
   function list.firstcell : cell;
   begin
     if self.is_empty then
       raise Exception.create('empty list has no first member.')
-    else begin
-      if not self.findfirstcell( result ) then
-	raise Exception.create('nested empty list has no first member.')
-    end
+    else if not self.findfirstcell( result ) then
+      raise Exception.create('nested empty list has no first member.')
   end;
 
   function list.first: t;
@@ -487,10 +530,12 @@ implementation
 
   function list.lastcell : cell;
   begin
-    if is_empty then raise Exception.create('empty list has no last member.')
-    else result := self.make_cursor.prevcell
+    if is_empty then
+      raise Exception.create('empty list has no last member.')
+    else if not self.findlastcell( result ) then
+      raise Exception.create('nested empty list has no last member.')
   end;
-  
+
   function list.last: T;
   begin
     result := self.lastcell.value;
