@@ -18,7 +18,7 @@ implementation uses ll, li, xpc;
   begin
     result := '';
     if ls.is_empty then pass
-    else for ch in ls do result += ch;
+    else for ch in ls do result += ch
   end;
 
   procedure add_chars;

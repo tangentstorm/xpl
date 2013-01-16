@@ -1,15 +1,16 @@
 {$i xpc}
-unit ll; { link list support }
+unit ll; { li list support }
 interface uses xpc, sysutils, sq, stacks;
 
+const maxdepth = 8;
 type
   generic list<T> = class
 
     { -- inner types -------------------------------------------------------- }
 
    private type
-     { list.specialized : just an internal name for this type }
-     specialized = specialize list<t>;
+     { list.listof_t : just an internal name for this type }
+     listof_t = specialize list<t>;
 
      { list.link : abstract link class with .nextlink, .prevlink }
      link = class
@@ -33,6 +34,7 @@ type
 
      { list.cell : a special cell that joins the ends of the list }
      clasp = class( cell )
+       parent : link;
        constructor create;
        function length : cardinal; override;
        function is_clasp : boolean; override;
@@ -40,30 +42,32 @@ type
 
      { list.child : allows creation of nested lists (trees) }
      child = class( link )
-       items : specialized;
+       items : listof_t;
        constructor create;
        function length : cardinal; override;
      end;
+     path = specialize stacks.stack<child>;
 
     public { procedure types used by foreach, find }
       type listaction = procedure( var n : T ) is nested;
       type predicate  = function( n : T ) : Boolean is nested;
+
 
     { list.cursor : tracks a position in the list, even through inserts/deletes }
-    public type cursor = class
-      private type linkstack = specialize stacks.stack<link>;
-      private
-        _lis  : specialized;
+  public type cursor = class
+    type path = specialize stack<child>;
+    protected
+        _lis  : listof_t; // the main list
         _cel  : cell;
         _idx  : cardinal;
-        _path : linkstack;
+        _path : path;
         function _get_value : T;
         procedure _set_value( v : T );
         function _get_index : cardinal;
         function nextcell : cell; virtual;
         function prevcell : cell; virtual;
       public
-        constructor create( lis : specialized );
+        constructor create( lis : listof_t );
         procedure reset;
         procedure to_top;
         procedure to_end;
@@ -91,8 +95,10 @@ type
    protected
      _clasp : cell; // holds the two ends together
      _count : cardinal;
-     function findfirstcell( out v : cell ) : boolean;
-     function findlastcell( out v : cell ) : boolean;
+     function findnextcell
+       ( const start : cell; var p : path; out v : cell ) : boolean;
+     function findprevcell
+       ( const start : cell; var p : path; out v : cell ) : boolean;
      function firstcell: cell;
      function lastcell: cell;
    public
@@ -187,7 +193,7 @@ implementation
   constructor list.child.create;
   begin
     inherited create;
-    items := specialized.create;
+    items := listof_t.create;
   end;
 
   function list.child.length : cardinal;
@@ -198,9 +204,10 @@ implementation
 
   { -- list cursor ( internal type ) -- }
 
-  constructor list.cursor.create( lis : specialized );
+  constructor list.cursor.create( lis : listof_t );
   begin
     _lis := lis;
+    _path.init( maxdepth ); //  todo: use a dynamically resizable stack
     self.reset;
   end;
 
@@ -212,17 +219,14 @@ implementation
 
   // default implementation does a depth-first walk of the tree
 
-
   function list.cursor.nextcell : cell;
-    var ln : link;
   begin
-    ln := _cel;
-    _cel := ln as cell;
+    _lis.findnextcell( _cel, _path, result )
   end;
 
   function list.cursor.prevcell : cell;
-    var ln : link;
   begin
+    _lis.findprevcell( _cel, _path, result )
   end;
 
   function list.cursor.move_next : boolean;
@@ -480,46 +484,64 @@ implementation
   begin result := _count = 0
   end;
 
-  function list.findfirstcell( out v : cell ) : boolean;
+  function list.findnextcell(
+    const start : cell; var p : path; out v : cell ) : boolean;
     var ln : link;
   begin
     result := false;
-    ln := _clasp;
+    ln := start;
     repeat
       ln := ln.nextlink;
-      if ( ln is child ) then
-	if (( ln as child).items.length = 0 ) then ln := ln.nextlink
-	else result := ( ln as child).items.findfirstcell( v )
+      if ( ln is child ) then with ln as child do begin
+	p.push( ln as child );
+	if items.length = 0 then ln := ln.nextlink
+	else ln := items._clasp
+      end
+      else if ln is clasp then begin
+        if p.sp > 0 then ln := p.pop
+	else ln := _clasp
+      end
       else if ln is cell then begin
-	result := ln <> _clasp;
-	  if result then v := ln as cell
+        result := true;
+        v := ln as cell;
       end
     until result or ( ln = _clasp );
+    v := ln as cell;
   end;
 
   { should be exactly the same as above but s/next/prev/g }
-  function list.findlastcell( out v : cell ) : boolean;
+  function list.findprevcell(
+    const start : cell; var p : path; out v : cell ) : boolean;
     var ln : link;
   begin
     result := false;
-    ln := _clasp;
+    ln := start;
     repeat
       ln := ln.prevlink;
-      if ( ln is child ) then
-	if (( ln as child).items.length = 0 ) then ln := ln.prevlink
-	else result := ( ln as child).items.findfirstcell( v )
+      if ( ln is child ) then with (ln as child) do begin
+        p.push( ln as child );
+	if ( items.length = 0 ) then ln := ln.prevlink
+	else result := items.findprevcell(items._clasp, p, v )
+      end
+      else if ln is clasp then begin
+        if p.sp > 0 then ln := p.pop
+	else ln := _clasp
+      end
       else if ln is cell then begin
-	result := ln <> _clasp;
-	  if result then v := ln as cell
+	result := true;
+	v := ln as cell;
       end
     until result or ( ln = _clasp );
+    v := ln as cell;
   end;
 
   function list.firstcell : cell;
+  var p : path;
   begin
+    p.init( maxdepth );
     if self.is_empty then
       raise Exception.create('empty list has no first member.')
-    else if not self.findfirstcell( result ) then
+    else if not findnextcell( _clasp, p, result ) then
       raise Exception.create('nested empty list has no first member.')
   end;
 
@@ -529,10 +551,12 @@ implementation
   end;
 
   function list.lastcell : cell;
+  var p : path;
   begin
+    p.init( maxdepth );
     if is_empty then
       raise Exception.create('empty list has no last member.')
-    else if not self.findlastcell( result ) then
+    else if not findprevcell( _clasp, p, result ) then
       raise Exception.create('nested empty list has no last member.')
   end;
 
