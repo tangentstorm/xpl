@@ -4,7 +4,7 @@
 }
 {$i xpc.inc}
 unit kvm;
-interface uses xpc, keyboard;
+interface uses xpc, keyboard, video;
 
   
 {  this should probably get moved into its own class? }
@@ -45,10 +45,13 @@ type
 	    end;
 
 procedure clrscr;
+procedure clreol;
 procedure gotoxy( x, y : int32 );
 procedure fg( c : char );  procedure fg( b : byte );
 procedure bg( c : char );  procedure bg( b : byte );
 procedure setfont( font :  bmpfont );
+function windmaxx : word;
+function windmaxy : word;
 var term : surface;
 
 {-- interface > mouse --}
@@ -102,6 +105,11 @@ begin
   write( #27, '[2J' );
 end; { clrscr }
 
+procedure clreol;
+begin
+  write( #27, '[K' );
+end; { clrscr }
+
 procedure ansi_reset;
 begin
   write( #27, '[0m' );
@@ -131,7 +139,7 @@ end; { ansi_fg }
 { xterm 256-color extensions }
 procedure xterm_fg( i	:  byte );
 begin
-  write( #27, '[38;5;', i , 'm' );
+  write( '#27', '[38;5;', i , 'm' );
 end;
 
 { --- public --- }
@@ -177,4 +185,22 @@ begin
   xterm_bg( b );
 end; { fg }
 
+
+
+  var mode :video.tvideomode;
+  function windmaxx : word;
+  begin
+    result := 80;//crt.windmaxx; //mode.col;
+  end; { maxx }
+  
+  function windmaxy : word;
+  begin
+    result := 25;//crt.windmaxy; //mode.row;
+  end;
+{
+initialization
+  video.initvideo; video.getvideomode(mode);
+finalization
+  video.donevideo;
+  }
 end.
