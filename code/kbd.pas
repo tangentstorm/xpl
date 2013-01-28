@@ -1,6 +1,7 @@
+{$i xpc.inc}
 unit kbd; { keyboard constants }
 
-interface uses keyboard;
+interface uses xpc, keyboard;
 
   procedure getenter;			
   function alt2normal( ch : Char ) : Char;
