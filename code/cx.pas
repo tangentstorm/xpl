@@ -21,6 +21,7 @@ implementation
       if odd( i ) then result += '|c' else result += '|B';
       result += lineending + backtracestrfunc( frames[ i ]);
     end;
+    result += '|w' + lineending;
   end; { stacktrace }
 
   // adapted from http://wiki.freepascal.org/Logging_exceptions#Unit_SysUtils

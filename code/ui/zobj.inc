@@ -1,11 +1,16 @@
 constructor zObj.create;
 begin
-  create( 10, 10, 1, 1 );
+  inherited create;
+  x := 0;
+  y := 0;
+  x2 := 1;
+  y2 := 1;
   is_dirty := false;
 end;
 
 constructor ZObj.create( a, b, a2, b2 : Byte );
 begin
+  inherited create;
   x  := a;
   y  := b;
   x2 := a2;
