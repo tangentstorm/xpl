@@ -2,7 +2,8 @@ unit kbd; { keyboard constants }
 
 interface uses keyboard;
 
-  procedure getenter;			
+  procedure getenter;
+  function keypressed : boolean;
   function alt2normal( ch : Char ) : Char;
   function shiftstate : Byte;		
   function enterpressed : Boolean;
@@ -104,7 +105,13 @@ begin
   result := ch;
 end; { readkey }
   
+function keypressed : boolean;
+begin
+  if have_cached then result := true
+  else result := keyboard.PollKeyEvent <> 0;
+end;
 
+  
 function kbstate : tKeyState;
 begin
   result := [];

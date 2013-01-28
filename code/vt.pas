@@ -12,14 +12,14 @@ interface uses utf8;
   function readkey : char;
   function keypressed : boolean;
 
-  procedure fg;
-  procedure bg;
+  procedure fg( color : byte );
+  procedure bg( color : byte );
 
   procedure cursoron;
   procedure cursoroff;
   procedure cursorbig;
 
-  type iScreen = interface
+  type iScreen = interface(IUnknown)
     procedure clrscr;
     procedure clreol;
     procedure setfg( c : byte );
@@ -31,9 +31,9 @@ interface uses utf8;
   end;
 
   type screen = class( iScreen )
-    constructor create(   );
     buffer : array of cell;
+    constructor create(   );
   end;
 
-begin
+implementation
 end.
