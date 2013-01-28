@@ -61,8 +61,6 @@ implementation
 
   var work : screen;
 
-implementation
-
   procedure screen.clrscr; begin kvm.clrscr end;
   procedure screen.clreol; begin kvm.clreol end;
   procedure screen.fg( c : byte ); begin kvm.fg( c ) end;
@@ -72,8 +70,8 @@ implementation
   procedure screen.insline; begin end;
   procedure screen.delline; begin end;
 
-  procedure fg( c : byte ); begin work.fg( c ) end;
-  procedure bg( c : byte ); begin work.bg( c ) end;
+  procedure fg( color : byte ); begin work.fg( color ) end;
+  procedure bg( color : byte ); begin work.bg( color ) end;
   procedure gotoxy( x, y : word ); begin work.gotoxy( x, y ) end;
   procedure clrscr; begin work.clrscr end;
   procedure clreol; begin work.clreol end;

@@ -2,7 +2,7 @@
 {$IFDEF FPC}
   {$mode objfpc}
   {$modeswitch nestedprocvars}
-
+{$coperators on}              // += , etc.
   {$assertions on}
   {$goto off}
   {$longstrings on}
