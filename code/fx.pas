@@ -1,6 +1,6 @@
 {$i xpc.inc}
 unit fx;
-interface uses xpc, cw, stri;
+interface uses xpc, cw, stri,cli,kvm;
 
   Type
     { 80x50 screen }
@@ -27,8 +27,8 @@ interface uses xpc, cw, stri;
   {■ ascii graphics }
   procedure txtline( a, b, x, y, c : byte );
   procedure greyshadow( a1, b1, a2, b2 : byte );
-  procedure Rectangle( a, b, x, y, c : byte );
-  procedure Bar( a, b, x, y, at: byte );
+  procedure Rectangle( a, b, x, y : byte; c : word );
+  procedure Bar( a, b, x, y : byte; c : word );
   procedure metalbar( a1, b1, a2, b2 : byte );
   procedure metalbox( a1, b1, a2, b2 : byte );
   procedure Button( a1, b1, a2, b2 : byte );
@@ -36,7 +36,7 @@ interface uses xpc, cw, stri;
 
 
   { ■ screen/window handling commands }
-  procedure fillscreen( atch : word ); {ATTR then CHAR}
+  procedure fillscreen( at : word; uc : string );
   procedure fillbox( a1, b1, a2, b2 : byte; atch : word );
   procedure slidedown( x1, x2, y1, y2 : byte;
 		      offwhat	      : screentypeptr );
@@ -64,7 +64,7 @@ implementation
       colorxy( a, b, c, stri.ntimes( '─', x - a + 1 ) );
   end;
 
-  procedure Rectangle( a, b, x, y, c : byte);
+  procedure Rectangle( a, b, x, y : byte; c : word );
     var count : byte;
   begin
     for count := a + 1 to x - 1 do
@@ -72,26 +72,25 @@ implementation
       ColorXY( count, b, c, '─' );
       ColorXY( count, y, c, '─' );
     end;
-    for count := B+1 to Y-1 do
-    begin
-      ColorXY( a, count, c, '│' );
-      ColorXY( x, count, c, '│' );
-    end;
+    //  this should be one loop, but for some reason, crt screws
+    // up when rendering these two characters on the same line:
+    // whichever one is written second gets displaced 2 spaces to
+    // the left...
+    for count := B+1 to Y-1 do ColorXY( a, count, c, '│' );
+    for count := B+1 to Y-1 do ColorXY( x, count, c, '│' );
     ColorXY( a, b, c, '┌' );
     ColorXY( a, y, c, '└' );
     ColorXY( x, b, c, '┐' );
     ColorXY( x, y, c, '┘' );
   end;
 
-  procedure Bar(a,b,x,y,at: byte);
+  procedure Bar(a,b,x,y	: byte; c: word);
     var cx,cy : byte;
   begin
-    Rectangle(a,b,x,y, at);
+    Rectangle(a,b,x,y, c);
     For cy := b +1  to y-1 do
-      For cx := a +1 to x-1 do
-	cw.colorxy(cx,cy,at,' ');
-  End;
-
+      cw.colorxy( a+1, cy, c and $ff00, chntimes(' ', x-a-1));
+  end;
 
   procedure greyshadow( a1, b1, a2, b2 : byte );
     var i, w, h : byte;
@@ -104,6 +103,7 @@ implementation
       for i := 0 to h do
 	writeto^[ (a2 * 2) + 1 + ( b1 + i ) * sw ] := $08;
   end;
+  
   procedure metalbar( a1, b1, a2, b2 : byte );
     var i, w, c  : byte; z : string;
   begin
@@ -137,11 +137,11 @@ implementation
   procedure Button(A1,B1,A2,B2 : byte);
     var Count : Byte;
   Begin
-    Bar(A1,B1,A2,B2,$70);
-    For Count := A1 to A2-1 do ColorXY(Count,B1,$7F,'─');
-    For Count := B1 to B2-1 do ColorXY(A1,Count,$7F,'│');
-    ColorXY(A1,B1,$7F,'┌');
-    ColorXY(A1,B2,$7F,'└');
+    Bar(A1,B1,A2,B2,$0200);
+    ColorXY(A1,B1,$07FF,'┌');
+    For Count := A1 to A2-1 do ColorXY(Count,B1,$07FF,'─');
+    For Count := B1 to B2-1 do ColorXY(A1,Count,$07FF,'│');
+    ColorXY(A1,B2,$07FF,'└');
   End;
 
   
@@ -154,15 +154,14 @@ implementation
 
 
 
-  procedure fillScreen( atch : Word ); {ATTR then Char}
+  procedure fillScreen( at : Word; uc:string); {ATTR then unicode Char}
     var
-      count : Word;
-      a	    : Byte;
-      s	    : string;
+      i	: byte;
+      s	: string;
   begin
-    a := hi( atCh );
-    s := chNTimes( chr( lo( atCh )), 80 );
-    for count := 1 to 25 do colorxy( 1, count, a, s );
+    s := ntimes( uc, windmaxx-2 );
+    for i := kvm.windmaxy-1 downto 1 do colorxy( 0, i, at, s );
+    readln;
   end; { FillScreen }
 
 
