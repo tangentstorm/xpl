@@ -7,18 +7,18 @@ end;
 
 procedure zText.ShowNormal;
 var mv : Boolean;
-begin  
+begin
   mv := mVisible;
   if mv then mou.hide;
-  cwritexy( mX, mY, st1 );
+  cwritexy( self.x, self.y, st1 );
   if mv then mou.show;
 end;
-
+  
 procedure zText.showInvert;
 var mv : Boolean;
 begin  
   mv := mvisible;
   if mv then mou.hide;
-  cwritexy( mX, mY, st2 );
+  cwritexy( self.x, self.y, st2 );
   if mv then mou.show;
 end;

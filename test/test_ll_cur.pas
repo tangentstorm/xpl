@@ -1,4 +1,4 @@
-{$i test_ll_cur.def }
+{$i test_ll_cur.def } {$i xpc.inc}
 implementation uses ll, li, xpc;
 
   type charlist = specialize list<char>;

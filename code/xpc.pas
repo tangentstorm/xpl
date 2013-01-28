@@ -53,12 +53,14 @@ implementation
   end; { pause }
 
 
+
   procedure hexdump( data :  string );
     var ch : char; hexstr, ascstr : string; i : integer;
   begin
     i := 0;
     hexstr := ''; ascstr := '';
     for ch in data do begin
+
       hexstr += hex( ord( ch ));
       if ord( ch ) in [ 0 .. 32, 128 .. 255] then ascstr += '.' else ascstr += ch;
       if i mod 4 = 0 then hexstr += ' ';

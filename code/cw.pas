@@ -1,6 +1,6 @@
 {$i xpc.inc}
 unit cw; { colorwrite }
-interface uses xpc, crt, num, stri;
+interface uses xpc, num, stri, vt;
 
   const trg = '|'; // trigger char
 
@@ -55,9 +55,9 @@ interface uses xpc, crt, num, stri;
 { ■ string writing commands }
 
   { primitives	       : these write text in solid colors }
-  procedure colorxy  ( const x, y, c : byte; const s : string );
-  procedure colorxyc ( x, y, c : byte; s : string );
-  procedure colorxyv ( const x, y, c : byte; const s : string ); // v = vertical
+  procedure colorxy  ( x, y : byte; c : word; const s : string );
+  procedure colorxyc ( x, y : byte; c : word; const s : string );
+  procedure colorxyv ( x, y : byte; c : word; const s : string ); // [v]ertical
 
 
   { colorwrite : color code interpreter }
@@ -95,16 +95,15 @@ implementation
     self.bg := hi( value );
   end;
 
-  procedure colorxy( const x, y, c : byte; const s : string); inline;
+  procedure colorxy(x, y :byte; c: word; const s : string); inline;
   begin
-    crt.TextColor( c );
-    crt.GotoXY( x, y );
+    vt.textattr := c;
+    vt.GotoXY( x, y );
     write( s );
   end;
 
   { vertical colorxy }
-  procedure Colorxyv( const x, y, c : byte;
-		      const s : string );
+  procedure Colorxyv( x, y : byte; c : word; const s : string );
     var i : byte;
   begin
     for i := 1 to length( s ) do begin
@@ -113,7 +112,7 @@ implementation
   end;
 
   { centered colorxy }
-  procedure colorxyc( x, y, c : byte; s : string );
+  procedure colorxyc( x, y : byte; c : word; const s : string );
   begin
     colorxy( x + 1 - length( s ) div 2, y, c, s );
   end;
@@ -122,12 +121,14 @@ implementation
     const digits = ['0','1','2','3','4','5','6','7','8','9'];
     var n : integer;
     procedure update_cur; begin;
-      cur.x := crt.wherex; cur.y := crt.wherey;
+      cur.x := vt.wherex;
+      cur.y := vt.wherey;
     end;
   begin
+    
     update_cur;
-    cur.bg := hi( crt.textattr );
-    cur.fg := lo( crt.textattr );
+    cur.bg := hi( vt.textattr );
+    cur.fg := lo( vt.textattr );
     case cn of
       cwfg : if s[ 1 ] in ccolset then
 		       cur.fg := pos( s[ 1 ], ccolors ) - 1;
@@ -141,12 +142,13 @@ implementation
 		     end;
       cwclrscr	   : begin
 		       //  fillbox( scr.x, scr.y, txmax, tymax, tcolor*256 + 32 );
+		       vt.clrscr;
 		       cur.x := 1;
 		       cur.y := 1;
 		     end;
       cwclreol	   : write( stri.chntimes( ' ', max( 0, scr.w - cur.x - 1 )));
-      cwsavecol	   : sav.c := crt.textattr;
-      cwloadcol	   : crt.textattr := sav.c;
+      cwsavecol	   : sav.c := vt.textattr;
+      cwloadcol	   : vt.textattr := sav.c;
       cwchntimes   : begin
 		       n := length( s );
 		       write( stri.ntimes( copy( s, 1, n-2 ), s2n( copy( s, n-1, 2 ))));
@@ -174,7 +176,8 @@ implementation
 	  end; } ;
 	cwrenegade : cur.fg := s2n( s );
     end; { of case cn }
-    crt.gotoxy( cur.x, cur.y ); crt.textattr := cur.c;
+    vt.gotoxy( cur.x, cur.y );
+    vt.textattr := cur.c;
   end; { of cwcommand }
 
   procedure cwrite( s : string );
@@ -227,7 +230,7 @@ implementation
 	  ^M  : runcmd( cwcr );
 	  ^G  : write( '␇' ); // 'bell'
 	  ^L  : begin
-		  write( ntimes( '- ', crt.windmaxx div 2 - 1 ));
+		  write( ntimes( '- ', vt.width div 2 - 1 ));
 		end;
 	  ^H  : runcmd( cwbs );
 	  else write( uch );
@@ -274,7 +277,7 @@ implementation
 
   procedure cwritexy( x, y : byte; s : string );
   begin
-    crt.gotoxy( x, y );
+    vt.gotoxy( x+1, y+1 );
     cwrite( s );
   end;
 
@@ -289,10 +292,10 @@ implementation
     for counter := 1 to Length(S) do
     begin
       case S[counter] of
-	'a'..'z','0'..'9','A'..'Z',' ' : crt.textcolor( $0F );
-	'[',']','(',')','{','}','<','>','"' : crt.textcolor( $09 );
-	#127 .. #255 : crt.textcolor( $08 ); //  '░'..'▀'
-	else crt.textcolor( $07 );
+	'a'..'z','0'..'9','A'..'Z',' ' : vt.fg( $0F );
+	'[',']','(',')','{','}','<','>','"' : vt.fg( $09 );
+	#127 .. #255 : vt.fg( $08 ); //  '░'..'▀'
+	else vt.fg( $07 );
       end;
       cwrite( s[ counter ]);
     end;
@@ -378,12 +381,12 @@ initialization
   cwnchexpected := 0;
   cur.c := $0007;
   sav.c := $000E;
-  cur.x := wherex;
-  cur.y := wherey;
+  cur.x := vt.wherex;
+  cur.y := vt.wherey;
   sav.x := 1;
   sav.y := 1;
   scr.x := 1;
   scr.y := 1;
-  scr.h := crt.windmaxy;
-  scr.w := crt.windmaxx;
+  scr.h := vt.width;
+  scr.w := vt.height;
 end.

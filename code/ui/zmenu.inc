@@ -1,8 +1,9 @@
 
 constructor zMenu.create( esc, alt, usetemp : Boolean; head : zchoice );
 begin
-  mChoices.create;
-  mChoices.insert( head );
+  mChoices := choicelist.create;
+  mChoices.append( head );
+  mCurrent := mChoices.make_cursor;
   setonfirst;
   escexits  := esc;
   altexits  := esc;
@@ -36,7 +37,7 @@ end;
 procedure zMenu.add( z : zchoice );
 begin
   if z = nil then exit;  { has to add in all the nexts! }
-  insert( z );
+  mchoices.append( z );
 end;
 
 
@@ -81,8 +82,8 @@ procedure zMenu.setonfirst;
 begin
  if not mChoices.is_empty then
  begin
-   mCurrent.reset;
-   repeat until thischoice.on or not mcurrent.move_next;
+   mCurrent.to_top;
+   while not ( thischoice.on or mcurrent.at_end ) do mcurrent.move_next
  end;
 end;
 
@@ -94,44 +95,44 @@ end;
 
 procedure zMenu.handle( ch : Char );
 begin
-  if ( ch = #0 ) then begin
-    handlestripped( readkey );
-    exit;
-  end;
+  if ( ch = #0 ) then handlestripped( readkey )
+  else begin
 
-  { hitting esc anywhere will exit }
-  if ( ch = kbd.ESC ) then begin
-    if escexits then begin
-      mCurrent    := nil;
-      endloop := true;
-    end;
-    exit; { quit handling regardless of whether esc exits the menu }
-  end;
-
-  { since we're still here.. }
-  { just letters, so the submenu handles it }
-
-  if subactive then
-  begin
-    submenu.handle( ch );
-    endloop := submenu.endloop;
-    submenu.endloop := false;
-  end
-
-  else  { sub <> nil }
-    case Ch of
-      kbd.ENTER : EndLoop := true;
-    otherwise
-      if shortcut( ch ) <> nil then
-      begin
-        setto( shortcut( ch ) );
-        if not subactive then endloop := true;
+    { hitting esc anywhere will exit }
+    if ( ch = kbd.ESC ) then begin
+      if escexits then begin
+	mCurrent    := nil;
+	endloop := true;
       end;
-    end;  { case }
+      exit; { quit handling regardless of whether esc exits the menu }
+    end;
+    
+    { since we're still here.. }
+    { just letters, so the submenu handles it }
+    
+    if subactive then
+    begin
+      submenu.handle( ch );
+      endloop := submenu.endloop;
+      submenu.endloop := false;
+    end
+    
+    else  { sub <> nil }
+      case Ch of
+	kbd.ENTER : EndLoop := true;
+	otherwise
+	if shortcut( ch ) <> nil then
+	begin
+	  setto( shortcut( ch ) );
+	  if not subactive then endloop := true;
+	end;
+      end  { case }
+  end
 end; { handle }
 
 
 procedure ZMenu.Handlestripped( ch : Char );
+  var old : cardinal;
 begin
   if ( subactive ) and ( ch in sArrows ) then
     submenu.handlestripped( ch )
@@ -139,9 +140,12 @@ begin
     case Ch of
       kbd.UP :
         begin
-          // TODO: this used to wrap around, but it should be in cursor, not here.
-          repeat mCurrent.move_prev
-          until thisChoice.enabled or mCurrent.at_top;
+	  //  todo: move wrapping to list.cursor
+	  old := mCurrent.index;
+	  repeat
+	    if mCurrent.at_top then mCurrent.to_end
+	    else mCurrent.move_prev;
+	  until thisChoice.enabled or ( mCurrent.index = old );
           show;
         end;
 
@@ -155,9 +159,13 @@ begin
             end;
 
       kbd.DOWN :
-        begin
-          repeat mCurrent.move_next
-          until thisChoice.enabled or mCurrent.at_end;
+	begin
+	  old := mCurrent.index;
+	  //  todo: move wrapping to list.cursor
+	  repeat
+	    if mCurrent.at_end then mCurrent.to_top
+	    else mCurrent.move_next;
+	  until thisChoice.enabled or ( mcurrent.index = old );
           show;
         end;
 
@@ -182,7 +190,7 @@ begin
           if not thisChoice.enabled then
              handlestripped( kbd.UP );
         end;
-    otherwise handle( ch );
+    otherwise writeln(' you pressed: $', hex(ord(ch)))
     end;
   end; { case }
 end; { handlestripped }
@@ -282,7 +290,7 @@ function zMenu.shortcut( ch : Char ) : zchoice;
 begin
   { TODO : find should return the content, not the node }
 
-  result := zchoice( mChoices.find( @match_shortcut ));
+  result := mChoices.find( @match_shortcut );
   if Assigned( result ) and not result.enabled then
     result := nil
 end;
@@ -312,11 +320,8 @@ end;
 
 
 function zMenu.get : Byte;
-var
-  ta : Byte;
-  mv : Boolean;
+var mv : Boolean;
 begin
-  ta := crt.textattr;
   if mChoices.is_empty then
     result := 0
   else
@@ -334,15 +339,14 @@ begin
         if (( shiftstate and altpressed ) <> 0 ) then
         begin
           repeat until ( shiftstate and altpressed ) = 0;
-          if ( altexits ) and ( not keypressed ) then handle( kbd.ESC );
+	  if ( altexits ) and ( not kbd.keypressed ) then handle( kbd.ESC );
         end;
-        if keypressed then handle( readkey ) else domousestuff
+	if kbd.keypressed then handle( readkey ) else domousestuff
       until endloop;
       get     := value;
       topmenu := false;
       mv      := mvisible;
       if mv then mou.hide;
       if mv then mou.show;
-      crt.textAttr := ta;
   end;
 end;
