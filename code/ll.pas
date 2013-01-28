@@ -1,6 +1,6 @@
 {$i xpc}
 unit ll; { li list support }
-interface uses xpc, sysutils, sq, stacks;
+interface uses xpc, sysutils, sq, stacks, cli;
 
 const maxdepth = 8;
 type
@@ -399,6 +399,7 @@ implementation
     var cur : cursor; found : boolean = false;
   begin
     cur := self.make_cursor;
+    cur.to_top;
     repeat
       found := pred( cur.value )
     until found or not cur.move_next;
@@ -418,7 +419,7 @@ implementation
 
   { insert : add to the start of the list, right after the clasp }
   procedure list.insert( val : T );
-    var ln : link;
+    var ln : cell;
   begin
     inc(_count);
     ln := cell.create( val );

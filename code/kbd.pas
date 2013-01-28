@@ -1,8 +1,9 @@
+{$i xpc.inc}
 unit kbd; { keyboard constants }
+interface uses xpc, keyboard, num;
 
-interface uses keyboard;
-
-  procedure getenter;			
+  procedure getenter;
+  function keypressed : boolean;
   function alt2normal( ch : Char ) : Char;
   function shiftstate : Byte;		
   function enterpressed : Boolean;
@@ -29,7 +30,10 @@ type
   function kbstate : tKeyState;
   function readkey : char;
   function readkey( out ch : char ) : char;
-  
+
+  // these are thes standardized keyboard codes from:
+  // http://www.freepascal.org/docs-html/rtl/keyboard/kbdscancode.html
+  // (that page uses hex though)
 const
   UP	      = #72;
   LEFT	      = #75;
@@ -79,22 +83,26 @@ var
   cached_key  : char;
   
 function readkey : char;
-  var Key: keyboard.TKeyEvent;
+  var Key: keyboard.TKeyEvent; ch : char;
 begin
   if have_cached then begin
     have_cached := false;
     result := cached_key;
   end else begin
     key := TranslateKeyEvent(GetKeyEvent);
-    case GetKeyEventFlags(Key) of
-      kbASCII : result := GetKeyEventChar(Key);
-      else
-      begin
-	cached_key := chr( GetKeyEventCode(Key));
-	have_cached := true;
-	result := #0;
-      end
+    if isFunctionKey(key) then
+    begin
+      case GetKeyEventCode(Key) of
+	kbdUp	 : ch := kbd.UP;
+	kbdDown	 : ch := kbd.DOWN;
+	kbdLeft	 : ch := kbd.LEFT;
+	kbdRight : ch := kbd.RIGHT;
+      end;
+      cached_key := ch;
+      have_cached := true;
+      result := #0;
     end
+    else result := GetKeyEventChar(Key);
   end;
 end; { readkey }
 
@@ -104,7 +112,13 @@ begin
   result := ch;
 end; { readkey }
   
+function keypressed : boolean;
+begin
+  if have_cached then result := true
+  else result := keyboard.PollKeyEvent <> 0;
+end;
 
+  
 function kbstate : tKeyState;
 begin
   result := [];

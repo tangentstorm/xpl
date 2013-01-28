@@ -37,13 +37,11 @@ type
       constructor createXY( a, b : Byte; s, s2 : String; ison : Boolean;
                         shortcut : char;
                         value : word;
-                        submen : zObj;
-                        tail : zChoice );
+                        submen : zObj );
       constructor create( s, s2 : String; ison : Boolean;
                         shortcut : char;
                         value : word;
-                        submen : zObj;
-                        tail : zChoice );
+                        submen : zObj );
       procedure draw( high : Boolean ); virtual;
       function enabled : Boolean;
   end;
@@ -224,13 +222,13 @@ type
 
 { module level functions }
 
-  function newSepBar( tail : zChoice ) : zChoice;
+  function newSepBar( ) : zChoice;
   function newChoiceXY(
     x, y : Byte; s1, s2 : String; on : Boolean;
-    sc : Char; v : Word; sub : zMenu; tail: zChoice ) : zChoice;
+    sc : Char; v : Word; sub : zMenu ) : zChoice;
   function newChoice(
     s1, s2 : String; on : Boolean; sc : Char; v : Word;
-    sub : zMenu; tail : zChoice ) : zChoice;
+    sub : zMenu ) : zChoice;
   function newbouncemenu(
     x, y, w : Byte; p : String; e, a : Boolean;
     head : zChoice ) : zBounceMenu;
@@ -292,26 +290,26 @@ implementation
 
   function newChoiceXY(
     x, y : Byte; s1, s2 : String; on : Boolean;
-    sc : Char; v : Word; sub : zMenu; tail: zChoice ) : zChoice;
+    sc : Char; v : Word; sub : zMenu ) : zChoice;
   begin
-    result := zChoice.createXY( x, y, s1, s2, on, sc, v, sub, tail );
+    result := zChoice.createXY( x, y, s1, s2, on, sc, v, sub );
   end;
 
   function newChoice(
     s1, s2 : String; on : Boolean; sc : Char; v : Word;
-    sub : zMenu; tail: zchoice ) : zchoice;
+    sub : zMenu ) : zchoice;
   begin
-    result := newChoiceXY( 0, 0, s1, s2, on, sc, v, sub, tail );
+    result := newChoiceXY( 0, 0, s1, s2, on, sc, v, sub );
   end;
 
-  function newSepBar( tail : zChoice ) : zChoice;
+  function newSepBar( ) : zChoice;
   begin
-    result := newChoiceXY( 0, 0, '', '', off, #255, 0, nil, tail );
+    result := newChoiceXY( 0, 0, '', '', off, #255, 0, nil );
   end;
 
   function newMenu( e, a : Boolean; head: zChoice ) : zMenu;
   begin
-    newmenu := zMenu.create( e, a, true, head );
+    result := zMenu.create( e, a, true, head );
   end;
 
   function newBounceMenu(

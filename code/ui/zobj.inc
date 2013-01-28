@@ -1,5 +1,6 @@
 constructor zObj.create;
 begin
+  inherited create;
   x := 0;
   y := 0;
   x2 := 1;
@@ -9,6 +10,7 @@ end;
 
 constructor ZObj.create( a, b, a2, b2 : Byte );
 begin
+  inherited create;
   x  := a;
   y  := b;
   x2 := a2;

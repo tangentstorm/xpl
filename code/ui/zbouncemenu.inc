@@ -8,8 +8,8 @@ begin
   setpal( p );
   height := 1;
   zMenu.create( e, a, true, head );
-  insert( newChoiceXY( x, y, top, '', false, #255, 255, nil, head ));
-  add( newChoiceXY( x, y + height, bottom, '', false, #255, 255, nil, head ));
+  insert( newChoiceXY( x, y, top, '', false, #255, 255, nil ));
+  add( newChoiceXY( x, y + height, bottom, '', false, #255, 255, nil ));
   settofirst;
   inc( height, 1 );
   inc( width, 1 );
