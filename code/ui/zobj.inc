@@ -1,9 +1,6 @@
 constructor zObj.create;
 begin
-  x := 0;
-  y := 0;
-  x2 := 1;
-  y2 := 1;
+  create( 10, 10, 1, 1 );
   is_dirty := false;
 end;
 

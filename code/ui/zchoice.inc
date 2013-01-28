@@ -2,28 +2,21 @@
 
 constructor zchoice.createXY(
   a, b : Byte; s, s2 : String; ison : Boolean;
-  shortcut : Char; value : Word; submen : zObj; tail : zChoice );
+  shortcut : Char; value : Word; submen : zObj );
 begin
-  zText.create( a, b, s, s2 );
-  self.st1  := s;
-  self.st2  := s2;
+  inherited create( a, b, s, s2 );
   self.on   := isOn;
   self.sc   := upCase( shortcut );
   self.v    := value;
-  if submen = nil then
-    self.sub := nil
-  else
-    self.sub := submen;
-  (* self.next := tail; *)
+  self.sub := submen;
 end;
 
 constructor zchoice.create(
   s, s2 : String; ison : Boolean;
-  shortcut : Char; value : Word; submen : zObj; tail : zChoice );
+  shortcut : Char; value : Word; submen : zObj );
 begin
-  self.createXY( 0, 0, s, s2, ison, shortcut, value, submen, tail );
+  self.createXY( 0, 0, s, s2, ison, shortcut, value, submen );
 end;
-
 
 procedure zchoice.draw( high : Boolean );
 begin
