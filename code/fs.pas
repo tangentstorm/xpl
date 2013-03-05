@@ -2,13 +2,26 @@ unit fs;   { file system routines }
 interface uses stri
   {$IFDEF FPC}, sysutils{$ENDIF};
 
-  { these do assign and the system version in one step }
   function exists( path : string ) : boolean;
-  procedure filereset  ( var f : file; path : string );
-  procedure filerewrite( var f : file; path : string );
-  procedure fileappend ( var f : file; path : string );
-  {  TODO : replace these with python-style open( ) }
-  // function open( path : string ) : file;
+
+  {  IDEA: general purpose file opener }
+  //  type fileobj = class
+  //    private _file : file;
+  //    constructor from(var f : file );
+  //    procedure seek( pos	: int32 );
+  // end;
+  // type flag = ( r, w, b ); flags = set of flag;
+  // function open( path : string; mode : flags = [ r ]) : fileobj;
+
+  { explicit versions. }
+  procedure review( var f : file; path : string );
+  procedure create( var f : file; path : string );
+  procedure update( var f : file; path : string );
+  procedure append( var f : file; path : string );
+
+  procedure filereset  ( var f : file; path : string ); deprecated;
+  procedure filerewrite( var f : file; path : string ); deprecated;
+  procedure fileappend ( var f : file; path : string ); deprecated;
 
   { write data to binary files }
   procedure savebyte( var f : file; b : byte );
@@ -53,32 +66,52 @@ const
 
 implementation
 
+
+  procedure review( var f : file; path : string );
+  begin
+    {$I-}
+    system.assign( f, path );
+    system.reset( f, sizeof( byte ));
+    {$I+}
+    error := ioresult;
+  end;
+
+  procedure create(var f : file; path : string );
+  begin
+    {$I-}
+    system.assign( f, path );
+    system.rewrite( f, 1 );
+    {$I+}
+    error := ioresult;
+  end;
+
+  {  todo: update and create are the same. all of these
+    should call a generic open(), but do some extra assertions. }
+  procedure update(var f : file; path : string );
+  begin
+    {$I-}
+    system.assign( f, path );
+    system.rewrite( f, 1 );
+    {$I+}
+    error := ioresult;
+  end;
+
+  procedure append ( var f : file; path : string );
+  begin
+    {$I-}
+    system.assign( f, path );
+    system.rewrite( f, 1 );
+    seek( f, filesize( f ));
+    {$I+}
+    error := ioresult;
+  end;
+
   procedure filereset( var f : file; path : string );
-  begin
-    {$I-}
-    assign( f, path );
-    reset( f, 1 );
-    {$I+}
-    error := ioresult;
-  end;
-
+    inline; begin review( f, path ); end;
   procedure filerewrite(var f : file; path : string );
-  begin
-    {$I-}
-    assign( f, path );
-    rewrite( f, 1 );
-    {$I+}
-    error := ioresult;
-  end;
-
+    inline; begin update( f, path ); end;
   procedure fileappend ( var f : file; path : string );
-  begin
-    {$I-}
-    assign( f, path );
-    rewrite( f, 1 );
-    {$I+}
-    error := ioresult;
-  end;
+    inline; begin append( f, path ); end;
 
 
   procedure savebyte( var f : file; b : byte );
