@@ -9,6 +9,7 @@ interface uses xpc, utf8, kvm, crt;
 		fg, bg : byte;
 		ch     : unichar;
 	      end;
+    colors  = (blk, grn, red, yel, blu, cyn, mgn, wht );
 
   procedure gotoxy( x, y : word );
   procedure clrscr;
@@ -35,7 +36,7 @@ interface uses xpc, utf8, kvm, crt;
     procedure clrscr;
     procedure clreol;
     procedure fg( c : byte );
-    procedure bg( c : byte ) ;
+    procedure bg( c : byte );
     procedure gotoxy( x, y : word );
 //    procedure emit( uc : unichar );
     procedure insline;
@@ -49,7 +50,7 @@ implementation
     procedure clrscr;
     procedure clreol;
     procedure fg( c : byte );
-    procedure bg( c : byte ) ;
+    procedure bg( c : byte );
     procedure gotoxy( x, y : word );
 //    procedure emit( uc : unichar );
     procedure insline;
