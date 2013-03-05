@@ -5,7 +5,7 @@ interface uses xpc, keyboard, num;
   procedure getenter;
   function keypressed : boolean;
   function alt2normal( ch : Char ) : Char;
-  function shiftstate : Byte;		
+  function shiftstate : Byte;
   function enterpressed : Boolean;
 
   {-- interface > keyboard --}
@@ -50,6 +50,18 @@ const
   C_RIGHT     = #116;
   C_END	      = #117;
   C_BKSP      = #127;
+  F1	      = #$3B;
+  F2	      = #$3C;
+  F3	      = #$3D;
+  F4	      = #$3E;
+  F5	      = #$3F;
+  F6	      = #$40;
+  F7	      = #$41;
+  F8	      = #$42;
+  F9	      = #$43;
+  F10	      = #$44;
+  F11	      = #$45;
+  F12	      = #$46;
   sArrows     = [ kbd.UP, kbd.RIGHT, kbd.DOWN, kbd.LEFT ];
   sCursorKeys = sArrows + [ #71, #73, #79, #81 ];
 
@@ -60,7 +72,7 @@ const
     alt16to25 : string = 'QWERTYUIOP';
     alt30to38 : string = 'ASDFGHJKL';
     alt44to50 : string = 'ZXCVBNM';
-    
+
     { keyboard shift states }
     rshiftpressed = $01;
     lshiftpressed = $02;
@@ -73,7 +85,7 @@ const
     inserton	  = $80;
 
 
-  
+
 { -- implementation > keyboard --------------------------- }
 
 implementation
@@ -81,28 +93,44 @@ implementation
 var
   have_cached : boolean;
   cached_key  : char;
-  
+
 function readkey : char;
-  var Key: keyboard.TKeyEvent; ch : char;
+  var
+    evt	: keyboard.TKeyEvent;
+    key	: keyboard.TKeyRecord absolute evt;
+    ch	: char;
 begin
   if have_cached then begin
     have_cached := false;
     result := cached_key;
   end else begin
-    key := TranslateKeyEvent(GetKeyEvent);
-    if isFunctionKey(key) then
+    evt := TranslateKeyEvent(GetKeyEvent);
+    if isFunctionKey(evt) then
     begin
-      case GetKeyEventCode(Key) of
+      { TODO: should be able to replace all this with chr(key.scancode) here }
+      case GetKeyEventCode(evt) of
 	kbdUp	 : ch := kbd.UP;
 	kbdDown	 : ch := kbd.DOWN;
 	kbdLeft	 : ch := kbd.LEFT;
 	kbdRight : ch := kbd.RIGHT;
+	kbdF1	 : ch := kbd.F1;
+	kbdF2	 : ch := kbd.F2;
+	kbdF3	 : ch := kbd.F3;
+	kbdF4	 : ch := kbd.F4;
+	kbdF5    : ch := kbd.F5;
+	kbdF6	 : ch := kbd.F6;
+	kbdF7	 : ch := kbd.F7;
+	kbdF8	 : ch := kbd.F8;
+	kbdF9	 : ch := kbd.F9;
+	kbdF10   : ch := kbd.F10;
+	kbdF11   : ch := kbd.F11;
+	kbdF12   : ch := kbd.F12;
       end;
       cached_key := ch;
       have_cached := true;
       result := #0;
     end
-    else result := GetKeyEventChar(Key);
+    else result := GetKeyEventChar(evt);
   end;
 end; { readkey }
 
@@ -111,14 +139,14 @@ begin
   ch := readkey();
   result := ch;
 end; { readkey }
-  
+
 function keypressed : boolean;
 begin
   if have_cached then result := true
   else result := keyboard.PollKeyEvent <> 0;
 end;
 
-  
+
 function kbstate : tKeyState;
 begin
   result := [];
@@ -174,11 +202,10 @@ end; { kbstate }
     until enterPressed;
   end; { getEnter }
 
-  
+
 
 initialization
   keyboard.initkeyboard;
 finalization
   keyboard.donekeyboard;
 end.
-
