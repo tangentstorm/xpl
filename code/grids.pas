@@ -20,7 +20,8 @@ type
     procedure SetItem( i : cardinal; value : T );
     function GetItem( i : cardinal ) : T;
     property at[ i : cardinal ]: T read GetItem write SetItem;
-  public
+  public { Sizing interface }
+    function Size : cardinal;
     procedure Resize( w, h : cardinal );
     property w : cardinal read _w;
     property h : cardinal read _w;
@@ -64,6 +65,11 @@ procedure TGrid.Resize( w, h : cardinal );
 begin
   _w := w; _h := h;
   SetLength(data, _w * _h);
+end;
+
+function TGrid.Size : cardinal;
+begin
+  result := Length(self.data)
 end;
 
 destructor TGrid.Destroy;
