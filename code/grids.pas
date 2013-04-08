@@ -1,16 +1,21 @@
 { Generic Grid Class }
-{$mode objfpc}
+{$i xpc.inc}
 unit grids;
-interface
+interface uses xpc, sysutils;
 
 type
   generic TGrid<T> = class
+    type P = ^T;
   private
-    _w, _h : cardinal;
-    data : array of T;
+    _w, _h   : cardinal;
+    _count   : word;  { how many items? }
+    _ramsize : word;  { how much ram have we allocated, in bytes? }
+    _dynamic : boolean;
+    _data    : P;
   public
     constructor Create;
-    constructor Create( w, h : cardinal );
+    constructor Create( w, h : cardinal; s : cardinal = 0 );
+    constructor CreateAt( w, h, s : cardinal; at : pointer );
     destructor Destroy; override;
   public { 2D interface }
     procedure SetItem( x, y : cardinal; value : T );
@@ -21,60 +26,110 @@ type
     function GetItem( i : cardinal ) : T;
     property at[ i : cardinal ]: T read GetItem write SetItem;
   public { Sizing interface }
-    function Size : cardinal;
     procedure Resize( w, h : cardinal );
+    property RamSize : word read _ramsize;
+    property Count : word read _count;
     property w : cardinal read _w;
-    property h : cardinal read _w;
+    property h : cardinal read _h;
+  public { utility interface }
+    procedure Dump;
+    procedure Fill( value : T );
   end;
 
 implementation
 
 constructor TGrid.Create;
 begin
-  Create(16,16);
+  CreateAt(16, 16, 0, nil );
 end;
 
-constructor TGrid.Create( w, h : cardinal );
+constructor TGrid.Create( w, h : cardinal; s : cardinal = 0 );
 begin
-  Resize( w, h );
+  CreateAt( w, h, s, nil );
 end;
+
+constructor TGrid.CreateAt( w, h, s : cardinal; at : pointer );
+begin
+  _ramsize := 0;
+  _count   := 0;
+  _dynamic := ( at = nil );
+  ReSize( w, h );
+  if _dynamic then FillDWord( _data[0], _ramsize div sizeof(dword), 0 );
+end;
+
 
 { 2D interface }
 procedure TGrid.SetItem( x, y : cardinal; value : T );
 begin
-  data[ y * _w + x ] := value;
+  _data[ y * _w + x ] := value;
 end;
 
 function TGrid.GetItem( x, y : cardinal ) : T;
 begin
-  result := data[ y * _w + x ];
+  result := _data[ y * _w + x ];
 end;
 
 { 1D direct interface }
 procedure TGrid.SetItem( i : cardinal; value : T );
 begin
-  data[ i ] := value;
+  _data[ i ] := value;
 end;
 
 function TGrid.GetItem( i : cardinal ) : T;
 begin
-  result := data[ i ];
+  result := _data[ i ];
 end;
 
-procedure TGrid.Resize( w, h : cardinal );
+procedure TGrid.Dump;
+  var x, y : word;
 begin
-  _w := w; _h := h;
-  SetLength(data, _w * _h);
+  for y := 0 to h-1 do begin
+    for x := 0 to w-2 do write( _data[ y * w + x ], ' ');
+    write( _data[ y * w + (w - 1) ]);
+    writeln;
+  end
 end;
 
-function TGrid.Size : cardinal;
+procedure TGrid.Fill( value : T );
+  var i : word;
 begin
-  result := Length(self.data)
+  for i := 0 to _count- 1 do self.at[ i ] := value
+end;
+
+{TODO: TGrid.Resize should probably only deal with count/ramsize }
+{TODO: add TGrid.Reshape(w,h,s) and handle creating the whitespace }
+procedure TGrid.Resize( w, h : cardinal );
+  var temp : pointer; newsize, newcount : cardinal;
+begin
+  _w := w; _h := h;
+  newcount := w * h;
+  newsize := newcount * SizeOf( t );
+  if ( newsize > _ramsize ) then
+    if _dynamic then
+      begin
+	GetMem( temp, newsize );
+	{ move the old data }
+	Move( _data, temp, _ramsize );
+	FreeMem(_data, _ramsize );
+	{ TODO fill new space with zeros }
+	_data := temp;
+      end
+    else
+      begin
+	{ For now, do nothing, though perhaps this should be virtual.
+	  The idea here is provide a way to talk directly to third
+	  party image / array libraries, so we occasionally do want
+	  to just declare data has some particular shape in ram. }
+      end;
+  if ( newsize < _ramsize ) then pass; { TODO }
+  _ramsize := newsize;
+  _count := newcount;
 end;
 
 destructor TGrid.Destroy;
 begin
-  data := nil;
+  if _dynamic then FreeMem( _data, _ramsize );
+  _data := nil;
 end;
 
 begin
