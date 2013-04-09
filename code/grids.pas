@@ -8,8 +8,8 @@ type
     type P = ^T;
   private
     _w, _h   : cardinal;
-    _count   : word;  { how many items? }
-    _ramsize : word;  { how much ram have we allocated, in bytes? }
+    _count   : cardinal;  { how many items? }
+    _ramsize : cardinal;  { how much ram have we allocated, in bytes? }
     _dynamic : boolean;
     _data    : P;
   public
@@ -27,12 +27,14 @@ type
     property at[ i : cardinal ]: T read GetItem write SetItem;
   public { Sizing interface }
     procedure Resize( w, h : cardinal );
-    property RamSize : word read _ramsize;
-    property Count : word read _count;
+    property ramSize : cardinal read _ramsize;
+    property count : cardinal read _count;
     property w : cardinal read _w;
     property h : cardinal read _h;
   public { utility interface }
+    {$IFDEF DumpGrid}
     procedure Dump;
+    {$ENDIF}
     procedure Fill( value : T );
   end;
 
@@ -80,6 +82,7 @@ begin
   result := _data[ i ];
 end;
 
+{$IFDEF DumpGrids}
 procedure TGrid.Dump;
   var x, y : word;
 begin
@@ -89,6 +92,7 @@ begin
     writeln;
   end
 end;
+{$ENDIF}
 
 procedure TGrid.Fill( value : T );
   var i : word;
