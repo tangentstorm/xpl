@@ -18,7 +18,7 @@ interface uses sysutils;
   type set32 = set of 0 .. 31;
   type int32 = longint;
   function toint( s : set32 ) : int32;
-  function hex( x :  int32 ) : string;
+  function hex( x : int32; pad : byte = 0 ) : string;
   function min( a, b : int32 ): int32;
   function max( a, b : int32 ): int32;
   function paramline : string;
@@ -103,20 +103,24 @@ implementation
     debug([arg]);
   end;
 
-  function hex( x : int32 ) : string;
+  function hex( x : int32; pad : byte = 0 ) : string;
     const digits = '0123456789ABCDEF';
       len	=  length( digits );
-    var i, d : int32; begun :  boolean;
+    var i, d : int32; count : byte;
   begin
     result := '';
-    begun := false;
+    count := 0;
     for i := 7 downto 0 do begin
       d := (( x shr ( i * 4 ))  mod 16 );
-      if begun or ( d > 0 ) then begin
+      if (count > 0) or ( d > 0 ) then begin
 	result += digits[ d + 1 ];
-	begun := true;
+	inc(count)
       end;
     end;
+    while count < pad do begin
+      insert( '_', result, 1 );
+      inc( count );
+    end
   end;
 
   function min( a, b :  int32 ) : int32;
