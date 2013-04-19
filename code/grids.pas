@@ -55,6 +55,7 @@ begin
   _ramsize := 0;
   _count   := 0;
   _dynamic := ( at = nil );
+  _data    := at;
   ReSize( w, h );
   if _dynamic then FillDWord( _data[0], _ramsize div sizeof(dword), 0 );
 end;
