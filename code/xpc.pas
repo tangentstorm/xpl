@@ -69,15 +69,16 @@ implementation
     writeln( '[', hexstr, ' ', ascstr, ']' );
   end;
 
-  function toint( s : set32 ) : int32;
-    var i, p : byte;
-   begin
+  function toint( s : set32 ) : Int32;
+    var i : byte;
+  begin
     result := 0;
-    p := 1;
-    for i := 0 to 31 do begin
-      if i in s then result := result + p;
-      p := p * 2;
-    end;
+    for i := low(set32) to high(set32) do begin
+      if i in s then inc( result );
+      {$rangechecks off}
+      result := cardinal( result shl 1 );
+      {$rangechecks on}
+    end
   end; { toint }
 
 
