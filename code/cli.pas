@@ -1,5 +1,5 @@
 unit cli;
-interface uses xpc, cw, crt;
+interface uses xpc, cw, vt, kbd;
 
   procedure hitakey;
   function yesno : Boolean;
@@ -11,12 +11,12 @@ implementation
     var
       tc : Byte;
   begin
-    tc := crt.textAttr;
+    tc := vt.textAttr;
     cwrite( '|r(|R(|Y(|W Hit a Key|G! |Y)|R)|r)' );
     while KeyPressed do ReadKey;
     ReadKey;
     cwrite( '' );
-    crt.textAttr := tc;
+    vt.textAttr := tc;
   end; { HitAKey }
 
 
