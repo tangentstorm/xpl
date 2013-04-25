@@ -14,8 +14,8 @@ interface uses xpc, cr, stacks;
     that sequences provide a cursor, specialized to the
     same type. :/
   }
-  type generic sequence<t,idx> =
-    class( specialize isequence<t,idx> )
+  type generic GSeq<t,idx> =
+    class( TInterfacedObject, specialize isequence<t,idx> )
 
       // abstract part
       function get_at( index : idx ) : t;	  virtual; abstract;
@@ -25,7 +25,7 @@ interface uses xpc, cr, stacks;
 
       { --- begin nested type ----------------------------------- }
       protected type seqcursor = class( specialize cr.cursor<t> )
-        private type tseq = specialize sequence<t, idx>;
+        private type TSeq = specialize GSeq<t,idx>;
       public
 	constructor create( seq : tseq );
 
@@ -47,7 +47,7 @@ interface uses xpc, cr, stacks;
         // slider<t>
         function prev( out val : t ) : boolean;
         function prev : t;                     virtual;
-        procedure set_index( idx : idx );
+        procedure set_index( index : idx );
         property index : idx read get_index write set_index;
 
         procedure mark;
@@ -67,34 +67,34 @@ interface uses xpc, cr, stacks;
 
 implementation
 
-  constructor sequence.seqcursor.create( seq : tseq );
+  constructor GSeq.seqcursor.create( seq : tseq );
   begin
     _seq := seq;
     _idx := 0;
   end;
 
  // reference<t>
-  function sequence.seqcursor.get_value : t;
+  function GSeq.seqcursor.get_value : t;
   begin
     result := _seq[ _idx ];
   end;
 
-  procedure sequence.seqcursor.set_value( v : t );
+  procedure GSeq.seqcursor.set_value( v : t );
   begin
     _seq[ _idx ] := t;
   end;
-  function sequence.seqcursor.is_readable : boolean;
+  function GSeq.seqcursor.is_readable : boolean;
   begin
     result := true;
   end;
 
-  function sequence.seqcursor.is_writable : boolean;
+  function GSeq.seqcursor.is_writable : boolean;
   begin
     result := true;
   end;
 
   // iterator<t>
-  function sequence.seqcursor.next( out val : t ) : boolean;
+  function GSeq.seqcursor.next( out val : t ) : boolean;
   begin
     try val := self.next;
       result := true;
@@ -103,25 +103,25 @@ implementation
     end;
   end;
 
-  function sequence.seqcursor.next : t;
+  function GSeq.seqcursor.next : t;
   begin
     inc( _idx );
     result := self.value;
   end;
 
   // enumerator<t>
-  procedure sequence.seqcursor.reset;
+  procedure GSeq.seqcursor.reset;
   begin
     _idx := 0;
   end;
 
-  function sequence.seqcursor.get_index : idx;
+  function GSeq.seqcursor.get_index : idx;
   begin
     result := _idx;
   end;
 
   // slider<t>
-  function sequence.seqcursor.prev( out val : t ) : boolean;
+  function GSeq.seqcursor.prev( out val : t ) : boolean;
   begin
     try val := self.prev;
       result := true;
@@ -130,29 +130,29 @@ implementation
     end;
   end;
 
-  function sequence.seqcursor.prev : t;
+  function GSeq.seqcursor.prev : t;
   begin
     dec( _idx );
     result := self.value;
   end;
 
-  procedure sequence.seqcursor.set_index( idx : idx );
+  procedure GSeq.seqcursor.set_index( index : idx );
   begin
-    _idx := idx;
+    _idx := index;
   end;
 
   // cursor<t>
-  procedure sequence.seqcursor.mark;
+  procedure GSeq.seqcursor.mark;
   begin
     self.marks.push( self.index )
   end;
 
-  procedure sequence.seqcursor.back;
+  procedure GSeq.seqcursor.back;
   begin
     self.index := self.marks.pop;
   end;
 
-  function sequence.make_cursor : seqcursor;
+  function GSeq.make_cursor : seqcursor;
     type tseqcur = specialize seqcursor<t>;
   begin
     result := tseqcur.create( self );
