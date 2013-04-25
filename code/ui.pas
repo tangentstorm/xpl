@@ -1,6 +1,6 @@
 {$i xpc.inc}
 unit ui;
-interface uses xpc, cw, li, ll, crt, kvm, mou, kbd, stri, fx, num, cli, sysutils;
+interface uses xpc, cw, li, ll, kvm, mou, kbd, stri, fx, num, cli, sysutils;
 
 { note : this module considers (0,0) to be the top left corner! }
 
