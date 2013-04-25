@@ -4,7 +4,7 @@
 }
 {$i xpc.inc}
 unit kvm;
-interface uses xpc, keyboard, video;
+interface uses xpc;
 
   
 {  this should probably get moved into its own class? }
@@ -102,13 +102,13 @@ end; { hascanvas }
 
 procedure clrscr;
 begin
-  write( #27, '[2J' );
+  write( #27, '[H', #27, '[J' );
 end; { clrscr }
 
 procedure clreol;
 begin
   write( #27, '[K' );
-end; { clrscr }
+end; { clreol }
 
 procedure ansi_reset;
 begin
@@ -185,21 +185,14 @@ begin
 end; { bg }
 
 
-
-  var mode :video.tvideomode;
-  function windmaxx : word;
-  begin
-    result := 80;//crt.windmaxx; //mode.col;
-  end; { maxx }
+function windmaxx : word;
+begin
+  result := 80;//crt.windmaxx; //mode.col;
+end;
   
-  function windmaxy : word;
-  begin
-    result := 25;//crt.windmaxy; //mode.row;
-  end;
-{
-initialization
-  video.initvideo; video.getvideomode(mode);
-finalization
-  video.donevideo;
-  }
+function windmaxy : word;
+begin
+  result := 25;//crt.windmaxy; //mode.row;
+end;
+
 end.
