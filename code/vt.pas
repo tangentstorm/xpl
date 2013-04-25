@@ -1,6 +1,6 @@
 {$i xpc.inc}
 unit vt;
-interface uses xpc, utf8, kvm, crt;
+interface uses xpc, utf8, kvm; //, video;
 
   type
     utf8ch  = string[ 4 ];
@@ -81,14 +81,13 @@ implementation
 
   function wherex : word;
   begin
-    result := crt.wherex;
+    result := 0; //video.cursorx;
   end;
 
   function wherey : word;
   begin
-    result := crt.wherey;
+    result := 0; //video.cursory;
   end;
-
 
   function get_textattr : word;
   begin
