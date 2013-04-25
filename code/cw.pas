@@ -176,7 +176,6 @@ implementation
 	  end; } ;
 	cwrenegade : cur.fg := s2n( s );
     end; { of case cn }
-    vt.gotoxy( cur.x, cur.y );
     vt.textattr := cur.c;
   end; { of cwcommand }
 
