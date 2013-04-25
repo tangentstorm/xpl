@@ -1,6 +1,6 @@
 {$i xpc}
 unit ll; { li list support }
-interface uses xpc, sysutils, sq, stacks, cli;
+interface uses xpc, sysutils, stacks;
 
 const maxdepth = 8;
 type
