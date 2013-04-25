@@ -139,7 +139,7 @@ end; { ansi_fg }
 { xterm 256-color extensions }
 procedure xterm_fg( i	:  byte );
 begin
-  write( '#27', '[38;5;', i , 'm' );
+  write( #27, '[38;5;', i , 'm' );
 end;
 
 { --- public --- }
@@ -147,9 +147,8 @@ end;
 procedure fg( c :  char );
   var i : byte;
 begin
-  {  crt.textcolor( i - 1 ); }
   i := pos( c, 'krgybmcwKRGYBMCW' );
-  if i > 0 then ansi_fg( i - 1 ) ;
+  if i > 0 then xterm_fg( i - 1 );
 end; { fg }
 
 procedure fg( b : byte );
@@ -176,14 +175,14 @@ procedure bg( c :  char );
 var i : byte;
 begin
   {  crt.textbackground( i - 1 ); }
-  i := pos( 'krgybmcwKRGYBMCW', c );
-  if i > 7 then xterm_bg( i - 1  ) else xterm_bg( 7 );
+  i := pos( c, 'krgybmcwKRGYBMCW' );
+  if i > 0 then xterm_bg( i - 1  );
 end;
 
 procedure bg( b : byte );
 begin
   xterm_bg( b );
-end; { fg }
+end; { bg }
 
 
 
