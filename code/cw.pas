@@ -24,10 +24,11 @@ interface uses xpc, num, stri, vt;
      cwrenegade );
 
   const //  why do I need both of these?
-    ccolors : array [0..15] of char = 'kbgcrmywKBGCRMYW';
-    ccolstr : string		    = 'kbgcrmywKBGCRMYW';
-    ccolset = [ 'k','b','g','c','r','m','y','w',
-		'K','B','G','C','R','M','Y','W' ];
+    ccolors : array [0..15] of char = 'krgybmcwKRGYBMCW';
+    ccolstr : string = 'krgybmcwKRGYBMCW';
+    ccolset = [ 'k', 'r', 'g', 'y', 'b', 'm', 'c', 'w',
+	        'K', 'R', 'G', 'Y', 'B', 'M', 'C', 'W' ];
+
 
   type
     point = object
