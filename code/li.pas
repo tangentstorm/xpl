@@ -295,7 +295,7 @@ implementation
                  end;
       '('      : begin next( ch ); result := read_list() end;
       ')'      : begin next( ch ); result := endl end;
-      EOT      : begin result := null; done := true; end;
+      ascii.EOT: begin result := null; done := true; end;
       else result := read_symbol
     end; { case }
     if debug_mode then writeln( 'read_value -> ', result.kind );
