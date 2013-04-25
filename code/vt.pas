@@ -95,8 +95,10 @@ implementation
   end;
   procedure set_textattr( value	: word );
   begin
-    work._fg := value shr 8;
-    work._bg := value and $00ff;
+    work._fg := value and $0f;
+    work._bg := (value and $f00) shr 8;
+    fg( work._fg );
+    bg( work._bg );
   end;
 
 initialization
