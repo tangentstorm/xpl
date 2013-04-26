@@ -56,8 +56,6 @@ implementation
     _outgoing.Append( TNidArray.Create( 0 ));
   end;
 
-  { based on Tarjan's algorithm, as described here:
-    http://en.wikipedia.org/wiki/Topological_sorting }
   function TGraphData.Edge( a, b : cardinal ) : cardinal;
     var c : cardinal;
   begin
@@ -90,6 +88,7 @@ implementation
     result := _outgoing[ nid ];
   end;
 
+
   function TGraphData.TopSort : TNidArray;
     var
       marked : array of boolean;
@@ -117,7 +116,9 @@ implementation
       end
     end; { visit }
 
-  begin
+  begin { TopSort }
+    { based on Tarjan's algorithm, as described here:
+      http://en.wikipedia.org/wiki/Topological_sorting }
     SetLength( marked, _nodeCount );
     result := TNidArray.Create( _nodeCount );
     for node := 0 to _nodeCount - 1 do marked[ node ] := false;
