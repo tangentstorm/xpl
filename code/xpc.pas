@@ -21,7 +21,9 @@ interface uses sysutils;
   function hex( x : int32; pad : byte = 0 ) : string;
   function min( a, b : int32 ): int32;
   function max( a, b : int32 ): int32;
+
   function paramline : string;
+  function fileparam : boolean;
 
   type thunk = procedure of object;
   type logger = object
@@ -144,6 +146,16 @@ implementation
     for i := 1 to paramcount do
       s := s + paramstr( i )+ ' ';
     result := s;
+  end; { paramline }
+
+  function fileparam : boolean;
+  begin
+    result := false;
+    if (paramcount > 0) and fileexists( paramstr( 1 )) then begin
+      assign( input, paramstr( 1 ));
+      reset( input );
+      result := true;
+    end
   end;
 
 
