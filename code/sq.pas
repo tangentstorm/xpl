@@ -2,11 +2,11 @@
 unit sq;{ sequences }
 interface uses xpc, cr, stacks;
 
-  type generic isequence<t, idx> = interface
-    function get_at( index : idx ) : t;
-    procedure set_at( index : idx; value : t );
-    property at[ i : idx ] : t read get_at write set_at; default;
-    function length : idx;
+  type generic ISequence<TVal, Tkey> = interface
+    function Length : cardinal;
+    function GetItem( i : TKey ) : TVal;
+    procedure SetItem( i : TKey; value : TVal );
+    property item[ i : TKey ] : TVal read GetItem write SetItem; default;
   end;
 
   { abstract sequence class.
@@ -15,19 +15,18 @@ interface uses xpc, cr, stacks;
     same type. :/
   }
   type generic GSeq<t,idx> =
-    class( TInterfacedObject, specialize isequence<t,idx> )
+    class( TInterfacedObject, specialize ISequence<t,idx> )
 
       // abstract part
-      function get_at( index : idx ) : t;	  virtual; abstract;
-      procedure set_at( index : idx; value : t ); virtual; abstract;
-      property at[ i : idx ] : t read get_at write set_at; default;
+      function GetItem( index : idx ) : t; virtual; abstract;
+      procedure SetItem( index : idx; value : t ); virtual; abstract;
       function length : idx; virtual; abstract;
 
       { --- begin nested type ----------------------------------- }
-      protected type seqcursor = class( specialize cr.cursor<t> )
-        private type TSeq = specialize GSeq<t,idx>;
+    type NSeqCursor = class( TInterfacedObject, specialize cr.ICursor<t> )
+      private type SSeq = specialize ISequence<T,idx>;
       public
-	constructor create( seq : tseq );
+	constructor create( seq : SSeq );
 
 	// reference<t>
 	function get_value : t;
@@ -38,7 +37,7 @@ interface uses xpc, cr, stacks;
 
         // iterator<t>
         function next( out val : t ) : boolean;
-        function next : t;                     virtual;
+        function next : t; virtual;
 
         // enumerator<t>
         procedure reset;
@@ -53,48 +52,53 @@ interface uses xpc, cr, stacks;
         procedure mark;
         procedure back;
 
+      public  { for..in loop interface }
+        function MoveNext : boolean;
+	property Current : T read get_value;
+
       private
-        type idxstack = specialize stacks.stack<idx>;
+        type idxstack = specialize stack<idx>;
       private
-        _seq  : tseq;
+        _seq  : SSeq;
         _idx  : idx;
         marks : idxstack;
       end;
       { --- end nested type ----------------------------------- }
-
-    function make_cursor : seqcursor; virtual;
+  public
+    function make_cursor : NSeqcursor; virtual;
+    function GetEnumerator : NSeqcursor;
   end;
 
 implementation
 
-  constructor GSeq.seqcursor.create( seq : tseq );
+  constructor GSeq.NSeqcursor.create( seq : SSeq );
   begin
     _seq := seq;
     _idx := 0;
   end;
 
  // reference<t>
-  function GSeq.seqcursor.get_value : t;
+  function GSeq.NSeqcursor.get_value : t;
   begin
     result := _seq[ _idx ];
   end;
 
-  procedure GSeq.seqcursor.set_value( v : t );
+  procedure GSeq.NSeqcursor.set_value( v : t );
   begin
-    _seq[ _idx ] := t;
+    _seq[ _idx ] := v;
   end;
-  function GSeq.seqcursor.is_readable : boolean;
+  function GSeq.NSeqcursor.is_readable : boolean;
   begin
     result := true;
   end;
 
-  function GSeq.seqcursor.is_writable : boolean;
+  function GSeq.NSeqcursor.is_writable : boolean;
   begin
     result := true;
   end;
 
   // iterator<t>
-  function GSeq.seqcursor.next( out val : t ) : boolean;
+  function GSeq.NSeqcursor.next( out val : t ) : boolean;
   begin
     try val := self.next;
       result := true;
@@ -103,25 +107,25 @@ implementation
     end;
   end;
 
-  function GSeq.seqcursor.next : t;
+  function GSeq.NSeqcursor.next : t;
   begin
     inc( _idx );
     result := self.value;
   end;
 
   // enumerator<t>
-  procedure GSeq.seqcursor.reset;
+  procedure GSeq.NSeqcursor.reset;
   begin
     _idx := 0;
   end;
 
-  function GSeq.seqcursor.get_index : idx;
+  function GSeq.NSeqcursor.get_index : idx;
   begin
     result := _idx;
   end;
 
   // slider<t>
-  function GSeq.seqcursor.prev( out val : t ) : boolean;
+  function GSeq.NSeqcursor.prev( out val : t ) : boolean;
   begin
     try val := self.prev;
       result := true;
@@ -130,32 +134,44 @@ implementation
     end;
   end;
 
-  function GSeq.seqcursor.prev : t;
+  function GSeq.NSeqcursor.prev : t;
   begin
     dec( _idx );
     result := self.value;
   end;
 
-  procedure GSeq.seqcursor.set_index( index : idx );
+  procedure GSeq.NSeqcursor.set_index( index : idx );
   begin
     _idx := index;
   end;
 
   // cursor<t>
-  procedure GSeq.seqcursor.mark;
+  procedure GSeq.NSeqcursor.mark;
   begin
     self.marks.push( self.index )
   end;
 
-  procedure GSeq.seqcursor.back;
+  procedure GSeq.NSeqcursor.back;
   begin
     self.index := self.marks.pop;
   end;
 
-  function GSeq.make_cursor : seqcursor;
-    type tseqcur = specialize seqcursor<t>;
+  function GSeq.make_cursor : GSeq.NSeqCursor;
   begin
-    result := tseqcur.create( self );
+    result := GSeq.NSeqCursor.create( self );
+  end;
+
+  { IEnumerator Interaface for FOR .. IN ... DO  loops }
+
+  function GSeq.GetEnumerator : NSeqCursor;
+  begin
+    result := self.make_cursor;
+  end;
+
+  function GSeq.NSeqcursor.MoveNext : boolean;
+  begin
+    try self.next; result := true;
+    except result := false end;
   end;
 
 end.
