@@ -1,6 +1,6 @@
 {$i xpc.inc}
 unit vt;
-interface uses xpc, utf8, kvm; //, video;
+interface uses xpc, utf8, kvm, num, sysutils { for environ };
 
   type
     utf8ch  = string[ 4 ];
@@ -26,6 +26,9 @@ interface uses xpc, utf8, kvm; //, video;
   function wherex : word;
   function wherey : word;
 
+  function windMaxX : word;
+  function windMaxY : word;
+
 //  function readkey	: char;
 //  function keypressed	: boolean;
 //  procedure cursoron;
@@ -47,6 +50,7 @@ implementation
 
   type screen = class( tinterfacedobject, iScreen )
     buffer : array of cell;
+    constructor create;
     procedure clrscr;
     procedure clreol;
     procedure fg( c : byte );
@@ -61,6 +65,19 @@ implementation
   end;
 
   var work : screen;
+
+  procedure GetEnv( const key : AnsiString; out result : word; const default : word );
+    begin
+      try result := s2n( sysutils.GetEnvironmentVariable( key ))
+      except result := default end;
+    end;
+
+  constructor screen.create;
+    begin
+      {  TODO : get terminal size for non-linux platforms }
+      GetEnv( 'LINES', h, 80 );
+      GetEnv( 'COLUMNS', w, 25 );
+    end;
 
   procedure screen.clrscr; begin kvm.clrscr end;
   procedure screen.clreol; begin kvm.clreol end;
@@ -78,6 +95,8 @@ implementation
   procedure clreol; begin work.clreol end;
   function width : word; begin result := work.w end;
   function height : word; begin result := work.h end;
+  function windMaxX : word; begin result := work.w - 1 end;
+  function windMaxY : word; begin result := work.h - 1 end;
 
   function wherex : word;
   begin
