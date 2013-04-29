@@ -42,7 +42,7 @@ tidy:
 clean:
 	@rm -f *~ *.gpi *.o *.pyc
 	@delp $(BIN)
-	@rm -f $(GEN)/*
+	@rm -rf $(GEN) ; mkdir -p $(GEN)
 
 # we use always here, else it'll see the test directory and assume we're done.
 test: always init clean test-runner
