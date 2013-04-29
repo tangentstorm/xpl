@@ -41,7 +41,7 @@ interface uses classes, xpc, ascii, ll, num;
   procedure repl;
 
 
-		   
+
 implementation
 
   const whitespace = [ #0 .. #32 ];
