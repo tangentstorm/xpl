@@ -115,7 +115,6 @@ begin
 
   v := pad( copy( work, d1st, dlen ), dlen, ' ' );
   colorxy( self.x, self.y, tcol, v );
-  writeln( self.x + cpos - d1st, self.y );
   gotoxy( self.x + cpos - d1st, self.y );
 end;
 
