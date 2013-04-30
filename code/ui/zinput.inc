@@ -133,8 +133,11 @@ begin
   { renamed from delete because I couldn't figure out
     to call the global one in gpc. }
   // {$ifdef FPC}System.delete( work, cpos, 1 );{$endif}
-  delete( work, cpos + 1, 1 );
-  smudge;
+  if length( work ) > cpos then
+  begin
+    delete( work, cpos + 1, 1 );
+    smudge;
+  end
 end;
 
 
