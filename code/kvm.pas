@@ -50,8 +50,7 @@ procedure gotoxy( x, y : int32 );
 procedure fg( c : char );  procedure fg( b : byte );
 procedure bg( c : char );  procedure bg( b : byte );
 procedure setfont( font :  bmpfont );
-function windmaxx : word;
-function windmaxy : word;
+  
 var term : surface;
 
 {-- interface > mouse --}
@@ -185,14 +184,5 @@ begin
 end; { bg }
 
 
-function windmaxx : word;
-begin
-  result := 80;//crt.windmaxx; //mode.col;
-end;
-  
-function windmaxy : word;
-begin
-  result := 25;//crt.windmaxy; //mode.row;
-end;
 
 end.

@@ -1,6 +1,6 @@
 {$i xpc.inc}
 unit vt;
-interface uses xpc, utf8, kvm, num, sysutils { for environ };
+interface uses xpc, utf8, kvm, kbd, num, sysutils, video;
 
   type
     utf8ch  = string[ 4 ];
@@ -23,8 +23,6 @@ interface uses xpc, utf8, kvm, num, sysutils { for environ };
 
   function width : word;
   function height : word;
-  function wherex : word;
-  function wherey : word;
 
   function windMaxX : word;
   function windMaxY : word;
@@ -47,6 +45,7 @@ interface uses xpc, utf8, kvm, num, sysutils { for environ };
   end;
 
 implementation
+  uses BaseUnix ,unix, termio; {$i CRTXY.INC}
 
   type screen = class( tinterfacedobject, iScreen )
     buffer : array of cell;
@@ -66,17 +65,13 @@ implementation
 
   var work : screen;
 
-  procedure GetEnv( const key : AnsiString; out result : word; const default : word );
-    begin
-      try result := s2n( sysutils.GetEnvironmentVariable( key ))
-      except result := default end;
-    end;
-
   constructor screen.create;
     begin
       {  TODO : get terminal size for non-linux platforms }
-      GetEnv( 'LINES', h, 80 );
-      GetEnv( 'COLUMNS', w, 25 );
+      video.initvideo;
+      self.w := video.screenwidth;
+      self.h := video.screenheight;
+      video.donevideo;
     end;
 
   procedure screen.clrscr; begin kvm.clrscr end;
@@ -98,28 +93,42 @@ implementation
   function windMaxX : word; begin result := work.w - 1 end;
   function windMaxY : word; begin result := work.h - 1 end;
 
-  function wherex : word;
-  begin
-    result := 0; //video.cursorx;
-  end;
+  function quote( ch :  char ) : string;
+    begin
+      if ch >= #32 then result := '''' + ch + ''''
+      else result := '#' + IntToStr( ord( ch ));
+    end;
 
-  function wherey : word;
-  begin
-    result := 0; //video.cursory;
-  end;
+  procedure expect( ch, goal : char );
+    begin
+      if ch <> goal then
+        begin
+	  writeln('ch: (should be ', quote(goal), '): ', quote(ch));
+	  halt
+	end
+    end;
+
+  function readchar : char;
+    begin
+      read( result );
+    end;
 
   function get_textattr : word;
-  begin
-    result := ( work._fg shl 8 ) + work._bg;
-  end;
+    begin
+      result := ( work._fg shl 8 ) + work._bg;
+    end;
+
   procedure set_textattr( value	: word );
-  begin
-    work._fg := value and $0f;
-    work._bg := (value and $f00) shr 8;
-    fg( work._fg );
-    bg( work._bg );
-  end;
+    begin
+      work._fg := value and $0f;
+      work._bg := (value and $f00) shr 8;
+      fg( work._fg );
+      bg( work._bg );
+    end;
 
 initialization
   work := screen.create;
+  SetRawMode(True);
+finalization
+  SetRawMode(False)
 end.

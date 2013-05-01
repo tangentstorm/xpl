@@ -1,6 +1,6 @@
 {$i xpc.inc}
 unit fx;
-interface uses xpc, cw, stri,cli,kvm;
+interface uses xpc, cw, stri,cli, vt;
 
   Type
     { 80x50 screen }
@@ -159,8 +159,8 @@ implementation
       i	: byte;
       s	: string;
   begin
-    s := ntimes( uc, windmaxx-2 );
-    for i := kvm.windmaxy-1 downto 1 do colorxy( 0, i, at, s );
+    s := ntimes( uc, vt.windmaxx-2 );
+    for i := vt.windmaxy-1 downto 1 do colorxy( 0, i, at, s );
     readln;
   end; { FillScreen }
 

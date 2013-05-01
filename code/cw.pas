@@ -27,7 +27,7 @@ interface uses xpc, num, stri, vt;
     ccolors : array [0..15] of char = 'krgybmcwKRGYBMCW';
     ccolstr : string = 'krgybmcwKRGYBMCW';
     ccolset = [ 'k', 'r', 'g', 'y', 'b', 'm', 'c', 'w',
-	        'K', 'R', 'G', 'Y', 'B', 'M', 'C', 'W' ];
+		'K', 'R', 'G', 'Y', 'B', 'M', 'C', 'W' ];
 
 
   type
@@ -35,7 +35,7 @@ interface uses xpc, num, stri, vt;
 	      x, y, fg, bg : byte;
               procedure setc( value : byte );
               function getc : byte;
-      	      property c : byte read getc write setc;
+	      property c : byte read getc write setc;
 	    end;
     rect  = record
 	      x, y, w, h : integer
@@ -45,7 +45,7 @@ interface uses xpc, num, stri, vt;
   var
     cur, sav	       : point;
     scr		       : rect;
-    tXmax, tYmax       : byte;     { CWrite xy max }
+    min, max	       : point;
     cwcommandmode      : boolean;  { cwrite command mode? }
     cwcurrenttask      : command;  { cwrite current command }
     cwnchexpected      : byte;     { cwrite #chars expected }
@@ -94,13 +94,25 @@ implementation
   begin
     self.fg := lo( value );
     self.bg := hi( value );
+  end; { point.setc }
+
+  procedure wr( ch : unichar );
+  begin
+    write(ch);
+    //colorxy( min.x+cur.x, min.y+cur.y, cur.c, s );
+    inc( cur.x );
+    if cur.x >= (max.x - min.x) then cwrite( ^M );
   end;
 
   procedure colorxy(x, y :byte; c: word; const s : string); inline;
+    var i : integer;
   begin
     vt.textattr := c;
     vt.GotoXY( x, y );
-    write( s );
+    for i := 1 to length(s) do
+    begin
+      wr( s[i] );
+    end;
   end;
 
   { vertical colorxy }
@@ -121,21 +133,23 @@ implementation
   procedure cwcommand( cn : command; s : string );
     const digits = ['0','1','2','3','4','5','6','7','8','9'];
     var n : integer;
-    procedure update_cur; begin;
-      cur.x := vt.wherex;
-      cur.y := vt.wherey;
-    end;
   begin
-    
-    update_cur;
-    cur.bg := hi( vt.textattr );
-    cur.fg := lo( vt.textattr );
     case cn of
       cwfg : if s[ 1 ] in ccolset then
-		       cur.fg := pos( s[ 1 ], ccolors ) - 1;
+		 cur.fg := pos( s[ 1 ], ccolors ) - 1;
       cwbg : if s[ 1 ] in ccolset then
-		       cur.bg := pos( s[ 1 ], ccolors ) - 1;
-      cwCR	   : begin writeln; update_cur end;
+		 cur.bg := pos( s[ 1 ], ccolors ) - 1;
+      cwCR	   : begin
+		       cur.x := 0;
+		       cur.y := inc2( cur.y, 1, max.y - min.y + 2);
+		       { TODO: scroll up }
+		       if cur.y > max.y - min.y then
+		       begin
+			 // scrollup1( txmin, txmax, tymin, tymax, writeto );
+			 cur.y := max.y - min.y;
+			 cwrite('|%');
+		       end
+		     end;
       cwBS	   : if cur.x <> 1 then
 		     begin
 		       colorxy( cur.x - 1, cur.y, cur.c, ' ' );
@@ -144,16 +158,22 @@ implementation
       cwclrscr	   : begin
 		       //  fillbox( scr.x, scr.y, txmax, tymax, tcolor*256 + 32 );
 		       vt.clrscr;
-		       cur.x := 1;
-		       cur.y := 1;
+		       cur.x := 0;
+		       cur.y := 0;
 		     end;
-      cwclreol	   : write( stri.chntimes( ' ', max( 0, scr.w - cur.x - 1 )));
+      cwclreol	   : begin
+		       // vt.clreol; // doesn't seem to work :/
+		       write(
+		       //colorxy( min.x + cur.x, min.y + cur.y, cur.c,
+			       chntimes( ' ', max.x - cur.x ));
+		       vt.gotoxy(cur.x, cur.y);
+		     end;
       cwsavecol	   : sav.c := vt.textattr;
       cwloadcol	   : vt.textattr := sav.c;
       cwchntimes   : begin
 		       n := length( s );
-		       write( stri.ntimes( copy( s, 1, n-2 ), s2n( copy( s, n-1, 2 ))));
-		       update_cur;
+		       cwrite( normaltext( chntimes( s[1], s2n(s[2]+s[3])) ));
+		       //write( stri.ntimes( copy( s, 1, n-2 ), s2n( copy( s, n-1, 2 ))));
 		     end;
       cwgotoxy	   : begin
 		       if length( s ) <> 4 then exit;
@@ -177,7 +197,8 @@ implementation
 	  end; } ;
 	cwrenegade : cur.fg := s2n( s );
     end; { of case cn }
-    vt.textattr := cur.c;
+    vt.fg(cur.fg);
+    vt.bg(cur.bg);
   end; { of cwcommand }
 
   procedure cwrite( s : string );
@@ -233,11 +254,11 @@ implementation
 		  write( ntimes( '- ', vt.width div 2 - 1 ));
 		end;
 	  ^H  : runcmd( cwbs );
-	  else write( uch );
+	  else wr( uch );
 	end
       else
 	case ch of
-	  '|' : write( '|' );
+	  '|' : wr( '|' );
 	  '_' : runcmd( cwcr );
 	  '!' : runcmd( cwbg, 1 );
 	  '@' : runcmd( cwgotoxy, 4 );
@@ -254,7 +275,7 @@ implementation
 		      runcmd( cwrenegade, 2 ) // + next char = 2 total
 		    end;
 	  else if ch in ccolset then begin dec( i ); runcmd( cwfg, 1 ) end
-	  else write( trg, uch ); // just ignore invalid triggers
+	  else wr( uch ); // ignore invalid triggers
 	end
     end
   end;
@@ -277,7 +298,9 @@ implementation
 
   procedure cwritexy( x, y : byte; s : string );
   begin
-    vt.gotoxy( x+1, y+1 );
+    cur.x := x;
+    cur.y := y;
+    vt.gotoxy( x, y );
     cwrite( s );
   end;
 
@@ -381,12 +404,17 @@ initialization
   cwnchexpected := 0;
   cur.c := $0007;
   sav.c := $000E;
-  cur.x := vt.wherex;
-  cur.y := vt.wherey;
-  sav.x := 1;
-  sav.y := 1;
-  scr.x := 1;
-  scr.y := 1;
-  scr.h := vt.width;
-  scr.w := vt.height;
+  vt.clrscr; // until we have vt.wherex/wherey implemented correctly
+  cur.x := 0;
+  cur.y := 0;
+  sav.x := 0;
+  sav.y := 0;
+  scr.x := 0;
+  scr.y := 0;
+  scr.h := vt.height;
+  scr.w := vt.width;
+  min.x := 0;
+  min.y := 0;
+  max.x := scr.w - 1;
+  max.y := scr.h - 1;
 end.
