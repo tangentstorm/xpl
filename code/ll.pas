@@ -73,6 +73,7 @@ type
         procedure to_end;
         function at_top : boolean;
         function at_end : boolean;
+        function at_clasp : boolean;
         procedure move_to( other : cursor );
         function move_next : boolean;
         function move_prev : boolean;
@@ -105,7 +106,7 @@ type
      constructor create;
      procedure append( val : T );
      procedure insert( val : T );
-     procedure insert_at( val : T;  at_index : cardinal	= 0 );
+     procedure insert_at( val : T;  at_index : cardinal= 0 );
      procedure remove( val : T );
      procedure drop;
      procedure foreach( action : listaction );
@@ -294,6 +295,11 @@ implementation
   function list.cursor.at_end : boolean;
   begin
     result := (self.nextcell = _lis._clasp) and not _lis.is_empty;
+  end;
+
+  function list.cursor.at_clasp : boolean;
+  begin
+    result := (self._cel = _lis._clasp);
   end;
 
   procedure list.cursor.move_to( other : cursor );
