@@ -91,46 +91,58 @@ const
 implementation
 
 var
-  have_cached : boolean;
-  cached_key  : char;
+  have_cached : boolean = false;
+  cached_key  : char = #0;
 
 function readkey : char;
   var
     evt	: keyboard.TKeyEvent;
-    key	: keyboard.TKeyRecord absolute evt;
     ch	: char;
 begin
-  if have_cached then begin
-    have_cached := false;
-    result := cached_key;
-  end else begin
-    evt := TranslateKeyEvent(GetKeyEvent);
-    if isFunctionKey(evt) then
+  if have_cached then
     begin
-      { TODO: should be able to replace all this with chr(key.scancode) here }
-      case GetKeyEventCode(evt) of
-	kbdUp	 : ch := kbd.UP;
-	kbdDown	 : ch := kbd.DOWN;
-	kbdLeft	 : ch := kbd.LEFT;
-	kbdRight : ch := kbd.RIGHT;
-	kbdF1	 : ch := kbd.F1;
-	kbdF2	 : ch := kbd.F2;
-	kbdF3	 : ch := kbd.F3;
-	kbdF4	 : ch := kbd.F4;
-	kbdF5    : ch := kbd.F5;
-	kbdF6	 : ch := kbd.F6;
-	kbdF7	 : ch := kbd.F7;
-	kbdF8	 : ch := kbd.F8;
-	kbdF9	 : ch := kbd.F9;
-	kbdF10   : ch := kbd.F10;
-	kbdF11   : ch := kbd.F11;
-	kbdF12   : ch := kbd.F12;
-      end;
-      cached_key := ch;
-      have_cached := true;
-      result := #0;
+      have_cached := false;
+      result := cached_key;
+      cached_key := #0;
     end
-    else result := GetKeyEventChar(evt);
+  else
+    begin
+      evt := TranslateKeyEvent(GetKeyEvent);
+      case GetKeyEventFlags(evt) of
+	kbUniCode  : begin
+		       Writeln('Unicode keys not yet handled. :/');
+		       result := '?';
+		     end;
+	kbFnKey :
+	  begin
+	    { TODO: should be able to replace all this with chr(key.scancode) here }
+	    case GetKeyEventCode(evt) of
+	      kbdUp    : ch := kbd.UP;
+	      kbdDown  : ch := kbd.DOWN;
+	      kbdLeft  : ch := kbd.LEFT;
+	      kbdRight : ch := kbd.RIGHT;
+	      kbdF1    : ch := kbd.F1;
+	      kbdF2    : ch := kbd.F2;
+	      kbdF3    : ch := kbd.F3;
+	      kbdF4    : ch := kbd.F4;
+	      kbdF5    : ch := kbd.F5;
+	      kbdF6    : ch := kbd.F6;
+	      kbdF7    : ch := kbd.F7;
+	      kbdF8    : ch := kbd.F8;
+	      kbdF9    : ch := kbd.F9;
+	      kbdF10   : ch := kbd.F10;
+	      kbdF11   : ch := kbd.F11;
+	      kbdF12   : ch := kbd.F12;
+	      else ch := chr(lo(GetKeyEventCode(evt)))
+	    end;
+	    cached_key := ch;
+	    have_cached := true;
+	    result := #0;
+	  end;
+	kbASCII,
+	kbPhys	   : result := chr(lo(GetKeyEventCode(evt)));  //GetKeyEventChar(evt);
+	kbReleased : result := ReadKey(); // recurse
+      end
   end;
 end; { readkey }
 
