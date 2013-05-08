@@ -10,10 +10,10 @@ type
     _items : array of T; 
     constructor Create( sizeHint : cardinal = 16 );
     function Grow : cardinal;
-    procedure Append( item : T );
+    procedure Append( value : T );
   public { IArray }
     function Length : cardinal; override;
-    procedure SetItem( i : cardinal; value : T ); override;
+    procedure SetItem( i : cardinal; const value : T ); override;
     function GetItem( i : cardinal ) : T; override;
     property at[ i : cardinal ]: T read GetItem write SetItem; default;
   end;
@@ -31,9 +31,9 @@ implementation
     SetLength( _items, result + 1 );
   end;
   
-  procedure GArray.Append( item	: T );
+  procedure GArray.Append( value : T );
   begin
-    _items[ self.Grow ] := item;
+    _items[ self.Grow ] := value;
   end;
  
   function GArray.Length : cardinal;
@@ -41,7 +41,7 @@ implementation
     result := system.Length( _items );
   end;
 
-  procedure GArray.SetItem( i : cardinal; value : T );
+  procedure GArray.SetItem( i : cardinal; const value : T );
   begin
     _items[ i ] := value
   end;
