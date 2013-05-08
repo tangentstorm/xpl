@@ -21,6 +21,8 @@ interface uses xpc, cr, stacks;
       function GetItem( index : idx ) : t; virtual; abstract;
       procedure SetItem( index : idx; value : t ); virtual; abstract;
       function length : idx; virtual; abstract;
+      property item[ ix : idx ] : T
+	read GetItem write SetItem; default;
 
       { --- begin nested type ----------------------------------- }
     type NSeqCursor = class( TInterfacedObject, specialize cr.ICursor<t> )
