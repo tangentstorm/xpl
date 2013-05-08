@@ -6,7 +6,8 @@ type
   TNid	     =  cardinal; { node id }
   TNidArray  = GArray<TNid>;
 
-  IGraphData = interface
+  { ISimpleGraph is for graphs without labels. }
+  ISimpleGraph = interface
     function Node : cardinal;
     function Edge( a, b : cardinal ) : cardinal;
     function Incoming( nid : cardinal ) : TNidArray;
@@ -17,7 +18,15 @@ type
     property edgeCount : cardinal read GetEdgeCount;
   end;
 
-  TGraphData = class ( TInterfacedObject, IGraphData )
+  { IGraph lets you associate arbitrary objects with each node/edge }
+  IGraph<nodeT, edgeT> = interface( ISimpleGraph )
+    function GetNode( nid : cardinal ) : nodeT;
+    function GetEdge( eid : cardinal ) : edgeT;
+    property nodes[ nid : cardinal ] : nodeT read GetNode;
+    property edges[ eid : cardinal ] : edgeT read GetEdge;
+  end;
+
+  TGraphData = class ( TInterfacedObject, ISimpleGraph )
   private
     type TEdgeArray = GArray<TNidArray>;
     { !! TEdgeArray is nested because there's one array per node. }

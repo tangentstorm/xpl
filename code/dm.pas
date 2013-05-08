@@ -1,23 +1,23 @@
 unit dm; { doc model }
-interface uses seq;
+interface uses sq, docs;
 
   (* DocSeq is a Seq for dom nodes. *)
   type DocSeq  = class
-    constructor DocSeq.create(doc);
-    function DocSeq.iter: pNode;
-    function DocSeq.first: pNode;
-    function DocSeq.first: pNode;
-    function DocSeq.final: pNode;
-    function DocSeq.after ( item : pNode ): pNode;
-    function DocSeq.offset ( item : pNode, k : integer ): pNode;
-    function DocSeq.keyed ( index : pNode ): pNode;
+    constructor create( doc : TDocument );
+    function iter: pNode;
+    function first: pNode;
+    function first: pNode;
+    function final: pNode;
+    function after ( item : pNode ): pNode;
+    function offset ( item : pNode, k : integer ): pNode;
+    function keyed ( index : pNode ): pNode;
   end;
 
 implementation
 
-  constructor DocSeq.create(doc)
+  constructor DocSeq.create( variant )
   begin
-    self.doc = doc # TODO check.type(dom.Node)
+    self.doc := doc # TODO check.type(dom.Node)
   end;
 
   function DocSeq.iter: pNode;
