@@ -5,7 +5,10 @@
 GEN = ./.gen
 # BIN: where to put the final executables
 BIN = ./bin
-FPC = fpc -Mobjfpc -FE$(BIN) -Fu$(GEN) -Fi$(GEN) -Fu./code -Fi./code -gl
+XML = /usr/share/fpcsrc/2.6.2/packages/fcl-xml/src/
+FPC = fpc -Mobjfpc -FE$(BIN) -Fu$(GEN) -Fi$(GEN) \
+	-Fu$(XML) -Fi$(XML) \
+	-Fu./code -Fi./code -gl
 
 targets:
 	@echo
