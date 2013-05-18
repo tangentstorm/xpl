@@ -1,7 +1,11 @@
 { xpc.inc : include to ease cross-compiler portability }
 {$IFDEF FPC}
 
+{$IFDEF DELPHIMODE}
+  {$mode delphi}
+{$ELSE}
   {$mode objfpc}               // classes, generics, etc
+{$ENDIF}
 
   // language tweaks
   {$coperators on}              // += , etc.
