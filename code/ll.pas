@@ -46,7 +46,7 @@ type
        constructor create;
        function length : cardinal; override;
      end;
-     path = specialize stacks.stack<child>;
+     path = specialize stacks.GStack<child>;
 
     public { procedure types used by foreach, find }
       type listaction = procedure( var n : T ) is nested;
@@ -55,7 +55,7 @@ type
 
     { list.cursor : tracks a position in the list, even through inserts/deletes }
   public type cursor = class
-    type path = specialize stack<child>;
+    type path = specialize GStack<child>;
     protected
         _lis  : listof_t; // the main list
         _cel  : cell;
@@ -208,7 +208,8 @@ implementation
   constructor list.cursor.create( lis : listof_t );
   begin
     _lis := lis;
-    _path.init( maxdepth ); //  todo: use a dynamically resizable stack
+    //  todo: use a dynamically resizable stack
+    _path := Path.Create( maxdepth );
     self.reset;
   end;
 
@@ -505,7 +506,7 @@ implementation
 	else ln := items._clasp
       end
       else if ln is clasp then begin
-        if p.sp > 0 then ln := p.pop
+        if p.count > 0 then ln := p.pop
 	else ln := _clasp
       end
       else if ln is cell then begin
@@ -531,7 +532,7 @@ implementation
 	else result := items.findprevcell(items._clasp, p, v )
       end
       else if ln is clasp then begin
-        if p.sp > 0 then ln := p.pop
+        if p.count > 0 then ln := p.pop
 	else ln := _clasp
       end
       else if ln is cell then begin
@@ -545,7 +546,7 @@ implementation
   function list.firstcell : cell;
   var p : path;
   begin
-    p.init( maxdepth );
+    p := path.Create( maxdepth );
     if self.is_empty then
       raise Exception.create('empty list has no first member.')
     else if not findnextcell( _clasp, p, result ) then
@@ -560,7 +561,7 @@ implementation
   function list.lastcell : cell;
   var p : path;
   begin
-    p.init( maxdepth );
+    p := path.Create( maxdepth );
     if is_empty then
       raise Exception.create('empty list has no last member.')
     else if not findprevcell( _clasp, p, result ) then

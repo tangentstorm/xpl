@@ -5,21 +5,17 @@
   license : MIT / ngaro
 
 }
+{$DEFINE DELPHIMODE}
 {$i xpc.inc}
 unit stacks;
 interface uses xpc;
 
-  {!! for now, this is an object rather than a
-        class. usually a stack is a global resource,
-        so it makes sense for it to be static, like
-        an array. therefore: use init, not create. }
-
-  type generic stack< A > = object
-    sp   : integer;  // stack pointer
+  type GStack<a> = class
+    _count   : cardinal;  // stack pointer
     cells : array of A;
     overflow, underflow : thunk;
     show : function( x : A ) : string;
-    constructor init( len:word );
+    constructor Create( len:word );
     procedure push( t : A );
     function pop: A;
     procedure pop1( var t : A );
@@ -37,125 +33,127 @@ interface uses xpc;
     function dumps:string;
     procedure dump;
     function limit : cardinal;
+    property peek : A read tos;
+    property count : cardinal read _count;
   end;
 
 implementation
 
-  constructor stack.init( len: word );
+  constructor GStack<a>.Create( len: word );
   begin
-    sp := 0;
+    _count := 0;
     setlength( cells, len );
-    overflow := @default_overflow;
-    underflow := @default_underflow;
-  end; { stack.init }
+    overflow := default_overflow;
+    underflow := default_underflow;
+  end;
 
-  procedure stack.push( t : A );
+  procedure GStack<a>.push( t : A );
   begin
-    inc( sp );
-    if sp >= length( cells ) then overflow
-    else cells[ sp ] := t;
-  end; { stack.push }
+    inc( _count );
+    if _count >= length( cells ) then overflow
+    else cells[ _count ] := t;
+  end; { GStack<a>.push }
 
-  function stack.pop : A;
+  function GStack<a>.pop : A;
   begin
     result := tos;
     drop;
-  end; { stack.pop }
+  end; { GStack<a>.pop }
 
-  procedure stack.pop1( var t : A );
+  procedure GStack<a>.pop1( var t : A );
   begin
     t := pop
-  end; { stack.pop1 }
+  end; { GStack<a>.pop1 }
 
-  procedure stack.push2( n, t :  A );
+  procedure GStack<a>.push2( n, t :  A );
   begin
     self.push( n );
     self.push( t );
-  end; { stack.push2 }
+  end; { GStack<a>.push2 }
 
-  procedure stack.pop2( var t, n :  A );
+  procedure GStack<a>.pop2( var t, n :  A );
   begin
     t := self.pop;
     n := self.pop;
-  end; { stack.pop2 }
+  end; { GStack<a>.pop2 }
 
-  procedure stack.push3( x, n, t :  A );
+  procedure GStack<a>.push3( x, n, t :  A );
   begin
     self.push( x );
     self.push( n );
     self.push( t );
-  end; { stack.push3 }
+  end; { GStack<a>.push3 }
 
-  procedure stack.pop3( var t, n, x :  A );
+  procedure GStack<a>.pop3( var t, n, x :  A );
   begin
     t := self.pop;
     n := self.pop;
     x := self.pop
-  end; { stack.pop3 }
+  end; { GStack<a>.pop3 }
 
-  function stack.tos : A;
+  function GStack<a>.tos : A;
   begin
-    result := cells[ sp ];
-  end; { stack.tos }
+    result := cells[ _count ];
+  end; { GStack<a>.tos }
 
-  function stack.nos : A;
+  function GStack<a>.nos : A;
   begin
-    result := cells[ sp - 1 ];
-  end; { stack.nos }
+    result := cells[ _count - 1 ];
+  end; { GStack<a>.nos }
 
-  procedure stack.dup;
+  procedure GStack<a>.dup;
   begin
     push( tos );
-  end; { stack.dup }
+  end; { GStack<a>.dup }
 
-  procedure stack.swap;
+  procedure GStack<a>.swap;
     var t : A;
   begin
-    if sp >= 2 then
+    if _count >= 2 then
       begin
         t := tos;
-        cells[ sp ] := nos;
-        cells[ sp - 1 ] := t;
+        cells[ _count ] := nos;
+        cells[ _count - 1 ] := t;
       end
     else underflow;
-  end; { stack.swap }
+  end; { GStack<a>.swap }
 
-  procedure stack.drop;
+  procedure GStack<a>.drop;
   begin
-    dec( sp );
-    if sp < 0 then underflow;
-  end; { stack.drop }
+    if _count = 0 then underflow
+    else dec( _count );
+  end; { GStack<a>.drop }
 
-  procedure stack.default_overflow;
+  procedure GStack<a>.default_overflow;
   begin
-    writeln( 'error: stack overflow' );
+    writeln( 'error: GStack<a> overflow' );
     halt
   end;
 
-  procedure stack.default_underflow;
+  procedure GStack<a>.default_underflow;
   begin
-    writeln( 'error: stack underflow' );
+    writeln( 'error: GStack<a> underflow' );
     halt
   end;
 
-  function stack.dumps : string;
+  function GStack<a>.dumps : string;
     var i : word;
   begin
     result := '';
     if assigned( self.show ) then
-      if sp > 0 then begin
-	for i := 1 to sp - 1 do result += self.show( cells[ i ]) + ' ';
-	result += self.show( cells[ sp ]);
+      if _count > 0 then begin
+	for i := 1 to _count - 1 do result += self.show( cells[ i ]) + ' ';
+	result += self.show( cells[ _count ]);
       end
       else result := '<stack.show not defined>';
-  end; { stack.dumps }
+  end; { GStack<a>.dumps }
 
-  procedure stack.dump;
+  procedure GStack<a>.dump;
   begin
     writeln( dumps );
-  end; { stack.dump }
+  end; { GStack<a>.dump }
 
-  function stack.limit : cardinal;
+  function GStack<a>.limit : cardinal;
   begin
     result := length( cells );
   end;

@@ -59,7 +59,7 @@ interface uses xpc, cr, stacks;
 	property Current : T read get_value;
 
       private
-        type idxstack = specialize stack<idx>;
+        type idxstack = specialize GStack<idx>;
       private
         _seq  : SSeq;
         _idx  : idx;
@@ -77,6 +77,7 @@ implementation
   begin
     _seq := seq;
     _idx := 0;
+    marks := idxStack.Create(32);
   end;
 
  // reference<t>
