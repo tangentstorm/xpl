@@ -5,68 +5,65 @@
 // Written by greenfish (2012)
 // Released into public domain
 
-// changes:
+// changes by @tangentstorm
 // - search and replace TMap -> TRBMap
 // - reformatted
+// - switched to my generic stack class
 
 {$mode delphi}
 unit rb;
-interface uses SysUtils, Contnrs;
+interface uses SysUtils, stacks;
 
   type
   TRBMapNode<TKey, TValue> = class
   private
     IsBlack: boolean;
     Left, Right, Parent: TRBMapNode<TKey, TValue>;
-
     FKey: TKey;
   public
     Value: TValue;
     property Key: TKey read FKey;
-    
     constructor Create;
     destructor Destroy; override;
   end;
 
   TRBMapNodeEnumerator<TKey, TValue> = class
   private
-    Root: TRBMapNode<TKey, TValue>;
+    type TNode  = TRBMapNode<TKey, TValue>;
+    type TStack = GStack<TNode>;
+  private
+    Root:  TNode;
     Stack: TStack;
-
     function GetCurrent: TRBMapNode<TKey, TValue>;
   public
     constructor Create(ARoot: TRBMapNode<TKey, TValue>); virtual;
     destructor Destroy; override;
-
     function MoveNext: Boolean;
     property Current: TRBMapNode<TKey, TValue> read GetCurrent;
   end;
 
   // Implements a map with a red-black tree
-  TRBMap<TKey, TValue> = class
-  protected
-    FCount: integer;
-    Root: TRBMapNode<TKey, TValue>;
-
-    function TreeSearch(const Key: TKey;
-      out Parent: TRBMapNode<TKey, TValue>): TRBMapNode<TKey, TValue>;
+  TRBMap<TKey, TValue>= class
+   protected
+    FCount : integer;
+    Root   : TRBMapNode<TKey, TValue>;
+    function TreeSearch(const Key	 : TKey;
+			      out Parent : TRBMapNode<TKey, TValue>): TRBMapNode<TKey, TValue>;
     procedure LeftRotate(x: TRBMapNode<TKey, TValue>);
     procedure RightRotate(x: TRBMapNode<TKey, TValue>);
     function TreeInsertIfNotExist(const Key: TKey): TRBMapNode<TKey, TValue>;
-
     function GetValue(const Key: TKey): TValue;
     procedure SetValue(const Key: TKey; const Value: TValue);
-  public
+   public
     constructor Create; virtual;
     destructor Destroy; override;
     procedure Clear;
-
     function SafeGet(const Key: TKey): TValue;
     function ContainsKey(const Key: TKey): boolean;
     function GetEnumerator: TRBMapNodeEnumerator<TKey, TValue>;
-
     property Count: integer read FCount;
-    property Values[Key: TKey]: TValue read GetValue write SetValue; default;
+    property Values[Key: TKey]: TValue
+      read GetValue write SetValue; default;
   end;
 
 implementation
@@ -82,7 +79,7 @@ implementation
       FKey := Default(TKey);
       Value := Default(TValue);
     end;
-  
+
   destructor TRBMapNode<TKey, TValue>.Destroy;
     begin
       if Left <> nil then Left.Free;
@@ -111,10 +108,10 @@ implementation
       y	: TRBMapNode<TKey, TValue>;
     begin
       y := x.Right;
-      
+
       x.Right := y.Left;
       if y.Left <> nil then y.Left.Parent := x;
-      
+
       y.Parent := x.Parent;
 
       if x.Parent = nil then Root := y
@@ -129,16 +126,16 @@ implementation
     var y: TRBMapNode<TKey, TValue>;
     begin
       y := x.Left;
-      
+
       x.Left := y.Right;
       if y.Right <> nil then y.Right.Parent := x;
-      
+
       y.Parent := x.Parent;
 
       if x.Parent = nil then Root := y
       else if x = x.Parent.Left then x.Parent.Left := y
       else x.Parent.Right := y;
-      
+
       y.Right := x;
       x.Parent := y;
     end;
@@ -271,7 +268,7 @@ implementation
   constructor TRBMapNodeEnumerator<TKey, TValue>.Create(ARoot: TRBMapNode<TKey, TValue>);
     begin
       Root := ARoot;
-      Stack := TStack.Create;
+      Stack := TStack.Create(256); // arbitrary height
     end;
 
   destructor TRBMapNodeEnumerator<TKey, TValue>.Destroy;
@@ -281,7 +278,7 @@ implementation
 
   function TRBMapNodeEnumerator<TKey, TValue>.GetCurrent;
     begin
-      if not Stack.AtLeast(1) then
+      if not Stack.count >= 1 then
 	raise Exception.Create('GetCurrent called before MoveNext');
       Result := Stack.Peek;
     end;
@@ -293,7 +290,7 @@ implementation
       if Root = nil then Exit(False);
 
       // first MoveNext?
-      if not Stack.AtLeast(1) then
+      if not Stack.count >= 1 then
         begin
 	  Stack.Push(Root);
 	  Exit(True);
@@ -311,7 +308,7 @@ implementation
 	  Exit(True);
 	end;
 
-      while Stack.AtLeast(1) do
+      while Stack.count >= 1 do
         begin
 	  Node := Stack.Pop;
 	  if (Node.Parent <> nil)
@@ -327,4 +324,3 @@ implementation
     end;
 
 end.
-
