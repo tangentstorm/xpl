@@ -1,5 +1,5 @@
 { Generic Grid Class }
-{$i xpc.inc}
+{$mode objfpc}{$i xpc.inc}
 unit grids;
 interface uses xpc, sysutils;
 

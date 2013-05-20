@@ -1,6 +1,6 @@
 { all of these are by michal j. wallace, circa 1992.
   extracted from crtstuff.pas and updated 2012 }
-{$i xpc.inc}
+{$mode objfpc}{$i xpc.inc}
 unit stri; { string interface }
 interface uses xpc, sysutils, strutils;
 

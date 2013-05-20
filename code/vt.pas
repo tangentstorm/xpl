@@ -1,4 +1,4 @@
-{$i xpc.inc}
+{$mode objfpc}{$i xpc.inc}
 unit vt;
 interface uses xpc, utf8, kvm, kbd, num, sysutils, video;
 
