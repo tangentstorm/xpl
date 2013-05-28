@@ -5,7 +5,7 @@
   license : MIT / ngaro
 
 }
-{$DEFINE DELPHIMODE}
+{$mode delphi}
 {$i xpc.inc}
 unit stacks;
 interface uses xpc;
