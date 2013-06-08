@@ -1,4 +1,4 @@
-{$i xpc.inc}
+{$mode objfpc}{$i xpc.inc}
 unit num; { ■ number/conversion commands }
 interface uses xpc, sysutils;
   function min( p, q : longint ) : longint;

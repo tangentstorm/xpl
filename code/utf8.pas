@@ -1,7 +1,7 @@
 // Mockup of UTF-8 encoding/decoding system.
 // My main interest is exploring the UTF-8 encoding system
 // as compression for instructions in retropascal.
-{$i xpc.inc}
+{$mode objfpc}{$i xpc.inc}
 unit utf8;
 interface uses xpc;
 

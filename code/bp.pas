@@ -1,9 +1,8 @@
 
-{ NOTE : this file is generated from ../ref/bplus.org , so...
+{ NOTE : this file is generated from ~/b/web/bp.pas.org , so...
   --->> DON'T EDIT THIS FILE! <<--- }
 { B+ Trees for pascal }
-{$i xpc.inc}
-{$H+}
+{$mode delphi} {$i xpc.inc} {$H+}
 unit bp;
 interface uses xpc, sysutils;
 
@@ -18,6 +17,7 @@ interface uses xpc, sysutils;
       //function get( key : TKey ): TVal;
       //function has( key : Tkey ): boolean;
     end;
+    TTree  = class; // forward reference for TIter
     
     TNode = class ( TInterfacedObject, IBPlus )
      public
@@ -48,7 +48,6 @@ interface uses xpc, sysutils;
       function isinner : boolean;
     end;
     
-    TTree  = class; // forward reference for TIter
     TIter = class
     private
       tree : TTree; // only useful to support Reset

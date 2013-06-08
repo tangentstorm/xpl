@@ -1,4 +1,4 @@
-{$i xpc.inc}
+{$mode objfpc}{$i xpc.inc}
 unit cw; { colorwrite }
 interface uses xpc, num, stri, vt;
 

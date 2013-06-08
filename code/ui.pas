@@ -1,4 +1,4 @@
-{$i xpc.inc}
+{$mode objfpc}{$i xpc.inc}
 unit ui;
 interface uses xpc, cw, li, ll, kvm, mou, kbd, stri, fx, num, cli, sysutils;
 

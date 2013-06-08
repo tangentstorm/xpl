@@ -1,7 +1,7 @@
-{$i xpc.inc}
+{$i xpc.inc}{$mode objfpc}
 unit build;
 interface uses xpc;
-  
+
 type
   generic IBuilder<T> = interface
     function GetRoot : T;

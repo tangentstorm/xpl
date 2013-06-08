@@ -1,4 +1,4 @@
-{$i xpc.inc}
+{$mode objfpc}{$i xpc.inc}
 unit sq;{ sequences }
 interface uses xpc, cr, stacks;
 

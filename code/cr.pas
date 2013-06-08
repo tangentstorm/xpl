@@ -1,10 +1,10 @@
-{$i xpc.inc}
+{$mode objfpc}{$i xpc.inc}
 unit cr; { cursor interfaces }
 interface
 
   { here we describe a number of interfaces for traversing data types,
     independend of the data types themselves.
-  
+
     A Cursor does the actual work of navigating back and
     forth along a Sequence. A Sequence can have any number
     of cursors moving around on it.

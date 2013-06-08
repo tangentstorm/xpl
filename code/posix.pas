@@ -3,7 +3,7 @@
   copyright (c) 2012 michal j. wallace. all rights reserved.
   available to the public under the ISC or MIT/X11 license.
 }
-{$i xpc.inc}
+{$mode objfpc}{$i xpc.inc}
 unit posix;
 interface uses xpc, sysutils, dateutils;
 
@@ -15,6 +15,6 @@ implementation
   begin
     result := dateutils.DateTimeToUnix( sysutils.Time );
   end;
-  
+
 begin
 end.

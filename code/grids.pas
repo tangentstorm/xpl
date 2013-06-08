@@ -32,7 +32,8 @@ type
     property w : cardinal read _w;
     property h : cardinal read _h;
   public { utility interface }
-    {$IFDEF DumpGrid}
+    {$IFDEF DumpGrids}
+    function ToString : String; override;
     procedure Dump;
     {$ENDIF}
     procedure Fill( value : T );
@@ -83,15 +84,21 @@ begin
   result := _data[ i ];
 end;
 
+
 {$IFDEF DumpGrids}
-procedure TGrid.Dump;
+{ This is ifdeffed because I don't know how to convert arbitrary types to strings. :/ }
+function TGrid.ToString : string;
   var x, y : word;
+  begin
+    for y := 0 to h-1 do begin
+      for x := 0 to w-2 do result += ToStr( _data[ y * w + x ]) + ' ';
+      result += ToStr( _data[ y * w + (w - 1) ]);
+    end
+  end;
+
+procedure TGrid.Dump;
 begin
-  for y := 0 to h-1 do begin
-    for x := 0 to w-2 do write( _data[ y * w + x ], ' ');
-    write( _data[ y * w + (w - 1) ]);
-    writeln;
-  end
+  writeln( self.ToString )
 end;
 {$ENDIF}
 

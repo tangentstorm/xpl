@@ -1,4 +1,4 @@
-{$i xpc.inc}
+{$mode objfpc}{$i xpc.inc}
 unit fx;
 interface uses xpc, cw, stri,cli, vt;
 
@@ -10,7 +10,7 @@ interface uses xpc, cw, stri,cli, vt;
     PCel	= ^Cel;                                     { ^TextPicture }
   ScreenTypePtr	= ^ScreenType;
 
-  
+
   Var
     sw	       : word;           { width of screen * 2}
     Screen     : ScreenType      { co80 screen  }
@@ -103,7 +103,7 @@ implementation
       for i := 0 to h do
 	writeto^[ (a2 * 2) + 1 + ( b1 + i ) * sw ] := $08;
   end;
-  
+
   procedure metalbar( a1, b1, a2, b2 : byte );
     var i, w, c  : byte; z : string;
   begin
@@ -311,6 +311,6 @@ implementation
     scrollright( 1, 80, 1, 25, offwhat );
   end; { scrollrightoff }
 
-  
+
 initialization
 end.

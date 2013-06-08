@@ -1,4 +1,4 @@
-{$i xpc.inc}
+{$mode objfpc}{$i xpc.inc}
 unit gn; {python style generators. work in progress. }
 interface uses xpc, sysutils, ll;
 

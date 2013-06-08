@@ -1,7 +1,7 @@
 {
 | a tiny lisp interpreter
 }
-{$i xpc.inc}
+{$mode objfpc}{$i xpc.inc}
 unit li;
 interface uses classes, xpc, ascii, ll, num;
 

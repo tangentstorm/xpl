@@ -2,7 +2,7 @@
 // Author: Todd Larason <jtl@molehill.org>
 // $XFree86: xc/programs/xterm/vttests/256colors2.pl,v 1.2 2002/03/26 01:46:43 dickey Exp $
 
-{$i xpc.inc }
+{$mode objfpc}{$i xpc.inc }
 program xterm256color;
   uses xpc, kvm, stri;
 
@@ -17,7 +17,7 @@ program xterm256color;
   end;
 
   { the original looked a lot nicer because it used two spaces of background
-    and thus showed solid blocks... but: i was testing both foreground and   
+    and thus showed solid blocks... but: i was testing both foreground and
     background, and the brackets still kind of look cool. :) }
   procedure showcolor( color :  byte );
   begin
@@ -28,13 +28,15 @@ program xterm256color;
     kvm.fg( 0 );
     write(']');
   end;
-  
+
   var red, green, blue, gray, color, level : byte;
 
 begin
-  
+
+  clrscr;
+
   { -- looks like he's configuring the palette here --------------------- }
-  
+
   // use the resources for colors 0-15 - usually more-or-less a
   // reproduction of the standard ANSI colors, but possibly more
   // pleasing shades
@@ -50,7 +52,7 @@ begin
 	if blue <> 0 then write( hexbyte( blue * 40 + 55 )) else write( '00' );
 	write( #27, '\' );
       end;
-  
+
   // colors 232-255 are a grayscale ramp, intentionally leaving out
   // black and white
   for gray := 0 to 23 do
@@ -64,7 +66,7 @@ begin
 
   // display the colors
   { by drawing two space characters, with different background colors each time }
-  
+
   // first the system ones:
   writeln( 'System colors:');
   for color := 0 to 7 do showcolor( color );
@@ -88,7 +90,7 @@ begin
     end;
     writeln;
   end;
-  
+
   // now the grayscale ramp
   writeln( 'Grayscale ramp:' );
   for color := 232 to 255 do showcolor( color );

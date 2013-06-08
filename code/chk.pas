@@ -1,3 +1,4 @@
+{$mode objfpc}{$i xpc.inc}
 unit chk;
 interface uses sysutils, num;
 type int = integer;

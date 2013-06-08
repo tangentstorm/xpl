@@ -1,3 +1,4 @@
+{$mode objfpc}{$i xpc.inc}
 unit fs;   { file system routines }
 interface uses stri
   {$IFDEF FPC}, sysutils{$ENDIF};

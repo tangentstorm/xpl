@@ -1,6 +1,7 @@
+{$DEFINE DumpGrids}
 program grid_demo;
 uses grids, chk;
-  
+
 type
   TCharGrid = specialize TGrid<Char>;
 
@@ -14,5 +15,5 @@ begin
   chk.equal( g.Count, 256 );
   g.Fill( '.' );
   for i := $0 to $f do g[ i, i ] := hex[ i + 1 ];
-  g.Dump;
+  writeln(g.ToString);
 end.

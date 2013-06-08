@@ -1,4 +1,4 @@
-{$i xpc}
+{$mode objfpc}{$i xpc.inc}
 unit ll; { li list support }
 interface uses xpc, sysutils, stacks;
 
