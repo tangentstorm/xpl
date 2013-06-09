@@ -18,6 +18,7 @@ type
     constructor CreateAt( w, h, s : cardinal; at : pointer );
     destructor Destroy; override;
   public { 2D interface }
+    function xyToI( x, y : cardinal ) : cardinal; inline;
     procedure SetItem( x, y : cardinal; value : T );
     function GetItem( x, y : cardinal ) : T;
     property at2[ x, y : cardinal ]: T read GetItem write SetItem; default;
@@ -63,14 +64,20 @@ end;
 
 
 { 2D interface }
+
+function TGrid.xyToI( x, y : cardinal ) : cardinal; inline;
+  begin
+    result := y * _w + x
+  end;
+
 procedure TGrid.SetItem( x, y : cardinal; value : T );
-begin
-  _data[ y * _w + x ] := value;
-end;
+  begin
+    _data[ xyToI( x, y ) ] := value;
+  end;
 
 function TGrid.GetItem( x, y : cardinal ) : T;
 begin
-  result := _data[ y * _w + x ];
+  result := _data[ xyToI( x, y ) ];
 end;
 
 { 1D direct interface }
