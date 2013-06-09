@@ -1,6 +1,6 @@
 {$mode objfpc}{$i xpc.inc}
 unit fx;
-interface uses xpc, cw, stri,cli, vt;
+interface uses xpc, cw, stri, cli, kvm;
 
   Type
     { 80x50 screen }
@@ -85,7 +85,7 @@ implementation
   end;
 
   procedure Bar(a,b,x,y	: byte; c: word);
-    var cx,cy : byte;
+    var cy : byte;
   begin
     Rectangle(a,b,x,y, c);
     For cy := b +1  to y-1 do
@@ -159,8 +159,8 @@ implementation
       i	: byte;
       s	: string;
   begin
-    s := ntimes( uc, vt.windmaxx-2 );
-    for i := vt.windmaxy-1 downto 1 do colorxy( 0, i, at, s );
+    s := ntimes( uc, kvm.maxX-2 );
+    for i := kvm.maxY-1 downto 1 do colorxy( 0, i, at, s );
     readln;
   end; { FillScreen }
 

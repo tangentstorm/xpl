@@ -1,6 +1,6 @@
 {$mode objfpc}{$i xpc.inc}
 unit cw; { colorwrite }
-interface uses xpc, num, stri, vt;
+interface uses xpc, num, stri, kvm;
 
   const trg = '|'; // trigger char
 
@@ -107,8 +107,8 @@ implementation
   procedure colorxy(x, y :byte; c: word; const s : string); inline;
     var i : integer;
   begin
-    vt.textattr := c;
-    vt.GotoXY( x, y );
+    kvm.textattr := c;
+    kvm.GotoXY( x, y );
     for i := 1 to length(s) do
     begin
       wr( s[i] );
@@ -157,19 +157,19 @@ implementation
 		     end;
       cwclrscr	   : begin
 		       //  fillbox( scr.x, scr.y, txmax, tymax, tcolor*256 + 32 );
-		       vt.clrscr;
+		       kvm.clrscr;
 		       cur.x := 0;
 		       cur.y := 0;
 		     end;
       cwclreol	   : begin
-		       // vt.clreol; // doesn't seem to work :/
+		       // kvm.clreol; // doesn't seem to work :/
 		       write(
 		       //colorxy( min.x + cur.x, min.y + cur.y, cur.c,
 			       chntimes( ' ', max.x - cur.x ));
-		       vt.gotoxy(cur.x, cur.y);
+		       kvm.gotoxy(cur.x, cur.y);
 		     end;
-      cwsavecol	   : sav.c := vt.textattr;
-      cwloadcol	   : vt.textattr := sav.c;
+      cwsavecol	   : sav.c := kvm.textattr;
+      cwloadcol	   : kvm.textattr := sav.c;
       cwchntimes   : begin
 		       n := length( s );
 		       cwrite( normaltext( chntimes( s[1], s2n(s[2]+s[3])) ));
@@ -197,8 +197,8 @@ implementation
 	  end; } ;
 	cwrenegade : cur.fg := s2n( s );
     end; { of case cn }
-    vt.fg(cur.fg);
-    vt.bg(cur.bg);
+    kvm.fg(cur.fg);
+    kvm.bg(cur.bg);
   end; { of cwcommand }
 
   procedure cwrite( s : string );
@@ -251,7 +251,7 @@ implementation
 	  ^M  : runcmd( cwcr );
 	  ^G  : write( '␇' ); // 'bell'
 	  ^L  : begin
-		  write( ntimes( '- ', vt.width div 2 - 1 ));
+		  write( ntimes( '- ', kvm.width div 2 - 1 ));
 		end;
 	  ^H  : runcmd( cwbs );
 	  else wr( uch );
@@ -300,7 +300,7 @@ implementation
   begin
     cur.x := x;
     cur.y := y;
-    vt.gotoxy( x, y );
+    kvm.gotoxy( x, y );
     cwrite( s );
   end;
 
@@ -315,10 +315,10 @@ implementation
     for counter := 1 to Length(S) do
     begin
       case S[counter] of
-	'a'..'z','0'..'9','A'..'Z',' ' : vt.fg( $0F );
-	'[',']','(',')','{','}','<','>','"' : vt.fg( $09 );
-	#127 .. #255 : vt.fg( $08 ); //  '░'..'▀'
-	else vt.fg( $07 );
+	'a'..'z','0'..'9','A'..'Z',' ' : kvm.fg( $0F );
+	'[',']','(',')','{','}','<','>','"' : kvm.fg( $09 );
+	#127 .. #255 : kvm.fg( $08 ); //  '░'..'▀'
+	else kvm.fg( $07 );
       end;
       cwrite( s[ counter ]);
     end;
@@ -404,15 +404,15 @@ initialization
   cwnchexpected := 0;
   cur.c := $0007;
   sav.c := $000E;
-  vt.clrscr; // until we have vt.wherex/wherey implemented correctly
+  kvm.clrscr; // until we have kvm.wherex/wherey implemented correctly
   cur.x := 0;
   cur.y := 0;
   sav.x := 0;
   sav.y := 0;
   scr.x := 0;
   scr.y := 0;
-  scr.h := vt.height;
-  scr.w := vt.width;
+  scr.h := kvm.height;
+  scr.w := kvm.width;
   min.x := 0;
   min.y := 0;
   max.x := scr.w - 1;

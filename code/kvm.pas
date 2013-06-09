@@ -1,188 +1,328 @@
-{  kvm : wrapper for keyboard, video, and mouse units
-   copyright (c) 2012 michal j. wallace. all rights reserved.
-   license: mit / isc
-}
+
 {$mode objfpc}{$i xpc.inc}
 unit kvm;
-interface uses xpc;
+interface uses xpc, grids;
 
-  
-{  this should probably get moved into its own class? }
-type
-  vector2d = record
-	       case kind : ( asize, apoint, avec2d ) of
-		 asize	: ( w, h : int32 );
-		 apoint	: ( x, y : int32 );
-		 avec2d	: ( v : array[ 0 .. 1 ] of int32 );
-	     end;
-
-{-- interface > video > graphics --}
-type
-  color	  = record
-	      case separate : boolean of
-		true  : ( r, g, b, a : byte );
-		false : ( c : int32 );
-	    end;
+  type ITerm = interface
+    function  Width : word;
+    function  Height: word;
+    function  MaxX  : word;
+    function  MaxY  : word;
+    function  WhereX: word;
+    function  WhereY: word;
+    procedure ClrScr;
+    procedure ClrEol;
+    procedure Fg( c : byte );
+    procedure Bg( c : byte );
+    procedure Emit( wc : widechar );
+    procedure GotoXY( x, y : word );
+    procedure InsLine;
+    procedure DelLine;
+    procedure SetTextAttr( value : word );
+    function  GetTextAttr : word;
+    property  TextAttr : word read GetTextAttr write SetTextAttr;
+  end;
+  function  Width : word;
+  function  Height: word;
+  function  MaxX  : word;
+  function  MaxY  : word;
+  function  WhereX : word;
+  function  WhereY : word;
+  procedure ClrScr;
+  procedure ClrEol;
+  procedure Fg( color : byte );
+  procedure Bg( color : byte );
+  procedure Emit( wc : widechar );
+  procedure GotoXY( x, y : word );
+  procedure InsLine;
+  procedure DelLine;
+  procedure SetTextAttr( value : word );
+  function  GetTextAttr : word;
+  property  TextAttr : word read GetTextAttr write SetTextAttr;
 
-  surface = record
-	      w, h : int32;
-	      data : array of int32;
-	    end;
+  type TTextAttr = record
+      bg : byte;
+      fg : byte;
+    end;
+  type TScreenCell = record
+      ch   : widechar;
+      attr : TTextAttr;
+    end;
+  type TScreenGrid = class (specialize TGrid<TScreenCell>)
+    private
+      function GetAttr( const x, y : word ) : TTextAttr;
+      function GetChar( const x, y : word ) : WideChar;
+      procedure SetAttr( const x, y : word; const value : TTextAttr );
+      procedure SetChar( const x, y : word; const value : WideChar );
+    public
+      property attr[ x, y : word ] : TTextAttr read GetAttr write SetAttr;
+      property char[ x, y : word ] : WideChar read GetChar write SetChar;
+    end;
+  type TPoint = class
+    x, y : cardinal;
+  end;
+  type TRect = class
+    x, y : cardinal;
+    w, h : cardinal;
+  end;
+  type TScreenTerm = class (TInterfacedObject, ITerm)
+    public
+      function  Width : word;
+      function  Height: word;
+      function  MaxX  : word;
+      function  MaxY  : word;
+      function  WhereX : word;
+      function  WhereY : word;
+      procedure ClrScr;
+      procedure ClrEol;
+      procedure Fg( color : byte );
+      procedure Bg( color : byte );
+      procedure Emit( wc : widechar );
+      procedure GotoXY( x, y : word );
+      procedure InsLine;
+      procedure DelLine;
+      procedure SetTextAttr( value : word );
+      function  GetTextAttr : word;
+      property  TextAttr : word read GetTextAttr write SetTextAttr;
+    private
+      attr : TTextAttr;
+      curs : TPoint;
+      grid : TScreenGrid;
+    public
+      constructor Create( w, h : word );
+      destructor Destroy; override;
+      function  Cursor : TPoint;
+    end;
+  type TAnsiTerm = class (TInterfacedObject, ITerm)
+    public
+      function  Width : word;
+      function  Height: word;
+      function  MaxX  : word;
+      function  MaxY  : word;
+      function  WhereX : word;
+      function  WhereY : word;
+      procedure ClrScr;
+      procedure ClrEol;
+      procedure Fg( color : byte );
+      procedure Bg( color : byte );
+      procedure Emit( wc : widechar );
+      procedure GotoXY( x, y : word );
+      procedure InsLine;
+      procedure DelLine;
+      procedure SetTextAttr( value : word );
+      function  GetTextAttr : word;
+      property  TextAttr : word read GetTextAttr write SetTextAttr;
+    public
+      procedure ResetColor;
+    end;
 
-function hascanvas : boolean;
-var canvas : surface;
-
-{-- interface > video > terminal --}
-type
-  glyph	  = record
-	      codepoint	: int32;
-	      w, h	: int32;
-	    end;
+  procedure fg( c : char );
+  procedure bg( c : char );
 
-  bmpfont = record
-	      size   : vector2d;
-	      glyphs : array of glyph;
-	    end;
-
-procedure clrscr;
-procedure clreol;
-procedure gotoxy( x, y : int32 );
-procedure fg( c : char );  procedure fg( b : byte );
-procedure bg( c : char );  procedure bg( b : byte );
-procedure setfont( font :  bmpfont );
-  
-var term : surface;
-
-{-- interface > mouse --}
-
-{  TODO type buttons = (??) for mouse / gamepad }
-
-function hasmouse : boolean;
-function mx : int32;
-function my : int32;
-function mb : set32;
-
-  
 implementation
-
-{ -- implementation > mouse ------------------------------ }
-
-{  mouse routines are just stubs at the moment }
-
-function hasmouse : boolean;
-begin
-  result := false;
-end; { hasmouse }
-
-function mx : int32;
-begin
-  result := 0;
-end; { mx }
-
-function my : int32;
-begin
-  result := 0;
-end; { my }
-
-function mb : set32;
-begin
-  result := [];
-end; { mbtn }
-
-{ -- implementation > video > graphics -------------------- }
-
-function hascanvas : boolean;
-begin
-  result := false;
-end; { hascanvas }
-
-
-{ -- implementation > video > text > general ------------- }
-
-procedure clrscr;
-begin
-  write( #27, '[H', #27, '[J' );
-end; { clrscr }
-
-procedure clreol;
-begin
-  write( #27, '[K' );
-end; { clreol }
-
-procedure ansi_reset;
-begin
-  write( #27, '[0m' );
-end; { ansi_reset }
-
-procedure gotoxy( x, y : integer );
-begin
-  write( #27, '[', y + 1, ';', x + 1, 'H' );
-  { crt.gotoxy( x + 1, y + 1 ); }
-end; { gotoxy }
-
   
-procedure setfont( font : bmpfont );
-begin
-end; { write }
-
-
-{ -- implementation > video > text > fg color ------------ }
-
-procedure ansi_fg( i : byte );
-begin
-  if i < 8 then write( #27, '[0;3', i , 'm' )           // ansi dim
-  else if i < 17 then write( #27, '[01;3', i-8 , 'm' ); // ansi bold
-  // else do nothing
-end; { ansi_fg }
-
-{ xterm 256-color extensions }
-procedure xterm_fg( i	:  byte );
-begin
-  write( #27, '[38;5;', i , 'm' );
-end;
-
-{ --- public --- }
-
-procedure fg( c :  char );
-  var i : byte;
-begin
-  i := pos( c, 'krgybmcwKRGYBMCW' );
-  if i > 0 then xterm_fg( i - 1 );
-end; { fg }
-
-procedure fg( b : byte );
-begin
-  xterm_fg( b );
-end; { fg }
-
-{ -- implementation > video > text > bg color ------------ }
-
-{  implement ansi_bg  -- below is only a copy/paste of ansi_fg }
-{procedure ansi_bg( i : byte );
-begin
-  if i < 8 then write( #27, '[0;3', i , 'm' )           // ansi dim
-  else if i < 17 then write( #27, '[01;3', i-8 , 'm' ); // ansi bold
-  // else do nothing
-end; }
+  function TScreenGrid.GetAttr( const x, y : word ) : TTextAttr;
+    begin
+      result.fg := self[ x, y ].attr.fg;
+      result.bg := self[ x, y ].attr.bg;
+    end;
   
-procedure xterm_bg( i	:  byte );
-begin
-  write( #27, '[48;5;', i , 'm' );
-end;
+  procedure TScreenGrid.SetAttr( const x, y  : word;
+                               const value : TTextAttr );
+    begin
+      with _data[ xyToI( x, y ) ].attr do
+        begin
+          bg := value.bg;
+          fg := value.fg;
+        end
+    end;
+  
+  function TScreenGrid.GetChar( const x, y : word ) : WideChar;
+    begin
+      result := self[ x, y ].ch;
+    end;
+  
+  procedure TScreenGrid.SetChar( const x, y  : word;
+                               const value : WideChar );
+    begin
+      _data[ xyToI( x, y ) ].ch := value;
+    end;
+  
+  
+  constructor TScreenTerm.Create( w, h : word );
+    begin
+    end;
+    
+  destructor TScreenTerm.Destroy;
+    begin
+    end;
+    
+  function  TScreenTerm.Width  : word; begin result := grid.w      end;
+  function  TScreenTerm.Height : word; begin result := grid.h      end;
+  function  TScreenTerm.MaxX   : word; begin result := width - 1   end;
+  function  TScreenTerm.MaxY   : word; begin result := height - 1  end;
+  function  TScreenTerm.WhereX : word; begin result := cursor.x    end;
+  function  TScreenTerm.WhereY : word; begin result := cursor.y    end;
+    
+  function  TScreenTerm.GetTextAttr : word; 
+    begin 
+      result := word(attr)
+    end;
+    
+  procedure TScreenTerm.SetTextAttr( value : word );
+    begin
+      attr := TTextAttr(value)
+    end;
+  
+  procedure TScreenTerm.Fg( color : byte );
+    begin
+      attr.fg := color
+    end;
+  
+  procedure TScreenTerm.Bg( color : byte );
+    begin
+      attr.bg := color
+    end;
+  
+  procedure TScreenTerm.ClrScr;
+    begin
+    end;
+    
+  procedure TScreenTerm.ClrEol;
+    begin
+    end;
+  
+  procedure TScreenTerm.GotoXY( x, y : word );
+    begin
+      cursor.x := x;
+      cursor.y := y;
+    end;
+  
+  procedure TScreenTerm.Emit( wc : widechar );
+    begin
+    end;
+    
+  procedure TScreenTerm.InsLine;
+    begin
+    end;
+  
+  procedure TScreenTerm.DelLine;
+    begin
+    end;
+  
+  function TScreenTerm.Cursor : TPoint;
+    begin
+      result := curs
+    end;
+  
+  
+  { TODO: find a way to get this data without the baggage incurred by
+    crt or video modules (breaking keyboard input or clearing the screen  }
+  
+  function  TAnsiTerm.Width  : word; begin result := 80   end;
+  function  TAnsiTerm.Height : word; begin result := 25   end;
+  function  TAnsiTerm.MaxX   : word; begin result := width  - 1  end;
+  function  TAnsiTerm.MaxY   : word; begin result := height - 1  end;
+  function  TAnsiTerm.WhereX : word; begin result := 0    end;
+  function  TAnsiTerm.WhereY : word; begin result := 0    end;
+  function  TAnsiTerm.GetTextAttr : word; 
+    begin 
+      result := $0007;
+    end;
+  
+  procedure TAnsiTerm.SetTextAttr( value : word );
+    begin
+      Fg(hi(value));
+      Bg(lo(value));
+    end;
+  
+  procedure TAnsiTerm.Fg( color : byte );
+    begin
+      { xterm 256-color extensions }
+      write( #27, '[38;5;', color , 'm' )
+    end;
+  
+  procedure TAnsiTerm.Bg( color : byte );
+    begin
+      { xterm 256-color extensions }
+      write( #27, '[48;5;', color , 'm' )
+    end;
+  
+  procedure TAnsiTerm.ClrScr;
+    begin
+      write( #27, '[H', #27, '[J' )
+    end;
+    
+  procedure TAnsiTerm.ClrEol;
+    begin
+      write( #27, '[K' )
+    end;
+  
+  procedure TAnsiTerm.GotoXY( x, y : word );
+    begin
+      write( #27, '[', y + 1, ';', x + 1, 'H' )
+    end;
+  
+  procedure TAnsiTerm.Emit( wc : widechar );
+    begin
+      write( wc )
+    end;
+  
+  { TODO }
+  procedure TAnsiTerm.InsLine;
+    begin
+    end;
+  
+  procedure TAnsiTerm.DelLine;
+    begin
+    end;
+  
+  procedure TAnsiTerm.ResetColor;
+    begin
+      write( #27, '[0m' )
+    end;
+  
+  
+  procedure bg( c :  char );
+    var i : byte;
+    begin
+      i := pos( c, 'krgybmcwKRGYBMCW' );
+      if i > 0 then bg( i - 1  );
+    end;
+  
+  procedure fg( c :  char );
+    var i : byte;
+    begin
+      i := pos( c, 'krgybmcwKRGYBMCW' );
+      if i > 0 then fg( i - 1  );
+    end;
+  
+  var work : ITerm;
+  
+  function  Width       : word; begin result := work.Width end;
+  function  Height      : word; begin result := work.Height end;
+  function  MaxX        : word; begin result := work.MaxX end;
+  function  MaxY        : word; begin result := work.MaxY end;
+  function  WhereX      : word; begin result := work.WhereX end;
+  function  WhereY      : word; begin result := work.WhereY end;
+  
+  procedure ClrScr; begin work.ClrScr end;
+  procedure ClrEol; begin work.ClrEol end;
+  
+  procedure Fg( color : byte );    begin work.Fg( color ) end;
+  procedure Bg( color : byte );    begin work.Bg( color ) end;
+  
+  procedure Emit( wc : widechar ); begin work.Emit( wc ) end;
+  procedure GotoXY( x, y : word ); begin work.GotoXY( x, y ) end;
+  
+  procedure InsLine; begin work.InsLine; end;
+  procedure DelLine; begin work.DelLine; end;
+  
+  procedure SetTextAttr( value : word ); begin TextAttr := value end;
+  function  GetTextAttr : word; begin result := work.TextAttr end;
 
-procedure bg( c :  char );
-var i : byte;
-begin
-  {  crt.textbackground( i - 1 ); }
-  i := pos( c, 'krgybmcwKRGYBMCW' );
-  if i > 0 then xterm_bg( i - 1  );
-end;
-
-procedure bg( b : byte );
-begin
-  xterm_bg( b );
-end; { bg }
-
-
-
+initialization
+  work := TAnsiTerm.Create;
+finalization
+  { work is destroyed automatically by reference count }
 end.
