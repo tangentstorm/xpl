@@ -161,13 +161,7 @@ implementation
 		       cur.x := 0;
 		       cur.y := 0;
 		     end;
-      cwclreol	   : begin
-		       // kvm.clreol; // doesn't seem to work :/
-		       write(
-		       //colorxy( min.x + cur.x, min.y + cur.y, cur.c,
-			       chntimes( ' ', max.x - cur.x ));
-		       kvm.gotoxy(cur.x, cur.y);
-		     end;
+      cwclreol	   : kvm.clreol;
       cwsavecol	   : sav.c := kvm.textattr;
       cwloadcol	   : kvm.textattr := sav.c;
       cwchntimes   : begin
