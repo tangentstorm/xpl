@@ -1,7 +1,10 @@
 
+{ --- warning!! generated file. edit ~/b/web/kvm.org instead!! --- }
+
+
 {$mode objfpc}{$i xpc.inc}
 unit kvm;
-interface uses xpc, grids;
+interface uses xpc, grids, terminal;
 
   type ITerm = interface
     function  Width : word;
@@ -112,7 +115,11 @@ interface uses xpc, grids;
       procedure SetTextAttr( value : word );
       function  GetTextAttr : word;
       property  TextAttr : word read GetTextAttr write SetTextAttr;
+    private
+      x, y : word;
+      attr : word;
     public
+      constructor Create;
       procedure ResetColor;
     end;
 
@@ -152,23 +159,23 @@ implementation
   constructor TScreenTerm.Create( w, h : word );
     begin
     end;
-    
+  
   destructor TScreenTerm.Destroy;
     begin
     end;
-    
+  
   function  TScreenTerm.Width  : word; begin result := grid.w      end;
   function  TScreenTerm.Height : word; begin result := grid.h      end;
   function  TScreenTerm.MaxX   : word; begin result := width - 1   end;
   function  TScreenTerm.MaxY   : word; begin result := height - 1  end;
   function  TScreenTerm.WhereX : word; begin result := cursor.x    end;
   function  TScreenTerm.WhereY : word; begin result := cursor.y    end;
-    
-  function  TScreenTerm.GetTextAttr : word; 
-    begin 
+  
+  function  TScreenTerm.GetTextAttr : word;
+    begin
       result := word(attr)
     end;
-    
+  
   procedure TScreenTerm.SetTextAttr( value : word );
     begin
       attr := TTextAttr(value)
@@ -187,7 +194,7 @@ implementation
   procedure TScreenTerm.ClrScr;
     begin
     end;
-    
+  
   procedure TScreenTerm.ClrEol;
     begin
     end;
@@ -201,7 +208,7 @@ implementation
   procedure TScreenTerm.Emit( wc : widechar );
     begin
     end;
-    
+  
   procedure TScreenTerm.InsLine;
     begin
     end;
@@ -216,34 +223,41 @@ implementation
     end;
   
   
+  constructor TAnsiTerm.Create;
+    begin
+      attr := $0007
+    end;
+  
   { TODO: find a way to get this data without the baggage incurred by
     crt or video modules (breaking keyboard input or clearing the screen  }
   
-  function  TAnsiTerm.Width  : word; begin result := 80   end;
-  function  TAnsiTerm.Height : word; begin result := 25   end;
+  function  TAnsiTerm.Width  : word; begin result := terminal.w end;
+  function  TAnsiTerm.Height : word; begin result := terminal.h end;
   function  TAnsiTerm.MaxX   : word; begin result := width  - 1  end;
   function  TAnsiTerm.MaxY   : word; begin result := height - 1  end;
-  function  TAnsiTerm.WhereX : word; begin result := 0    end;
-  function  TAnsiTerm.WhereY : word; begin result := 0    end;
-  function  TAnsiTerm.GetTextAttr : word; 
-    begin 
-      result := $0007;
+  function  TAnsiTerm.WhereX : word; begin result := x  end;
+  function  TAnsiTerm.WhereY : word; begin result := y  end;
+  function  TAnsiTerm.GetTextAttr : word;
+    begin
+      result := attr;
     end;
   
   procedure TAnsiTerm.SetTextAttr( value : word );
     begin
-      Fg(hi(value));
-      Bg(lo(value));
+      Fg(lo(value));
+      Bg(hi(value));
     end;
   
   procedure TAnsiTerm.Fg( color : byte );
     begin
+      attr := hi(attr) shl 8 + color;
       { xterm 256-color extensions }
       write( #27, '[38;5;', color , 'm' )
     end;
   
   procedure TAnsiTerm.Bg( color : byte );
     begin
+      attr := color shl 8 + lo(attr);
       { xterm 256-color extensions }
       write( #27, '[48;5;', color , 'm' )
     end;
@@ -252,7 +266,7 @@ implementation
     begin
       write( #27, '[H', #27, '[J' )
     end;
-    
+  
   procedure TAnsiTerm.ClrEol;
     begin
       write( #27, '[K' )
@@ -299,12 +313,12 @@ implementation
   
   var work : ITerm;
   
-  function  Width       : word; begin result := work.Width end;
-  function  Height      : word; begin result := work.Height end;
-  function  MaxX        : word; begin result := work.MaxX end;
-  function  MaxY        : word; begin result := work.MaxY end;
-  function  WhereX      : word; begin result := work.WhereX end;
-  function  WhereY      : word; begin result := work.WhereY end;
+  function  Width  : word; begin result := work.Width end;
+  function  Height : word; begin result := work.Height end;
+  function  MaxX   : word; begin result := work.MaxX end;
+  function  MaxY   : word; begin result := work.MaxY end;
+  function  WhereX : word; begin result := work.WhereX end;
+  function  WhereY : word; begin result := work.WhereY end;
   
   procedure ClrScr; begin work.ClrScr end;
   procedure ClrEol; begin work.ClrEol end;
@@ -315,14 +329,17 @@ implementation
   procedure Emit( wc : widechar ); begin work.Emit( wc ) end;
   procedure GotoXY( x, y : word ); begin work.GotoXY( x, y ) end;
   
-  procedure InsLine; begin work.InsLine; end;
-  procedure DelLine; begin work.DelLine; end;
+  procedure InsLine; begin work.InsLine end;
+  procedure DelLine; begin work.DelLine end;
   
-  procedure SetTextAttr( value : word ); begin TextAttr := value end;
-  function  GetTextAttr : word; begin result := work.TextAttr end;
+  procedure SetTextAttr( value : word );
+    begin work.TextAttr := value end;
+  function  GetTextAttr : word;
+    begin result := work.TextAttr end;
 
 initialization
   work := TAnsiTerm.Create;
+  work.GotoXY( terminal.startX-1, terminal.startY-1 );
 finalization
   { work is destroyed automatically by reference count }
 end.

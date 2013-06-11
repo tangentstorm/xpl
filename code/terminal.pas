@@ -20,11 +20,11 @@ procedure OnResizeIgnore (const w, h : byte );
 procedure GetWH( var w, h :  byte );
   var winsize : termio.TWinSize;
   begin
-    baseunix.fpioctl(system.stdinputhandle,
+    baseunix.fpioctl(system.stdInputHandle,
 		     termio.TIOCGWINSZ,
 		     @winsize);
-    w := winsize.ws_row;
-    h := winsize.ws_col;
+    w := winsize.ws_col;
+    h := winsize.ws_row;
   end;
 
 procedure OnResizeSignal( sig : cint ); cdecl;
@@ -87,7 +87,7 @@ procedure restoreRawSettings(tio: termio.termios);
   end;
 
 
-  procedure SetRawMode(b:boolean);
+procedure SetRawMode(b:boolean);
   var Tio : Termios;
   Begin
     if b then
@@ -149,6 +149,7 @@ procedure GetXY(var x, y : byte);
 {---------------------------------------------------------------------}
 
 initialization
+  GetWH( w, h );
   OnResize := @OnResizeIgnore;
   SetRawMode( true );
   GetXY( startX, startY );
