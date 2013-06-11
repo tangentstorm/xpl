@@ -1,4 +1,4 @@
-{$i xpc.inc}
+{$mode objfpc}{$i xpc.inc}
 unit cx; { colorized exceptions }
 interface uses cw, sysutils;
 
