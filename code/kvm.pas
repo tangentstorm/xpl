@@ -222,15 +222,15 @@ implementation
       result := curs
     end;
   
-  
+    
   constructor TAnsiTerm.Create;
     begin
       attr := $0007
     end;
-  
+    
   { TODO: find a way to get this data without the baggage incurred by
     crt or video modules (breaking keyboard input or clearing the screen  }
-  
+    
   function  TAnsiTerm.Width  : word; begin result := terminal.w end;
   function  TAnsiTerm.Height : word; begin result := terminal.h end;
   function  TAnsiTerm.MaxX   : word; begin result := width  - 1  end;
@@ -241,61 +241,64 @@ implementation
     begin
       result := attr;
     end;
-  
+    
   procedure TAnsiTerm.SetTextAttr( value : word );
     begin
       Fg(lo(value));
       Bg(hi(value));
     end;
-  
+    
   procedure TAnsiTerm.Fg( color : byte );
     begin
       attr := hi(attr) shl 8 + color;
       { xterm 256-color extensions }
       write( #27, '[38;5;', color , 'm' )
     end;
-  
+    
   procedure TAnsiTerm.Bg( color : byte );
     begin
       attr := color shl 8 + lo(attr);
       { xterm 256-color extensions }
       write( #27, '[48;5;', color , 'm' )
     end;
-  
+    
   procedure TAnsiTerm.ClrScr;
     begin
       write( #27, '[H', #27, '[J' )
     end;
-  
+    
   procedure TAnsiTerm.ClrEol;
+    var curx, cury, i : byte;
     begin
-      write( #27, '[K' )
+      terminal.getxy( curx, cury );
+      for i := curx to maxX do write(' ');
+      gotoxy( curx, cury );
     end;
-  
+    
   procedure TAnsiTerm.GotoXY( x, y : word );
     begin
       write( #27, '[', y + 1, ';', x + 1, 'H' )
     end;
-  
+    
   procedure TAnsiTerm.Emit( wc : widechar );
     begin
       write( wc )
     end;
-  
+    
   { TODO }
   procedure TAnsiTerm.InsLine;
     begin
     end;
-  
+    
   procedure TAnsiTerm.DelLine;
     begin
     end;
-  
+    
   procedure TAnsiTerm.ResetColor;
     begin
       write( #27, '[0m' )
     end;
-  
+    
   
   procedure bg( c :  char );
     var i : byte;
@@ -339,7 +342,7 @@ implementation
 
 initialization
   work := TAnsiTerm.Create;
-  work.GotoXY( terminal.startX-1, terminal.startY-1 );
+  work.GotoXY( terminal.startX, terminal.startY );
 finalization
   { work is destroyed automatically by reference count }
 end.
