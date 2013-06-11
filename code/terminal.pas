@@ -4,6 +4,7 @@ interface uses baseunix, termio;
   procedure OnResizeIgnore (const w, h : byte ); { default handler }
   procedure GetXY( var x, y : byte );
   procedure GetWH( var w, h : byte );
+  procedure SetRawMode(b:boolean);
   
   var
     w, h	   : byte; { initial terminal width and height }
@@ -142,6 +143,8 @@ procedure GetXY(var x, y : byte);
 	end
       else break;
     until false;
+    { note : kvm uses 0,0 as upper left, so we subtract 1 }
+    dec( x ); dec( y );
   end;
 
 {---------------------------------------------------------------------}
