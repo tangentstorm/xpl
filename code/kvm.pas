@@ -25,6 +25,7 @@ interface uses xpc, grids, terminal;
     function  GetTextAttr : word;
     property  TextAttr : word read GetTextAttr write SetTextAttr;
   end;
+  {$DEFINE unitscope}
   function  Width : word;
   function  Height: word;
   function  MaxX  : word;
@@ -35,13 +36,14 @@ interface uses xpc, grids, terminal;
   procedure ClrEol;
   procedure Fg( color : byte );
   procedure Bg( color : byte );
-  procedure Emit( wc : widechar );
+  procedure Emit( wc : widechar ); {$IFNDEF unitscope}virtual;{$ENDIF}
   procedure GotoXY( x, y : word );
   procedure InsLine;
   procedure DelLine;
   procedure SetTextAttr( value : word );
   function  GetTextAttr : word;
   property  TextAttr : word read GetTextAttr write SetTextAttr;
+  {$UNDEF unitscope}
 
   type TTextAttr = record
       bg : byte;
@@ -68,7 +70,7 @@ interface uses xpc, grids, terminal;
     x, y : cardinal;
     w, h : cardinal;
   end;
-  type TScreenTerm = class (TInterfacedObject, ITerm)
+  type TScreenTerm = class  (TInterfacedObject, ITerm) // (TAbstractTerminal)
     public
       function  Width : word;
       function  Height: word;
@@ -80,7 +82,7 @@ interface uses xpc, grids, terminal;
       procedure ClrEol;
       procedure Fg( color : byte );
       procedure Bg( color : byte );
-      procedure Emit( wc : widechar );
+      procedure Emit( wc : widechar ); {$IFNDEF unitscope}virtual;{$ENDIF}
       procedure GotoXY( x, y : word );
       procedure InsLine;
       procedure DelLine;
@@ -108,7 +110,7 @@ interface uses xpc, grids, terminal;
       procedure ClrEol;
       procedure Fg( color : byte );
       procedure Bg( color : byte );
-      procedure Emit( wc : widechar );
+      procedure Emit( wc : widechar ); {$IFNDEF unitscope}virtual;{$ENDIF}
       procedure GotoXY( x, y : word );
       procedure InsLine;
       procedure DelLine;
@@ -125,6 +127,7 @@ interface uses xpc, grids, terminal;
 
   procedure fg( c : char );
   procedure bg( c : char );
+var work : ITerm;
 
 implementation
   
@@ -222,83 +225,97 @@ implementation
       result := curs
     end;
   
-    
+  
   constructor TAnsiTerm.Create;
     begin
       attr := $0007
     end;
-    
+  
   { TODO: find a way to get this data without the baggage incurred by
     crt or video modules (breaking keyboard input or clearing the screen  }
-    
+  
   function  TAnsiTerm.Width  : word; begin result := terminal.w end;
   function  TAnsiTerm.Height : word; begin result := terminal.h end;
   function  TAnsiTerm.MaxX   : word; begin result := width  - 1  end;
   function  TAnsiTerm.MaxY   : word; begin result := height - 1  end;
-  function  TAnsiTerm.WhereX : word; begin result := x  end;
-  function  TAnsiTerm.WhereY : word; begin result := y  end;
+  
+  function  TAnsiTerm.WhereX : word;
+    var bx, by : byte;
+    begin
+      terminal.getxy(bx, by);
+      result := bx;
+    end;
+  
+  function  TAnsiTerm.WhereY : word;
+    var bx, by : byte;
+    begin
+      terminal.getxy(bx, by);
+      result := by;
+    end;
+  
   function  TAnsiTerm.GetTextAttr : word;
     begin
       result := attr;
     end;
-    
+  
   procedure TAnsiTerm.SetTextAttr( value : word );
     begin
       Fg(lo(value));
       Bg(hi(value));
     end;
-    
+  
   procedure TAnsiTerm.Fg( color : byte );
     begin
       attr := hi(attr) shl 8 + color;
       { xterm 256-color extensions }
       write( #27, '[38;5;', color , 'm' )
     end;
-    
+  
   procedure TAnsiTerm.Bg( color : byte );
     begin
       attr := color shl 8 + lo(attr);
       { xterm 256-color extensions }
       write( #27, '[48;5;', color , 'm' )
     end;
-    
+  
   procedure TAnsiTerm.ClrScr;
     begin
       write( #27, '[H', #27, '[J' )
     end;
-    
+  
   procedure TAnsiTerm.ClrEol;
     var curx, cury, i : byte;
     begin
       terminal.getxy( curx, cury );
-      for i := curx to maxX do write(' ');
+      for i := succ(curx) to maxX do write(' ');
       gotoxy( curx, cury );
     end;
-    
+  
   procedure TAnsiTerm.GotoXY( x, y : word );
     begin
       write( #27, '[', y + 1, ';', x + 1, 'H' )
     end;
-    
+  
   procedure TAnsiTerm.Emit( wc : widechar );
     begin
+      { TODO: handle escaped characters }
       write( wc )
     end;
-    
+  
   { TODO }
   procedure TAnsiTerm.InsLine;
     begin
     end;
-    
+  
   procedure TAnsiTerm.DelLine;
     begin
     end;
-    
+  
   procedure TAnsiTerm.ResetColor;
     begin
       write( #27, '[0m' )
     end;
-    
+  
   
   procedure bg( c :  char );
     var i : byte;
@@ -313,8 +330,6 @@ implementation
       i := pos( c, 'krgybmcwKRGYBMCW' );
       if i > 0 then fg( i - 1  );
     end;
-  
-  var work : ITerm;
   
   function  Width  : word; begin result := work.Width end;
   function  Height : word; begin result := work.Height end;

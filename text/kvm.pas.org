@@ -131,7 +131,7 @@ This is a contrcete implementation of ITerm.
 
 #+name: TScreenTerm
 #+begin_src pascal
-  type TScreenTerm = class (TInterfacedObject, ITerm)
+  type TScreenTerm = class  (TInterfacedObject, ITerm) // (TAbstractTerminal)
     public
       <<ITerm-Members>>
     private
@@ -248,8 +248,21 @@ This is a contrcete implementation of ITerm.
   function  TAnsiTerm.Height : word; begin result := terminal.h end;
   function  TAnsiTerm.MaxX   : word; begin result := width  - 1  end;
   function  TAnsiTerm.MaxY   : word; begin result := height - 1  end;
-  function  TAnsiTerm.WhereX : word; begin result := x  end;
-  function  TAnsiTerm.WhereY : word; begin result := y  end;
+
+  function  TAnsiTerm.WhereX : word;
+    var bx, by : byte;
+    begin
+      terminal.getxy(bx, by);
+      result := bx;
+    end;
+
+  function  TAnsiTerm.WhereY : word;
+    var bx, by : byte;
+    begin
+      terminal.getxy(bx, by);
+      result := by;
+    end;
+
   function  TAnsiTerm.GetTextAttr : word;
     begin
       result := attr;
@@ -295,6 +308,7 @@ This is a contrcete implementation of ITerm.
 
   procedure TAnsiTerm.Emit( wc : widechar );
     begin
+      { TODO: handle escaped characters }
       write( wc )
     end;
 
@@ -350,7 +364,7 @@ This is a contrcete implementation of ITerm.
     { work is destroyed automatically by reference count }
 #+end_src
 
-* Legacy interface : CRT
+* Legacy interface : =CRT.pas=
 
 CRT was the original console library for turbo pascal. It uses 1-based cordinates, and is limited to 16 colors.
 
@@ -362,13 +376,16 @@ CRT was the original console library for turbo pascal. It uses 1-based cordinate
   { --- warning!! generated file. edit ~/b/web/kvm.org instead!! --- }
 
 
-
+  {$mode objfpc}
   unit crt;
   interface uses kvm;
 
-  <<helpers>>
+  { helpers }
+  function crt_get_textattr : byte;
+  procedure crt_set_textattr( value : byte );
 
   { window / cursor managament }
+  var WindMaxX, WindMaxY, WindMinX, WindMinY : byte;
   procedure GotoXY( x, y : word );
   function  WhereX : byte;
   function  WhereY : byte;
@@ -392,7 +409,7 @@ CRT was the original console library for turbo pascal. It uses 1-based cordinate
   function  KeyPressed : boolean;
   function  ReadKey : char;
   procedure Delay;
-  procedure Sound;
+  procedure Sound( hz : word );
   procedure NoSound;
   { TODO:
   property CheckBreak : boolean }
@@ -437,13 +454,63 @@ CRT was the original console library for turbo pascal. It uses 1-based cordinate
 #+name: @crt:impl
 #+begin_src pascal
 
-  procedure GotoXY( x, y : cardinal );
+  var _x, _y : byte;
+  procedure GotoXY( x, y : word );
   begin
-    WhereX := x;
-    WhereY := y;
+    _x := x;
+    _y := y;
   end;
 
+  function WhereX:byte;
+    begin
+      result := _X;
+    end;
+
+  function WhereY:byte;
+    begin
+      result := _y;
+    end;
+
+
 #+end_src
+
+
+*** TODO finish implementing these
+#+name: @crt:impl
+#+begin_src pascal
+
+  procedure window(x1,y1,x2,y2:byte);
+    begin
+      // TODO: i don't think this is right behavior
+      windMinX := x1;
+      windMinY := y1;
+      windMaxX := x2;
+      windMaxY := y2;
+    end;
+
+  procedure clreol;
+    begin
+    end;
+
+  procedure clrscr;
+    begin
+    end;
+
+  procedure delline; begin end;
+  procedure insline; begin end;
+  procedure highvideo; begin end;
+  procedure lowvideo; begin end;
+  procedure normvideo; begin end;
+  function keypressed:boolean; begin result := false end;
+  function readkey:char; begin result := #255 end;
+  procedure delay; begin end;
+  procedure sound( hz : word); begin end;
+  procedure nosound; begin end;
+
+#+end_src
+
+
+
 
 * APPENDIX Convenience Routines
 
@@ -464,7 +531,7 @@ These follow the ITerm interface exactly.
   procedure ClrEol;
   procedure Fg( color : byte );
   procedure Bg( color : byte );
-  procedure Emit( wc : widechar );
+  procedure Emit( wc : widechar ); {$IFNDEF unitscope}virtual;{$ENDIF}
   procedure GotoXY( x, y : word );
   procedure InsLine;
   procedure DelLine;
@@ -479,8 +546,6 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
 
 #+name: @kvm:impl
 #+begin_src pascal
-  var work : ITerm;
-
   function  Width  : word; begin result := work.Width end;
   function  Height : word; begin result := work.Height end;
   function  MaxX   : word; begin result := work.MaxX end;
@@ -535,7 +600,9 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
   interface uses xpc, grids, terminal;
 
     <<ITerm>>
+    {$DEFINE unitscope}
     <<ITerm-Members>>
+    {$UNDEF unitscope}
 
     <<TTextAttr>>
     <<TScreenCell>>
@@ -546,6 +613,7 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
     <<TAnsiTerm>>
 
     <<extras>>
+  var work : ITerm;
 
   implementation
     <<@kvm:impl>>
