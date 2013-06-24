@@ -50,7 +50,7 @@ These units are written with a literate programming style:
 | vt      | ..       | virtual terminal + interface. mostly good/working. TODO: write/writeln         |
 | xpc     | ...      | general handy routines                                                         |
 
-* TODO generate links for those
+* TODO generate links for these
 * COMMENT
 #+begin_src pascal :tangle "../xpl.lpr" :comments both :padline yes :noweb tangle
   
