@@ -576,7 +576,7 @@ implementation
 
 {-- deprecated list interface --}
 
-  { this on is bad because "empty" can be a verb }
+  { this one is bad because "empty" can be a verb }
   function list.empty : boolean; inline; deprecated;
   begin result := self.is_empty;
   end;
