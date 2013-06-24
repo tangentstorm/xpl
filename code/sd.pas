@@ -5,6 +5,7 @@
 | copyright (c) 2012 michal j. wallace
 | see LICENSE.org for usage information
 }
+{$mode objfpc}{$i xpc.inc}
 unit sd;
 
 interface uses log, fs, sysutils;

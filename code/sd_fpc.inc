@@ -1,4 +1,4 @@
-
+{$mode objfpc}
 constructor TDrive.init ( path : string );
   begin
     // change to fs.open when it's ready
