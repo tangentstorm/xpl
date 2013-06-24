@@ -5,6 +5,8 @@ unit stri; { string interface }
 interface uses xpc, sysutils, strutils;
 
   function pad( s : string; len : integer; ch : char ) : string;
+  function lpad( s : string; len : integer; ch : char ) : string;
+  function rpad( s : string; len : integer; ch : char ) : string;
   function unpad( s : string; ch : char ) : string;
   function chntimes( c : char; n : byte ) : string;
   function ntimes( const s : string; n : byte ) : string;
@@ -41,12 +43,24 @@ begin
   result := s;
 end;
 
-function pad( s : string; len : integer; ch : char ) : string;
-begin
-  if length( s ) > len then s := trunc( s, len );
-  while length( s ) < len do s := s + ch;
-  result := s;
-end;
+function rpad( s : string; len : integer; ch : char ) : string;
+  begin
+    if length( s ) > len then s := trunc( s, len );
+    while length( s ) < len do s := s + ch;
+    result := s;
+  end;
+
+function lpad( s : string; len : integer; ch : char ) : string;
+  begin
+    if length( s ) > len then s := trunc( s, len );
+    while length( s ) < len do s := ch + s;
+    result := s;
+  end;
+
+function pad( s : string; len : integer; ch : char ) : string; inline;
+  begin
+    rpad( s, len, ch)
+  end;
 
 function unpad( s : string; ch : char ) : string;
   var i : integer;
