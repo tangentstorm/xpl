@@ -16,8 +16,8 @@ type
     constructor init ( path : string );
     procedure wipe;
     procedure grow ( n : byte );
-    procedure load ( i : integer; var b : TBlock );
-    procedure save ( i : integer; var b : TBlock );
+    procedure load ( i : cardinal; var b : TBlock );
+    procedure save ( i : cardinal; var b : TBlock );
     function block_count : cardinal;
     function byte_count : cardinal;
     destructor done ( );

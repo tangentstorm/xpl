@@ -17,13 +17,13 @@ procedure TDrive.grow ( n : byte );
     for n := n downto 1 do write( mFile, empty_block );
   end;
 
-procedure TDrive.load ( i : integer; var b : TBlock );
+procedure TDrive.load ( i : cardinal; var b : TBlock );
   begin
     seek( mFile, i );
     read( mFile, b );
   end;
 
-procedure TDrive.save ( i : integer; var b : TBlock );
+procedure TDrive.save ( i : cardinal; var b : TBlock );
   begin
     seek( mFile, i );
     write( mFile, b );
@@ -31,7 +31,7 @@ procedure TDrive.save ( i : integer; var b : TBlock );
 
 function TDrive.block_count : cardinal;
   begin
-    result := filesize( mFile ) div sizeOf( TBlock );
+    result := filesize( mFile )
   end;
 
 function TDrive.byte_count : cardinal;
