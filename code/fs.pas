@@ -6,6 +6,7 @@ interface uses stri
   function exists( path : string ) : boolean;
 
   {  IDEA: general purpose file opener }
+  //  TODO: http://www.freepascal.org/docs-html/rtl/sysutils/fileopen.html
   //  type fileobj = class
   //    private _file : file;
   //    constructor from(var f : file );
@@ -91,8 +92,10 @@ implementation
   procedure update(var f : file; path : string );
   begin
     {$I-}
+     { http://stackoverflow.com/questions/14428556/is-it-possible-to-read-and-write-from-to-file-opening-it-only-once }
+    system.FileMode := fmOpenReadWrite;
     system.assign( f, path );
-    system.rewrite( f, 1 );
+    system.reset( f );
     {$I+}
     error := ioresult;
   end;
