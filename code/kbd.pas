@@ -31,39 +31,73 @@ type
   function readkey : char;
   function readkey( out ch : char ) : char;
 
-  // these are thes standardized keyboard codes from:
+  // these are thes standardized keyboard codes for special keys from:
   // http://www.freepascal.org/docs-html/rtl/keyboard/kbdscancode.html
-  // (that page uses hex though)
-const
-  UP	      = #72;
-  LEFT	      = #75;
-  DOWN	      = #80;
-  RIGHT	      = #77;
-  HOME	      = #71;  // k_HOME = #71 and #73  - probably one is control/alt?
-  END_	      = #79;  // k_END    = #79 and #81
-  ESC	      = #27;
-  ENTER	      = #13;
-  INS	      = #82;
-  DEL	      = #83;
-  BKSP	      = #8;
-  C_LEFT      = #115;
-  C_RIGHT     = #116;
-  C_END	      = #117;
-  C_BKSP      = #127;
-  F1	      = #$3B;
-  F2	      = #$3C;
-  F3	      = #$3D;
-  F4	      = #$3E;
-  F5	      = #$3F;
-  F6	      = #$40;
-  F7	      = #$41;
-  F8	      = #$42;
-  F9	      = #$43;
-  F10	      = #$44;
-  F11	      = #$45;
-  F12	      = #$46;
-  sArrows     = [ kbd.UP, kbd.RIGHT, kbd.DOWN, kbd.LEFT ];
-  sCursorKeys = sArrows + [ #71, #73, #79, #81 ];
+  // (I have the numbers ascending in left-to-right order instead of
+  // top to bottom though. I found it easier to to see the structure):
+  const
+    NoKey	= #$00;
+    A_Esc	= #$01; A_Space    = #$02; C_Ins      = #$04;
+    S_Ins	= #$05; C_Del      = #$06; S_Del      = #$07;
+    A_Back	= #$08; A_S_Back   = #$09; S_Tab      = #$0F;
+
+    // control-letter and shift-letter codes are all standard
+    // characters, so only the alts appear in this table :
+    A_Q		= #$10; A_W        = #$11; A_E        = #$12;
+    A_R		= #$13; A_T        = #$14; A_Y        = #$15;
+    A_U		= #$16; A_I        = #$17; A_O        = #$18;
+    A_P		= #$19; A_LftBrack = #$1A; A_RgtBrack = #$1B;
+    A_A		= #$1E; A_S        = #$1F; A_D        = #$20;
+    A_F		= #$21; A_G        = #$22; A_H        = #$23;
+    A_J		= #$24; A_K        = #$25; A_L        = #$26;
+    A_SemiCol	= #$27; A_Quote    = #$28; A_OpQuote  = #$29;
+    A_BkSlash	= #$2B; A_Z        = #$2C; A_X        = #$2D;
+    A_C		= #$2E; A_V        = #$2F; A_B        = #$30;
+    A_N		= #$31; A_M        = #$32; A_Comma    = #$33;
+    A_Period	= #$34; A_Slash    = #$35; A_GreyAst  = #$37;
+
+    // function keys and arrows (f11 and f12 appear later on)
+    F1		= #$3B; F2         = #$3C; F3         = #$3D;
+    F4		= #$3E; F5         = #$3F; F6         = #$40;
+    F7		= #$41; F8         = #$42; F9         = #$43;
+    F10		= #$44; Home       = #$47; UP         = #$48;
+    PgUp	= #$49; LEFT       = #$4B; Center     = #$4C;
+    RIGHT	= #$4D; A_GrayPlus = #$4E; End_       = #$4F;
+    DOWN	= #$50; PgDn       = #$51; Ins        = #$52;
+    Del		= #$53; S_F1       = #$54; S_F2       = #$55;
+    S_F3	= #$56; S_F4       = #$57; S_F5       = #$58;
+    S_F6	= #$59; S_F7       = #$5A; S_F8       = #$5B;
+    S_F9	= #$5C; S_F10      = #$5D; C_F1       = #$5E;
+    C_F2	= #$5F; C_F3       = #$60; C_F4       = #$61;
+    C_F5	= #$62; C_F6       = #$63; C_F7       = #$64;
+    C_F8	= #$65; C_F9       = #$66; C_F10      = #$67;
+    A_F1	= #$68; A_F2       = #$69; A_F3       = #$6A;
+    A_F4	= #$6B; A_F5       = #$6C; A_F6       = #$6D;
+    A_F7	= #$6E; A_F8       = #$6F; A_F9       = #$70;
+    A_F10	= #$71; C_PrtSc    = #$72; C_Left     = #$73;
+    C_Right	= #$74; C_end      = #$75; C_PgDn     = #$76;
+    C_Home	= #$77;
+
+    {                 } A_1	   = #$78; A_2        = #$79;
+    A_3		= #$7A; A_4        = #$7B; A_5        = #$7C;
+    A_6		= #$7D; A_7        = #$7E; A_8        = #$7F;
+    A_9		= #$80; A_0        = #$81; A_Minus    = #$82;
+    A_Equal	= #$83; C_PgUp     = #$84; F11        = #$85;
+    F12		= #$86; S_F11      = #$87; S_F12      = #$88;
+    C_F11	= #$89; C_F12      = #$8A; A_F11      = #$8B;
+    A_F12	= #$8C; C_Up       = #$8D; C_Minus    = #$8E;
+    C_Center	= #$8F; C_GreyPlus = #$90; C_Down     = #$91;
+    C_Tab	= #$94; A_Home     = #$97; A_Up       = #$98;
+    A_PgUp	= #$99; A_Left     = #$9B; A_Right    = #$9D;
+    A_end	= #$9F; A_Down     = #$A0; A_PgDn     = #$A1;
+    A_Ins	= #$A2; A_Del      = #$A3; A_Tab      = #$A5;
+
+    ESC		= #27;
+    ENTER	= #13;
+    BKSP	= #8;
+
+    sArrows	= [ kbd.UP, kbd.RIGHT, kbd.DOWN, kbd.LEFT ];
+    sCursorKeys	= sArrows + [ #71, #73, #79, #81 ];
 
   const    { altkeys }
     {  these alt keys constants should move to the
@@ -83,8 +117,6 @@ const
     numlockon	  = $20;
     capslockon	  = $40;
     inserton	  = $80;
-
-
 
 { -- implementation > keyboard --------------------------- }
 
@@ -133,6 +165,8 @@ begin
 	      kbdF10   : ch := kbd.F10;
 	      kbdF11   : ch := kbd.F11;
 	      kbdF12   : ch := kbd.F12;
+              kbdPgUp  : ch := kbd.PgUp;
+              kbdPgDn  : ch := kbd.PgDn;
 	      else ch := chr(lo(GetKeyEventCode(evt)))
 	    end;
 	    cached_key := ch;
@@ -204,7 +238,7 @@ end; { kbstate }
     if KeyPressed then begin
       ch := Readkey;
     end;
-    enterPressed := ch = #13;
+    enterPressed := ch = ENTER;
   end; { enterpressed }
 
 
