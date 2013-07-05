@@ -25,7 +25,7 @@ implementation uses sets;
     var s : string;
     begin
       result := '';
-      for s in s do result += s;
+      for s in ss do result += s;
     end;
 
   procedure setup;
