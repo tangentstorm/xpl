@@ -5,9 +5,16 @@
 GEN = ./.gen
 # BIN: where to put the final executables
 BIN = ./bin
-XML = /usr/share/fpcsrc/2.6.2/packages/fcl-xml/src/
+
+PKG = ~/f/packages
+FCL = $(PKG)/fcl-base/src
+WEB = $(PKG)/fcl-web/src
+XML = $(PKG)/fcl-xml/src
+WEB = $(PKG)/fcl-web/src
 FPC = fpc -Mobjfpc -FE$(BIN) -Fu$(GEN) -Fi$(GEN) \
+	-Fu$(FCL) -Fi$(FCL) \
 	-Fu$(XML) -Fi$(XML) \
+	-Fu$(WEB) -Fi$(WEB) \
 	-Fu./code -Fi./code -gl
 
 targets:
