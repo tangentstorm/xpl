@@ -248,10 +248,9 @@ end;
 procedure zinput.handlestripped( ch : Char );
 begin
   case ch of
-    #6, ^T      : fw_del_token; { ^Del <-doesn't seem to work!!,^T }
     kbd.BKSP    : backspace;
     kbd.ENTER   : accept;
-    ^x		: while ( cpos > 1 ) do backspace;
+    ^x	   : while ( cpos > 1 ) do backspace;
     kbd.ESC     : if escexits then cancel;
     kbd.HOME    : to_start;
     kbd.LEFT    : left;
@@ -262,7 +261,7 @@ begin
     kbd.C_LEFT  : bw_token;
     kbd.C_RIGHT : fw_token;
     kbd.C_END   : del_to_end;
-    kbd.C_BKSP  : begin fw_token; bw_del_token; backspace; end
+    kbd.C_DEL   : fw_del_token;
   end;
   frst := false;
 end;
