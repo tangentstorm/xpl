@@ -398,7 +398,6 @@ initialization
   cwnchexpected := 0;
   cur.c := $0007;
   sav.c := $000E;
-  kvm.clrscr; // until we have kvm.wherex/wherey implemented correctly
   cur.x := 0;
   cur.y := 0;
   sav.x := 0;
