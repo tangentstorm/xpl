@@ -7,6 +7,9 @@
   {$macro on}                   // allow simple compiler macros
   {$modeswitch nestedprocvars}  // allow 'is nested'
 
+  // memory layout
+  {$packset 1}
+
   // safety
   {$assertions on}
 
