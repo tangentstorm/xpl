@@ -1,3 +1,4 @@
+{$mode objfpc}
 unit terminal;
 interface uses baseunix, termio;
 
