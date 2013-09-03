@@ -6,7 +6,7 @@
 
 {$i xpc.inc}
 unit di;
-interface uses xpc, li;
+interface uses xpc;
 
   type
     generic dict<v> = class
