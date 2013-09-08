@@ -14,8 +14,9 @@ procedure setup;
 procedure test_append;
   begin
     chk.equal( 0, ints.length );
-    ints.append( 12345 );
+    chk.equal( 0, ints.append( 12345 ));
     chk.equal( 1, ints.length );
+    chk.equal( 1, ints.append( 23456 ));
   end;
 
 procedure test_find;

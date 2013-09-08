@@ -13,7 +13,7 @@ type
   public
     constructor Create( growBy : cardinal = 16 );
     function Grow : cardinal;
-    procedure Append( item : T );
+    function Append( item : T ) : cardinal;
     function Find( item : T; out i : cardinal ) : boolean;
   public { IArray }
     function Length : cardinal; override;
@@ -39,9 +39,10 @@ function GArray<T>.Grow : cardinal;
       then SetLength( _items, result + _growBy )
   end;
 
-procedure GArray<T>.Append( item : T );
+function GArray<T>.Append( item : T ) : cardinal;
   begin
-    _items[ self.Grow ] := item;
+    result := self.Grow;
+    _items[ result ] := item;
   end;
 
 function GArray<T>.Length : cardinal;
