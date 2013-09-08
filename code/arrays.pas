@@ -1,54 +1,72 @@
-{$mode objfpc}{$i xpc.inc}
+{$mode delphi}{$i xpc.inc}
 unit arrays;
-interface uses sq;
+interface uses sq, sysutils;
 
 type
-  generic IArray<T> = interface ( specialize ISequence<T, cardinal> )
+  IArray<T> = interface ( ISequence<T, cardinal> )
   end;
 
-  generic GArray<T> = class ( specialize GSeq<T, cardinal>, specialize IArray<T> )
+  GArray<T> = class ( GSeq<T, cardinal>, IArray<T> )
     _items : array of T;
-    constructor Create( sizeHint : cardinal = 16 );
+    _count : cardinal;
+    _growby : cardinal;
+  public
+    constructor Create( growBy : cardinal = 16 );
     function Grow : cardinal;
-    procedure Append( value : T );
+    procedure Append( item : T );
+    function Find( item : T; out i : cardinal ) : boolean;
   public { IArray }
     function Length : cardinal; override;
-    procedure SetItem( i : cardinal; const value : T ); override;
+    procedure SetItem( i : cardinal; const item : T ); override;
     function GetItem( i : cardinal ) : T; override;
     property at[ i : cardinal ]: T read GetItem write SetItem; default;
   end;
 
 implementation
 
-  constructor GArray.Create( sizeHint : cardinal );
+constructor GArray<T>.Create( growBy : cardinal = 16 );
   begin
-    SetLength( _items, sizeHint );
+    _count := 0;
+    _growBy := growBy;
+    if _growBy > 0 then SetLength( _items, _growBy )
+    else raise Exception.Create('GArray.growBy must be > 0')
   end;
 
-  function GArray.Grow : cardinal;
+function GArray<T>.Grow : cardinal;
   begin
-    result := self.Length;
-    SetLength( _items, result + 1 );
+    result := _count; inc(_count);
+    if _count >= system.Length( _items )
+      then SetLength( _items, result + _growBy )
   end;
 
-  procedure GArray.Append( value : T );
+procedure GArray<T>.Append( item : T );
   begin
-    _items[ self.Grow ] := value;
+    _items[ self.Grow ] := item;
   end;
 
-  function GArray.Length : cardinal;
+function GArray<T>.Length : cardinal;
   begin
-    result := system.Length( _items );
+    result := _count
   end;
 
-  procedure GArray.SetItem( i : cardinal; const value : T );
+procedure GArray<T>.SetItem( i : cardinal; const item : T );
   begin
-    _items[ i ] := value
+    if i < _count then _items[ i ] := item
+    else raise Exception.Create('array index out of bounds')
   end;
 
-  function GArray.GetItem( i : cardinal ) : T;
+function GArray<T>.GetItem( i : cardinal ) : T;
   begin
-    result := _items[ i ];
+    if i < _count then result := _items[ i ]
+    else raise Exception.Create('array index out of bounds')
+  end;
+
+function GArray<T>.Find( item : T; out i : cardinal ) : boolean;
+  begin
+    i := self.length;
+    repeat
+      dec( i ); result := item = _items[ i ]
+    until result or (i = 0);
   end;
 
 end.
