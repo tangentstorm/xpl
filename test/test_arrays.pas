@@ -2,7 +2,7 @@
 {$i test_arrays.def }
 implementation uses arrays, sysutils;
 
-type TInt32Array = GArray<Int32>;
+type TInt32Array = GEqArray<Int32>;
 var ints : TInt32Array;
 
 procedure setup;
@@ -24,9 +24,9 @@ procedure test_find;
   begin
     ints.append( 55 );
     ints.append( 22 );
-    chk.that(not ints.find( 33, i ), '33 isn''t in the list.');
+    chk.that(not ints.Find( 33, i ), '33 isn''t in the list.');
     ints.append( 33 );
-    chk.that(ints.find( 33, i ), 'should have found 33');
+    chk.that(ints.Find( 33, i ), 'should have found 33');
     chk.equal( i, 2 );
   end;
 

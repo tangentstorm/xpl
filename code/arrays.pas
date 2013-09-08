@@ -14,12 +14,17 @@ type
     constructor Create( growBy : cardinal = 16 );
     function Grow : cardinal;
     function Append( item : T ) : cardinal;
-    function Find( item : T; out i : cardinal ) : boolean;
   public { IArray }
     function Length : cardinal; override;
     procedure SetItem( i : cardinal; const item : T ); override;
     function GetItem( i : cardinal ) : T; override;
     property at[ i : cardinal ]: T read GetItem write SetItem; default;
+  end;
+
+  // Find uses an equality check, so it only works on types where
+  // the = operator is overloaded.
+  GEqArray<T> = class( GArray<T> )
+    function Find( item : T; out i : cardinal ) : boolean;
   end;
 
 implementation
@@ -62,7 +67,7 @@ function GArray<T>.GetItem( i : cardinal ) : T;
     else raise Exception.Create('array index out of bounds')
   end;
 
-function GArray<T>.Find( item : T; out i : cardinal ) : boolean;
+function GEqArray<T>.Find( item : T; out i : cardinal ) : boolean;
   begin
     i := self.length;
     repeat
