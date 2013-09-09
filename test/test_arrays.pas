@@ -22,6 +22,7 @@ procedure test_append;
 procedure test_find;
   var i : cardinal;
   begin
+    chk.that(not ints.Find( 33, i ), 'nothing should be in empty list.');
     ints.append( 55 );
     ints.append( 22 );
     chk.that(not ints.Find( 33, i ), '33 isn''t in the list.');

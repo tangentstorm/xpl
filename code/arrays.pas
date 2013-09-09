@@ -70,9 +70,11 @@ function GArray<T>.GetItem( i : cardinal ) : T;
 function GEqArray<T>.Find( item : T; out i : cardinal ) : boolean;
   begin
     i := self.length;
-    repeat
-      dec( i ); result := item = _items[ i ]
-    until result or (i = 0);
+    if i = 0 then result := false
+    else
+      repeat
+	dec( i ); result := item = _items[ i ]
+      until result or (i = 0);
   end;
 
 end.
