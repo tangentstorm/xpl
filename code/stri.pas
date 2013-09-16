@@ -59,7 +59,7 @@ function lpad( s : string; len : integer; ch : char ) : string;
 
 function pad( s : string; len : integer; ch : char ) : string; inline;
   begin
-    rpad( s, len, ch)
+    result := rpad( s, len, ch)
   end;
 
 function unpad( s : string; ch : char ) : string;
