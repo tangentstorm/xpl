@@ -56,7 +56,8 @@ interface uses xpc, num, stri, kvm;
 { ■ string writing commands }
 
   { primitives	       : these write text in solid colors }
-  procedure colorxy  ( x, y : byte; c : word; const s : string );
+  procedure cxy(c : word; x, y : byte; const s : string );
+  procedure colorxy  ( x, y : byte; c : word; const s : string ); deprecated;
   procedure colorxyc ( x, y : byte; c : word; const s : string );
   procedure colorxyv ( x, y : byte; c : word; const s : string ); // [v]ertical
 
@@ -86,17 +87,18 @@ interface uses xpc, num, stri, kvm;
 
 implementation
 
-  function point.getc : byte;
+function point.getc : byte;
   begin
     result := (( bg and $0F ) shl 4 ) + ( fg and $0F ); //  todo : make this << 8 so I can use 256 colors
   end;
-  procedure point.setc( value : byte );
+
+procedure point.setc( value : byte );
   begin
     self.fg := lo( value );
     self.bg := hi( value );
   end; { point.setc }
 
-  procedure wr( ch : unichar );
+procedure wr( ch : unichar );
   begin
     write(ch);
     //colorxy( min.x+cur.x, min.y+cur.y, cur.c, s );
@@ -104,19 +106,21 @@ implementation
     if cur.x >= (max.x - min.x) then cwrite( ^M );
   end;
 
-  procedure colorxy(x, y :byte; c: word; const s : string); inline;
-    var i : integer;
+procedure cxy(c: word; x, y :byte; const s : string); inline;
+  var i : integer;
   begin
     kvm.textattr := c;
     kvm.GotoXY( x, y );
-    for i := 1 to length(s) do
-    begin
-      wr( s[i] );
-    end;
+    for i := 1 to length(s) do wr( s[i] );
+  end; { cxy }
+
+procedure colorxy(x, y :byte; c: word; const s : string); inline;
+  begin
+    cxy(c,x,y,s)
   end;
 
-  { vertical colorxy }
-  procedure Colorxyv( x, y : byte; c : word; const s : string );
+{ vertical colorxy }
+procedure Colorxyv( x, y : byte; c : word; const s : string );
     var i : byte;
   begin
     for i := 1 to length( s ) do begin
@@ -124,15 +128,15 @@ implementation
     end;
   end;
 
-  { centered colorxy }
-  procedure colorxyc( x, y : byte; c : word; const s : string );
+{ centered colorxy }
+procedure colorxyc( x, y : byte; c : word; const s : string );
   begin
     colorxy( x + 1 - length( s ) div 2, y, c, s );
   end;
 
-  procedure cwcommand( cn : command; s : string );
-    const digits = ['0','1','2','3','4','5','6','7','8','9'];
-    var n : integer;
+procedure cwcommand( cn : command; s : string );
+  const digits = ['0','1','2','3','4','5','6','7','8','9'];
+  var n : integer;
   begin
     case cn of
       cwfg : if s[ 1 ] in ccolset then
@@ -371,8 +375,8 @@ implementation
   end;
 
 
-  {  probably want to rename this to 'escape' }
-  function normaltext( s : string; esc : char = trg ) : string;
+{  probably want to rename this to 'escape' }
+function normaltext( s : string; esc : char = trg ) : string;
     var i : integer;
   begin
     result := '';
@@ -384,7 +388,7 @@ implementation
   end;
 
 
-  function cpadstr( s : string; len : byte; ch : char ) : string;
+function cpadstr( s : string; len : byte; ch : char ) : string;
   begin
     if clength( s ) > len then s := stri.trunc( s, len );
     while clength( s ) < len do s := s + ch;
