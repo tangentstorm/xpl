@@ -17,8 +17,8 @@ interface uses xpc, sysutils, stacks;
         { TLinkNode : link class with .nextLink, .prevLink }
         GNode = class
           nextLink, prevLink : GNode;
-          constructor create;
-          function length : cardinal; virtual;
+          constructor Create;
+          function Length : cardinal; virtual;
         end;
         GCellNode = class( GNode )
         protected
@@ -27,15 +27,15 @@ interface uses xpc, sysutils, stacks;
           function _get : T;
          public
           property value : T read _get write _set;
-          constructor create( v : T );
-          function length : cardinal; override;
-          function is_clasp : boolean; virtual;
+          constructor Create( v : T );
+          function Length : cardinal; override;
+          function IsClasp : boolean; virtual;
         end;
         { allow creation of nested lists (trees) }
         GRingNode = class ( GNode )
            items : GRing<T>;
-           constructor create;
-           function length : cardinal; override;
+           constructor Create;
+           function Length : cardinal; override;
          end;
         { list.TClaspNode : a special node that joins the ends of the list }
         { It's only a cell node because that made the implementation of
@@ -44,12 +44,12 @@ interface uses xpc, sysutils, stacks;
         //  TODO : refactor the node class hierarchy
         GClaspNode = class( GCellNode )
           parent : GNode;
-          constructor create;
-          function length : cardinal; override;
-          function is_clasp : boolean; override;
+          constructor Create;
+          function Length : cardinal; override;
+          function IsClasp : boolean; override;
         end;
         GNodeStack = GStack<GNode>;
-        { tracks a position in the list, even through inserts/deletes }
+        { tracks a position in the list, even through Inserts/deletes }
         type GCursor = class
           private type GNodeStack = GStack<GNode>;
           protected
@@ -57,32 +57,31 @@ interface uses xpc, sysutils, stacks;
             _cell  : GCellNode;
             _idx  : cardinal;
             _path : GNodeStack;
-            function _get_value : T;
-            procedure _set_value( v : T );
-            function _get_index : cardinal;
-            function nextcell : GCellNode; virtual;
-            function prevcell : GCellNode; virtual;
+            function GetValue : T;
+            procedure SetValue( v : T );
+            function GetIndex : cardinal;
+            function NextCell : GCellNode; virtual;
+            function PrevCell : GCellNode; virtual;
           public
-            constructor create( lis : GRing<T> );
-            procedure reset;
-            procedure to_top;
-            procedure to_end;
-            function at_top : boolean;
-            function at_end : boolean;
-            function at_clasp : boolean;
-            procedure move_to( other : GCursor );
-            function move_next : boolean;
-            function move_prev : boolean;
-            function next( out t : T ) : boolean;
-            function prev( out t : T ) : boolean;
-            procedure inject_prev( const val : T );
-            procedure inject_next( const val : T );
-            procedure delete_next;
-            property value : T read _get_value write _set_value;
-            property index : cardinal read _get_index;
+            constructor Create( lis : GRing<T> );
+            procedure Reset;
+            procedure ToTop;
+            procedure ToEnd;
+            function AtTop : boolean;
+            function AtEnd : boolean;
+            function AtClasp : boolean;
+            procedure MoveTo( other : GCursor );
+            function Next( out t : T ) : boolean;
+            function Prev( out t : T ) : boolean;
+            procedure InjectPrev( const val : T );
+            procedure InjectNext( const val : T );
+            procedure delete_Next;
+            property value : T read GetValue write SetValue;
+            property index : cardinal read GetIndex;
           public  { for..in loop interface }
-            function movenext : boolean;
-            property current  : T read _get_value;
+            property current  : T read GetValue;
+            function MoveNext : boolean;
+            function MovePrev : boolean; // just for symmetry
           end;
   
       public { procedure types used by foreach, find }
@@ -96,46 +95,46 @@ interface uses xpc, sysutils, stacks;
                              var p     : GNodeStack; out v : GCellNode ) : boolean;
         function FindPrev( const start : GCellNode;
                              var p     : GNodeStack; out v : GCellNode ) : boolean;
-      function firstcell: GCellNode;
-      function lastcell: GCellNode;
+      function FirstCell: GCellNode;
+      function LastCell: GCellNode;
      public
-      constructor create;
-      procedure append( val : T );
-      procedure insert( val : T );
-      procedure insert_at( val : T;  at_index : cardinal = 0 );
-      procedure remove( val : T );
-      procedure drop;
-      procedure foreach( action : GNodeAction );
-      function find( pred : GNodePredicate ) : T;
-      function is_empty: boolean;
-      function first : T;
-      function last : T;
-      function make_cursor : GCursor;
-      function length : cardinal;
+      constructor Create;
+      procedure Append( val : T );
+      procedure Insert( val : T );
+      procedure InsertAt( val : T;  at_index : cardinal = 0 );
+      procedure Remove( val : T );
+      procedure Drop;
+      procedure ForEach( action : GNodeAction );
+      function Find( pred : GNodePredicate ) : T;
+      function IsEmpty: boolean;
+      function First : T;
+      function Last : T;
+      function MakeCursor : GCursor;
+      function Length : cardinal;
   
       { -- interface for for..in loops -- }
      public
-      function getenumerator : GCursor;
+          function GetEnumerator : GCursor;
   
     end;
 
 implementation
   { -- link ( internal type ) -- }
   
-  constructor GRing<T>.GNode.create;
+  constructor GRing<T>.GNode.Create;
   begin
-    self.nextlink := nil;
-    self.prevlink := nil;
+    self.Nextlink := nil;
+    self.Prevlink := nil;
   end;
   
-  function GRing<T>.GNode.length : cardinal;
+  function GRing<T>.GNode.Length : cardinal;
   begin
     result := 0;
   end;
   
-  constructor GRing<T>.GCellNode.create( v : T );
+  constructor GRing<T>.GCellNode.Create( v : T );
     begin
-    inherited create;
+    inherited Create;
     self.value := v;
   end;
   
@@ -147,41 +146,41 @@ implementation
   begin result := self._val;
   end;
   
-  function GRing<T>.GCellNode.is_clasp : boolean;
+  function GRing<T>.GCellNode.IsClasp : boolean;
   begin
     result := false;
   end;
   
-  function GRing<T>.GCellNode.length : cardinal;
+  function GRing<T>.GCellNode.Length : cardinal;
   begin
     result := 1;
   end;
   
-  constructor GRing<T>.GClaspNode.create;
+  constructor GRing<T>.GClaspNode.Create;
     begin
-      self.nextlink := self;
-      self.prevlink := self;
+      self.Nextlink := self;
+      self.Prevlink := self;
     end;
   
-  function GRing<T>.GClaspNode.is_clasp : boolean;
+  function GRing<T>.GClaspNode.IsClasp : boolean;
     begin
       result := true;
     end;
   
-  function GRing<T>.GClaspNode.length : cardinal;
+  function GRing<T>.GClaspNode.Length : cardinal;
     begin
       result := 0;
     end;
   
-  constructor GRing<T>.GRingNode.create;
+  constructor GRing<T>.GRingNode.Create;
     begin
-      inherited create;
-      items := GRing<T>.create;
+      inherited Create;
+      items := GRing<T>.Create;
     end;
   
-  function GRing<T>.GRingNode.length : cardinal;
+  function GRing<T>.GRingNode.Length : cardinal;
     begin
-      result := items.length;
+      result := items.Length;
     end;
     { -- list cursor ( internal type ) -- }
   
@@ -190,273 +189,268 @@ implementation
       _ring := lis;
       //  todo: use a dynamically resizable stack
       _path := GNodeStack.Create( kMaxDepth );
-      self.reset;
+      self.Reset;
     end;
   
-  procedure GRing<T>.GCursor.reset;
+  procedure GRing<T>.GCursor.Reset;
     begin
       _cell := _ring._clasp;
       _idx := 0;
     end;
   
-  function GRing<T>.GCursor.nextCell : GCellNode;
+  function GRing<T>.GCursor.NextCell : GCellNode;
     begin
       _ring.FindNext( _cell, _path, result )
     end;
   
-  function GRing<T>.GCursor.prevCell : GCellNode;
+  function GRing<T>.GCursor.PrevCell : GCellNode;
     begin
       _ring.FindPrev( _cell, _path, result )
     end;
   
-  function GRing<T>.GCursor.move_next : boolean;
+  function GRing<T>.GCursor.MoveNext : boolean;
     begin
-      if _ring.is_empty then result := false
+      if _ring.IsEmpty then result := false
       else begin
-        _cell := self.nextcell;
+        _cell := self.NextCell;
         inc( _idx );
         result := ( _cell <> _ring._clasp );
       end
     end;
   
-  function GRing<T>.GCursor.next( out t : T ) : boolean;
+  function GRing<T>.GCursor.Next( out t : T ) : boolean;
     begin
-      result := self.move_next;
+      result := self.MoveNext;
       if result then t := _cell.value;
     end;
   
-  { this is only here to allow 'for..in' loops }
-  function GRing<T>.GCursor.movenext : boolean; inline;
-    begin result := self.move_next
-    end;
-  
-  function GRing<T>.GCursor.move_prev : boolean;
+  function GRing<T>.GCursor.MovePrev : boolean;
     begin
-      if _ring.is_empty then result := false
+      if _ring.IsEmpty then result := false
       else begin
-        _cell := self.prevcell;
-        if _idx = 0 then _idx := _ring.length else dec( _idx );
+        _cell := self.PrevCell;
+        if _idx = 0 then _idx := _ring.Length else dec( _idx );
         result := ( _cell <> _ring._clasp );
       end
-    end; { GRing<T>.cursor.move_prev }
+    end; { GRing<T>.cursor.MovePrev }
   
-  function GRing<T>.GCursor.prev( out t : T ) : boolean;
+  function GRing<T>.GCursor.Prev( out t : T ) : boolean;
     begin
-      result := self.move_prev;
+      result := self.MovePrev;
       if result then t := _cell.value;
-    end; { GRing<T>.cursor.prev }
+    end; { GRing<T>.cursor.Prev }
   
-  procedure GRing<T>.GCursor.to_top;
+  procedure GRing<T>.GCursor.ToTop;
     begin
-      if _ring.is_empty then raise Exception.create('no top item to go to')
+      if _ring.IsEmpty then raise Exception.Create('no top item to go to')
       else begin
-        self.reset;
-        self.move_next
+        self.Reset;
+        self.MoveNext
       end
     end;
   
-    procedure GRing<T>.GCursor.to_end;
+    procedure GRing<T>.GCursor.ToEnd;
     begin
-      if _ring.is_empty then raise Exception.create('no end item to go to')
+      if _ring.IsEmpty then raise Exception.Create('no end item to go to')
       else begin
-        self.reset;
-        self.move_prev
+        self.Reset;
+        self.MovePrev
       end
     end;
   
-    function GRing<T>.GCursor.at_top : boolean;
+    function GRing<T>.GCursor.AtTop : boolean;
     begin
-      result := (self.prevcell = _ring._clasp) and not _ring.is_empty;
+      result := (self.PrevCell = _ring._clasp) and not _ring.IsEmpty;
     end;
   
-    function GRing<T>.GCursor.at_end : boolean;
+    function GRing<T>.GCursor.AtEnd : boolean;
     begin
-      result := (self.nextcell = _ring._clasp) and not _ring.is_empty;
+      result := (self.NextCell = _ring._clasp) and not _ring.IsEmpty;
     end;
   
-    function GRing<T>.GCursor.at_clasp : boolean;
+    function GRing<T>.GCursor.AtClasp : boolean;
     begin
       result := (self._cell = _ring._clasp);
     end;
   
-    procedure GRing<T>.GCursor.move_to( other : GCursor );
+    procedure GRing<T>.GCursor.MoveTo( other : GCursor );
     begin
       _cell := other._cell;
       _idx := other._idx;
       _ring := other._ring;
     end;
-  function GRing<T>.GCursor._get_value : t;
+  function GRing<T>.GCursor.GetValue : t;
   begin
     if _cell = _ring._clasp then
-      raise Exception.create(
+      raise Exception.Create(
               'can''t get value at the clasp. move the cursor.' )
     else result := _cell.value
   end;
   
-  procedure GRing<T>.GCursor._set_value( v : T );
+  procedure GRing<T>.GCursor.SetValue( v : T );
   begin
     if _cell = _ring._clasp then
-      raise Exception.create(
+      raise Exception.Create(
               'can''t set value at the clasp. move the cursor.' )
     else _cell.value := v
   end;
   
-  function GRing<T>.GCursor._get_index : cardinal;
+  function GRing<T>.GCursor.GetIndex : cardinal;
   begin
     result := _idx;
   end;
-  procedure GRing<T>.GCursor.inject_prev( const val : T );
+  procedure GRing<T>.GCursor.InjectPrev( const val : T );
     var ln : GNode;
   begin
     inc( self._ring._count );
     inc( self._idx );
     ln := GCellNode.Create( val );
-    ln.nextlink := self._cell;
-    ln.prevlink := self._cell.prevlink;
-    self._cell.prevlink.nextlink := ln;
-    self._cell.prevlink := ln;
-  end; { GRing<T>.cursor.inject_prev }
+    ln.Nextlink := self._cell;
+    ln.Prevlink := self._cell.Prevlink;
+    self._cell.Prevlink.Nextlink := ln;
+    self._cell.Prevlink := ln;
+  end; { GRing<T>.cursor.InjectPrev }
   
-  procedure GRing<T>.GCursor.inject_next( const val : T );
+  procedure GRing<T>.GCursor.InjectNext( const val : T );
     var ln : GNode;
   begin
     // we don't increase the index here because we're injecting *after*
     inc( self._ring._count );
     ln := GCellNode.Create( val );
-    ln.prevlink := self._cell;
-    ln.nextlink := self._cell.nextlink;
-    self._cell.nextlink.prevlink := ln;
-    self._cell.nextlink := ln;
-  end; { GRing<T>.cursor.inject_next }
+    ln.Prevlink := self._cell;
+    ln.Nextlink := self._cell.Nextlink;
+    self._cell.Nextlink.Prevlink := ln;
+    self._cell.Nextlink := ln;
+  end; { GRing<T>.cursor.InjectNext }
   //  this is probably leaking memory. how to deal with pointers?
-  procedure GRing<T>.GCursor.delete_next;
+  procedure GRing<T>.GCursor.delete_Next;
     var temp : GNode;
   begin
-    temp := self._cell.nextlink;
+    temp := self._cell.Nextlink;
     if temp <> self._ring._clasp then
     begin
-      self._cell.nextlink := temp.nextlink;
-      self._cell.nextlink.prevlink := self._cell;
-      temp.nextlink := nil;
-      temp.prevlink := nil;
+      self._cell.Nextlink := temp.Nextlink;
+      self._cell.Nextlink.Prevlink := self._cell;
+      temp.Nextlink := nil;
+      temp.Prevlink := nil;
       // todo: temp.free
     end
   end;
   
   
-  constructor GRing<T>.create;
+  constructor GRing<T>.Create;
     begin
       _clasp := GClaspNode.Create;
       _count := 0;
     end;
   
-  function GRing<T>.make_cursor : GCursor;
+  function GRing<T>.MakeCursor : GCursor;
     begin
       result := GCursor.Create( self )
     end;
   
   { this allows 'for .. in' in the fpc / delphi compilers }
-  function GRing<T>.getenumerator: GCursor;
+  function GRing<T>.GetEnumerator: GCursor;
     begin
-      result := self.make_cursor
+      result := self.MakeCursor
     end;
   
   
-  function GRing<T>.length : cardinal;
+  function GRing<T>.Length : cardinal;
     var ln : GNode;
     begin
       result := 0;
       ln := _clasp;
       repeat
-        inc( result, ln.length );
-        ln := ln.nextlink;
+        inc( result, ln.Length );
+        ln := ln.Nextlink;
       until ln = _clasp;
     end;
   
   
-  function GRing<T>.find( pred : GNodePredicate ) : t;
+  function GRing<T>.Find( pred : GNodePredicate ) : t;
     var cur : GCursor; found : boolean = false;
     begin
-      cur := self.make_cursor;
-      cur.to_top;
+      cur := self.MakeCursor;
+      cur.ToTop;
       repeat
         found := pred( cur.value )
-      until found or not cur.move_next;
+      until found or not cur.MoveNext;
       if found then result := cur.value
-    end; { find }
+    end; { Find }
   
-  procedure GRing<T>.foreach( action : GNodeAction );
+  procedure GRing<T>.ForEach( action : GNodeAction );
     var item : T;
     begin
       for item in self do action( item );
     end;
   
-  { insert : add to the start of the list, right after the clasp }
-  procedure GRing<T>.insert( val : T );
+  { Insert : add to the start of the list, right after the clasp }
+  procedure GRing<T>.Insert( val : T );
     var ln : GCellNode;
   begin
     inc(_count);
     ln := GCellNode.Create( val );
-    ln.prevlink := _clasp;
-    ln.nextlink := _clasp.nextlink;
-    _clasp.nextlink.prevlink := ln;
-    _clasp.nextlink := ln;
-  end; { insert }
+    ln.Prevlink := _clasp;
+    ln.Nextlink := _clasp.Nextlink;
+    _clasp.Nextlink.Prevlink := ln;
+    _clasp.Nextlink := ln;
+  end; { Insert }
   
-  procedure GRing<T>.insert_at( val : T; at_index : cardinal );
+  procedure GRing<T>.InsertAt( val : T; at_index : cardinal );
     var cur : GCursor;
   begin
-    cur := self.make_cursor;
-    if at_index >= length then cur.to_end
-    else while cur.index < at_index do cur.move_next;
-    cur.inject_next( val );
-  end; { insert_at }
+    cur := self.MakeCursor;
+    if at_index >= Length then cur.ToEnd
+    else while cur.index < at_index do cur.MoveNext;
+    cur.InjectNext( val );
+  end; { InsertAt }
   
-  { append : add to the end of the list, right before the clasp }
-  procedure GRing<T>.append( val : T );
+  { Append : add to the end of the list, right before the clasp }
+  procedure GRing<T>.Append( val : T );
     var ln : GNode;
   begin
     inc(_count);
     ln := GCellNode.Create( val );
-    ln.nextlink := _clasp;
-    ln.prevlink := _clasp.prevlink;
-    _clasp.prevlink.nextlink := ln;
-    _clasp.prevlink := ln;
-  end; { append }
-  procedure GRing<T>.remove( val : T );
+    ln.Nextlink := _clasp;
+    ln.Prevlink := _clasp.Prevlink;
+    _clasp.Prevlink.Nextlink := ln;
+    _clasp.Prevlink := ln;
+  end; { Append }
+  procedure GRing<T>.Remove( val : T );
     var c : GCursor; found : boolean = false;
     begin
-      if not self.is_empty then pass
+      if not self.IsEmpty then pass
       else begin
-        c := self.make_cursor;
+        c := self.MakeCursor;
         repeat
-          c.move_next;
+          c.MoveNext;
           found := c.value = val;
-        until found or c.at_end;
+        until found or c.AtEnd;
         if found then begin
-          c.move_prev;
-          c.delete_next
+          c.MovePrev;
+          c.delete_Next
         end
       end
-    end; { remove }
-    
-  procedure GRing<T>.drop;
+    end; { Remove }
+  
+  procedure GRing<T>.Drop;
       var temp : GNode;
     begin
-      if is_empty then raise Exception.create('attempted to drop from empty list')
+      if IsEmpty then raise Exception.Create('attempted to drop from empty list')
       else begin
-        temp := _clasp.prevlink;
-        _clasp.prevlink := _clasp.prevlink.prevlink;
-        temp.prevlink := nil;
-        temp.nextlink := nil;
+        temp := _clasp.Prevlink;
+        _clasp.Prevlink := _clasp.Prevlink.Prevlink;
+        temp.Prevlink := nil;
+        temp.Nextlink := nil;
         temp.free;
       end
     end;
-    
-  function GRing<T>.is_empty : boolean;
+  
+  function GRing<T>.IsEmpty : boolean;
     begin result := _count = 0
     end;
-    
+  
   function GRing<T>.FindNext( const start : GCellNode; var p : GNodeStack;
                            out v : GCellNode ) : boolean;
     var ln : GNode;
@@ -464,18 +458,18 @@ implementation
       result := false;
       ln := start;
       repeat
-        if ( ln is GCellNode ) then 
-          with ln as GCellNode do ln := ln.nextlink;
-        if ( ln is GRingNode ) then 
+        if ( ln is GCellNode ) then
+          with ln as GCellNode do ln := ln.Nextlink;
+        if ( ln is GRingNode ) then
           with ln as GRingNode do begin
             p.push( ln );
-            if items.length = 0 then ln := ln.nextlink
+            if items.Length = 0 then ln := ln.Nextlink
             else ln := items._clasp
           end
         else if ln is GClaspNode then
           if p.count > 0 then ln := p.pop
           else ln := _clasp
-        else if ln is GCellNode then 
+        else if ln is GCellNode then
           begin
             result := true;
             v := ln as GCellNode;
@@ -483,8 +477,8 @@ implementation
       until result or ( ln = _clasp );
       v := ln as GCellNode;
     end;
-    
-  { should be exactly the same as above but s/next/prev/g }
+  
+  { should be exactly the same as above but s/Next/Prev/g }
   function GRing<T>.FindPrev(
       const start : GCellNode; var p : GNodeStack; out v : GCellNode ) : boolean;
       var ln : GNode;
@@ -492,10 +486,10 @@ implementation
       result := false;
       ln := start;
       repeat
-        ln := ln.prevlink;
+        ln := ln.Prevlink;
         if ( ln is GRingNode ) then with (ln as GRingNode) do begin
           p.push( ln as GRingNode );
-          if ( items.length = 0 ) then ln := ln.prevlink
+          if ( items.Length = 0 ) then ln := ln.Prevlink
           else result := items.FindPrev(items._clasp, p, v )
         end
         else if ln is GClaspNode then begin
@@ -509,35 +503,35 @@ implementation
       until result or ( ln = _clasp );
       v := ln as GCellNode;
     end;
-    
+  
   function GRing<T>.FirstCell : GCellNode;
     var p : GNodeStack;
     begin
       p := GNodeStack.Create( kMaxDepth );
-      if self.is_empty then
-        raise Exception.create('empty list has no first member.')
+      if self.IsEmpty then
+        raise Exception.Create('empty list has no first member.')
       else if not FindNext( _clasp, p, result ) then
-        raise Exception.create('nested empty list has no first member.')
+        raise Exception.Create('nested empty list has no first member.')
     end;
-    
-  function GRing<T>.First: t;
+  
+  function GRing<T>.First : T;
     begin
       result := self.FirstCell.value;
     end;
-    
+  
   function GRing<T>.LastCell : GCellNode;
     var p : GNodeStack;
     begin
       p := GNodeStack.Create( kMaxDepth );
-      if is_empty then
-        raise Exception.create('empty list has no last member.')
+      if IsEmpty then
+        raise Exception.Create('empty list has no last member.')
       else if not FindPrev( _clasp, p, result ) then
-        raise Exception.create('nested empty list has no last member.')
+        raise Exception.Create('nested empty list has no last member.')
     end;
-    
-  function GRing<T>.last: T;
+  
+  function GRing<T>.Last: T;
     begin
-      result := self.lastcell.value;
-    end; { last }
+      result := self.LastCell.value;
+    end; { Last }
 initialization
 end.
