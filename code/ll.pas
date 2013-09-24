@@ -46,7 +46,7 @@ type
        constructor create;
        function length : cardinal; override;
      end;
-     path = specialize stacks.GStack<child>;
+     path = specialize GStack<child>;
 
     public { procedure types used by foreach, find }
       type listaction = procedure( var n : T ) is nested;
