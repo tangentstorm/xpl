@@ -18,6 +18,7 @@ interface uses xpc, sysutils, strutils;
   function wordn( const s : string; n : cardinal ) : string;
   function nwords( const s : string ) : cardinal;
   function startswith(const haystack, needle : string) : boolean;
+  function boolstr(const b : boolean; const trueStr, falseStr : string ) : string;
 
 implementation
 
@@ -156,5 +157,10 @@ begin
     inc( i )
   end
 end;
+
+function boolstr(const b : boolean; const trueStr, falseStr : string ) : string; inline;
+  begin
+    if b then result := trueStr else result := falseStr
+  end;
 
 end.
