@@ -2,7 +2,7 @@
   inspired by linenoise by antirez. }
 {$i xpc.inc}{$mode objfpc}{$h+}
 unit lined;
-interface uses classes, sysutils, kvm, kbd;
+interface uses classes, sysutils, kvm, kbd, cw;
 
   type
     StringList	   = class ( TStringList )
@@ -65,25 +65,23 @@ implementation
   procedure LineEditor.set_prompt( const s : string );
   begin
     self.pmt := s;
-    self.plen := length(s);
+    self.plen := cw.clength(s);
   end;
 
   procedure LineEditor.refresh;
     var ch: char; ofs : shortint = -1; i : integer = 0;
   begin
     kvm.gotoxy( 0, kvm.wherey ); // left edge
-    write( pmt );
+    cwrite( pmt );
     for ch in buf do begin
       inc( i );
       if ( ch < ' ' ) and not ( ch = ^J ) then begin
-	kvm.fg('g');
-	write( '^', chr( ord( '@' ) + ord( ch )));
-	if i <= cur then inc( ofs );
-	kvm.fg('w');
+	cwrite( '|g^' + chr( ord( '@' ) + ord( ch )) + '|w');
+	inc( ofs );
       end
       else write( ch )
     end;
-    kvm.clreol; // write( #27, '[0G', #27, '[', plen + cur , 'C' );
+    kvm.clreol;
     kvm.gotoxy( plen + cur + ofs, kvm.wherey );
   end;
 
@@ -205,7 +203,7 @@ implementation
 
   procedure LineEditor.reset;
   begin
-    len := 0; cur := 1; plen := length( pmt );
+    len := 0; cur := 1; plen := clength( pmt );
     _done := false;
     browse_history( history.count );
   end;
@@ -213,8 +211,9 @@ implementation
   function LineEditor.input( const pmt : string; var res : string ) : boolean;
   begin
     self.pmt := pmt;
-    self.buf := res;
     reset;
+    self.buf := res;
+    self.len := length(buf);
     refresh;
     _done := false; keep := true; // optimism!
     repeat step until done;
@@ -249,7 +248,7 @@ begin
     result := ed.input( msg, buf )
   end
   else begin
-    write( msg );
+    cwrite( msg );
     readln( system.input );
     result := not eof; //  need to debug this
   end
