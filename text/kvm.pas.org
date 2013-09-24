@@ -31,6 +31,8 @@ A screen tracks a cursor position, bounds, color.
     procedure SetTextAttr( value : word );
     function  GetTextAttr : word;
     property  TextAttr : word read GetTextAttr write SetTextAttr;
+    procedure ShowCursor;
+    procedure HideCursor;
   end;
 #+end_src
 
@@ -216,6 +218,14 @@ This is a contrcete implementation of ITerm.
       result := curs
     end;
 
+  procedure TScreenTerm.ShowCursor;
+    begin
+    end;
+
+  procedure TScreenTerm.HideCursor;
+    begin
+    end;
+
 #+end_src
 
 * =TAnsiTerm=
@@ -297,7 +307,7 @@ This is a contrcete implementation of ITerm.
     var curx, cury, i : byte;
     begin
       terminal.getxy( curx, cury );
-      for i := succ(curx) to maxX do write(' ');
+      for i := curx to maxX do write(' ');
       gotoxy( curx, cury );
     end;
 
@@ -324,6 +334,16 @@ This is a contrcete implementation of ITerm.
   procedure TAnsiTerm.ResetColor;
     begin
       write( #27, '[0m' )
+    end;
+
+  procedure TAnsiTerm.ShowCursor; // !! xterm / dec terminals
+    begin
+      write(#27, '[?25h');
+    end;
+
+  procedure TAnsiTerm.HideCursor; // !! xterm / dec terminals
+    begin
+      write(#27, '[?25l');
     end;
 
 #+end_src
@@ -538,6 +558,8 @@ These follow the ITerm interface exactly.
   procedure SetTextAttr( value : word );
   function  GetTextAttr : word;
   property  TextAttr : word read GetTextAttr write SetTextAttr;
+  procedure ShowCursor;
+  procedure HideCursor;
 #+end_src
 
 ** implementation
@@ -564,6 +586,9 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
 
   procedure InsLine; begin work.InsLine end;
   procedure DelLine; begin work.DelLine end;
+
+  procedure ShowCursor; begin work.ShowCursor end;
+  procedure HideCursor; begin work.HideCursor end;
 
   procedure SetTextAttr( value : word );
     begin work.TextAttr := value end;
@@ -592,7 +617,7 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
 #+begin_src pascal :tangle "~/x/code/kvm.pas" :noweb tangle
 
 
-  { --- warning!! generated file. edit ~/b/web/kvm.org instead!! --- }
+  { --- warning!! generated file. edit ~/../kvm.pas.org instead!! --- }
 
 
   {$mode objfpc}{$i xpc.inc}

@@ -1,5 +1,5 @@
 
-{ --- warning!! generated file. edit ~/b/web/kvm.org instead!! --- }
+{ --- warning!! generated file. edit ~/../kvm.pas.org instead!! --- }
 
 
 {$mode objfpc}{$i xpc.inc}
@@ -24,6 +24,8 @@ interface uses xpc, grids, terminal;
     procedure SetTextAttr( value : word );
     function  GetTextAttr : word;
     property  TextAttr : word read GetTextAttr write SetTextAttr;
+    procedure ShowCursor;
+    procedure HideCursor;
   end;
   {$DEFINE unitscope}
   function  Width : word;
@@ -43,6 +45,8 @@ interface uses xpc, grids, terminal;
   procedure SetTextAttr( value : word );
   function  GetTextAttr : word;
   property  TextAttr : word read GetTextAttr write SetTextAttr;
+  procedure ShowCursor;
+  procedure HideCursor;
   {$UNDEF unitscope}
 
   type TTextAttr = record
@@ -89,6 +93,8 @@ interface uses xpc, grids, terminal;
       procedure SetTextAttr( value : word );
       function  GetTextAttr : word;
       property  TextAttr : word read GetTextAttr write SetTextAttr;
+      procedure ShowCursor;
+      procedure HideCursor;
     private
       attr : TTextAttr;
       curs : TPoint;
@@ -117,6 +123,8 @@ interface uses xpc, grids, terminal;
       procedure SetTextAttr( value : word );
       function  GetTextAttr : word;
       property  TextAttr : word read GetTextAttr write SetTextAttr;
+      procedure ShowCursor;
+      procedure HideCursor;
     private
       x, y : word;
       attr : word;
@@ -225,6 +233,14 @@ implementation
       result := curs
     end;
   
+  procedure TScreenTerm.ShowCursor;
+    begin
+    end;
+  
+  procedure TScreenTerm.HideCursor;
+    begin
+    end;
+  
   
   constructor TAnsiTerm.Create;
     begin
@@ -287,7 +303,7 @@ implementation
     var curx, cury, i : byte;
     begin
       terminal.getxy( curx, cury );
-      for i := succ(curx) to maxX do write(' ');
+      for i := curx to maxX do write(' ');
       gotoxy( curx, cury );
     end;
   
@@ -314,6 +330,16 @@ implementation
   procedure TAnsiTerm.ResetColor;
     begin
       write( #27, '[0m' )
+    end;
+  
+  procedure TAnsiTerm.ShowCursor; // !! xterm / dec terminals
+    begin
+      write(#27, '[?25h');
+    end;
+  
+  procedure TAnsiTerm.HideCursor; // !! xterm / dec terminals
+    begin
+      write(#27, '[?25l');
     end;
   
   
@@ -349,6 +375,9 @@ implementation
   
   procedure InsLine; begin work.InsLine end;
   procedure DelLine; begin work.DelLine end;
+  
+  procedure ShowCursor; begin work.ShowCursor end;
+  procedure HideCursor; begin work.HideCursor end;
   
   procedure SetTextAttr( value : word );
     begin work.TextAttr := value end;
