@@ -79,7 +79,7 @@ end;
 
 procedure zinput.del_to_end;
 begin
-  while cpos <= Length( work ) do self.del;
+  while (Length(work) > cpos) do self.del;
 end;
 
 function zinput.str_to_end : string;
