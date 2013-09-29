@@ -1,9 +1,10 @@
+
 {$mode delphi}
 {$i test_sets.def }{$h+}
 implementation uses sets;
 
   type
-    TStringSet = TSet<string>;
+    TStringSet = GSet<string>;
     TCharSet   = set of char;
 
   const { these are built-in (set of char), tested with bits }
@@ -11,16 +12,16 @@ implementation uses sets;
     vowels = ['a','e','i','o','u'];
 
   var { these use the custom implementation }
-    h, v : ISet<string>;
+    h, v : TStringSet;
 
-  function makeStringSet( chs : TCharSet ) : ISet<string>;
+  function makeStringSet( chs : TCharSet ) : TStringSet;
     var ch : char;
     begin
       result := TStringSet.Create;
       for ch in chs do result.include( ch );
     end;
   
-  function ToString( ss : ISet<string>) : string;
+  function ToString( ss : TStringSet) : string;
     var s : string;
     begin
       result := '';

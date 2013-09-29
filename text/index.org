@@ -52,7 +52,8 @@ These units are written with a literate programming style:
 
 * TODO generate links for these
 * COMMENT
-#+begin_src pascal :tangle "../xpl.lpr" :comments both :padline yes :noweb tangle
+#+begin_src pascal
+// :tangle "../xpl.lpr" :comments both :padline yes :noweb tangle
   
   {-- generated from text/index.org --}
   

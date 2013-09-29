@@ -238,7 +238,7 @@ There is currently a small python dependency used to generate the boilerplate co
 
 ** Appendix: unit =sets=
 
-#+begin_src pascal :tangle "~/x/test/test_sets.pas" :noweb tangle
+#+begin_src pascal :tangle "~/x/wip/test_sets.pas" :noweb tangle
 {$mode delphi}
 {$i test_sets.def }{$h+}
 implementation uses sets;
@@ -282,7 +282,7 @@ implementation uses sets;
 end.
 #+end_src
 
-#+begin_src pascal :tangle "~/x/code/sets.pas" :noweb tangle
+#+begin_src pascal :tangle "~/x/wip/sets.pas" :noweb tangle
   {$mode delphi}
   unit sets;
   interface uses rb;

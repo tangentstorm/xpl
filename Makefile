@@ -16,6 +16,8 @@ FPC = fpc -Mobjfpc -FE$(BIN) -Fu$(GEN) -Fi$(GEN) \
 	-Fu$(XML) -Fi$(XML) \
 	-Fu$(WEB) -Fi$(WEB) \
 	-Fu./code -Fi./code -gl
+PY = python
+TANGLE = ./etc/tangle.el
 
 targets:
 	@echo
@@ -55,12 +57,16 @@ clean:
 	@rm -rf $(GEN) ; mkdir -p $(GEN)
 
 # we use always here, else it'll see the test directory and assume we're done.
-test: always init clean test-runner
+test: always init clean tangle test-runner
 	@bin/run-tests $(paramline)
 test-runner: test/*.pas code/*.pas
-	cd test; python gen-tests.py ../$(GEN)
+	cd test; $(PY) gen-tests.py ../$(GEN)
 	$(FPC) -B test/run-tests.pas
 
+#-- org-mode stuff ----------------------------
+
+tangle:
+	$(PY) etc/tangle-all.py
 
 #-- units -------------------------------------
 
