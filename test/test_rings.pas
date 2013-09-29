@@ -30,4 +30,22 @@ procedure test_cursor;
     chk.that(cur.AtTop, 'cursor should be AtTop after ToTop');
   end;
 
+  procedure test_DeleteAt;
+  begin
+    ints := GRing<UInt32>.Create;
+    ints.Append(100);
+    ints.Append(101);
+    ints.Append(102);
+    chk.equal(100, ints[0]);
+    chk.equal(101, ints[1]);
+    chk.equal(102, ints[2]);
+    ints.DeleteAt(0);
+    chk.equal(101, ints[0]);
+    chk.equal(102, ints[1]);
+    ints.DeleteAt(1);
+    chk.equal(101, ints[0]);
+    ints.DeleteAt(0);
+    chk.equal(0, ints.length);
+  end;
+
 end.

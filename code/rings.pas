@@ -121,7 +121,8 @@ interface uses xpc, sysutils, stacks;
       constructor Create;
       procedure Append( val : T );
       procedure Insert( val : T );
-      procedure InsertAt( val : T;  at_index : cardinal = 0 );
+      procedure InsertAt( i : cardinal; val : T );
+      procedure DeleteAt( i : cardinal );
       procedure Remove( val : T );
       procedure Drop;
       procedure ForEach( action : GNodeAction );
@@ -265,35 +266,51 @@ implementation
   { Insert : add to the start of the list, right after the clasp }
   procedure GRing<T>.Insert( val : T );
     var ln : GCellNode<T>;
-  begin
-    inc(_count);
-    ln := GCellNode<T>.Create( val );
-    ln.PrevLink := _clasp;
-    ln.NextLink := _clasp.NextLink;
-    _clasp.NextLink.PrevLink := ln;
-    _clasp.NextLink := ln;
-  end; { Insert }
+    begin
+      inc(_count);
+      ln := GCellNode<T>.Create( val );
+      ln.PrevLink := _clasp;
+      ln.NextLink := _clasp.NextLink;
+      _clasp.NextLink.PrevLink := ln;
+      _clasp.NextLink := ln;
+    end; { Insert }
   
-  procedure GRing<T>.InsertAt( val : T; at_index : cardinal );
+  procedure GRing<T>.InsertAt( i : cardinal; val : T );
     var cur : IRingCursor<T>;
-  begin
-    cur := self.MakeCursor;
-    if at_index >= Length then cur.ToEnd
-    else while cur.index < at_index do cur.MoveNext;
-    cur.InjectNext( val );
-  end; { InsertAt }
+    begin
+      cur := self.MakeCursor;
+      if i >= Length then cur.ToEnd
+      else while cur.index < i do cur.MoveNext;
+      cur.InjectNext( val );
+    end; { InsertAt }
+  
+  procedure GRing<T>.DeleteAt( i : cardinal );
+    var c : IRingCursor<T>; n : cardinal;
+    begin
+      c := self.MakeCursor;
+      if i = 0 then
+        c.DeleteNext
+      else
+        begin
+          c.MoveTo(i);
+          c.ToTop;
+          for n := 1 to i do c.MoveNext;
+          c.MovePrev;
+          c.DeleteNext;
+        end;
+    end; { DeleteAt }
   
   { Append : add to the end of the list, right before the clasp }
   procedure GRing<T>.Append( val : T );
     var ln : GNode<T>;
-  begin
-    inc(_count);
-    ln := GCellNode<T>.Create( val );
-    ln.NextLink := _clasp;
-    ln.PrevLink := _clasp.PrevLink;
-    _clasp.PrevLink.NextLink := ln;
-    _clasp.PrevLink := ln;
-  end; { Append }
+    begin
+      inc(_count);
+      ln := GCellNode<T>.Create( val );
+      ln.NextLink := _clasp;
+      ln.PrevLink := _clasp.PrevLink;
+      _clasp.PrevLink.NextLink := ln;
+      _clasp.PrevLink := ln;
+    end; { Append }
   procedure GRing<T>.Remove( val : T );
     var c : IRingCursor<T>; found : boolean = false;
     begin
