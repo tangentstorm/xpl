@@ -102,13 +102,13 @@ end;
 procedure zinput.show;
 var v : String;
 begin
-  //if tovr then //doscursorbig else //doscursoron;
+  { TODO: if tovr then //doscursorbig else} kvm.ShowCursor;
 
   if length( work ) > dlen
     then colorxy( self.x + dlen, self.y, acol, '»' )
     else colorxy( self.x + dlen, self.y, acol, ' ' );
 
-  //if cpos = maxlen + 1 then //doscursoroff;
+  if cpos = maxlen + 1 then kvm.HideCursor;
 
   while cpos > d1st + dlen do inc( d1st );
   while cpos < d1st do dec( d1st );
@@ -270,7 +270,6 @@ end;
 procedure zinput.finish;
 begin
   isdone := true;
-  //doscursorOff;
 end;
 
 function zinput.value : String;
