@@ -3,7 +3,6 @@ unit sq;{ sequences }
 interface uses xpc, cr, stacks;
 
   type ISequence<TVal, Tkey> = interface
-    function Length : cardinal;
     function GetItem( i : TKey ) : TVal;
     procedure SetItem( i : TKey; const value : TVal );
     property item[ i : TKey ] : TVal read GetItem write SetItem; default;
@@ -20,7 +19,8 @@ interface uses xpc, cr, stacks;
       // abstract part
       function GetItem( index : idx ) : t; virtual; abstract;
       procedure SetItem( index : idx; const value : t ); virtual; abstract;
-      function length : idx; virtual; abstract;
+      function GetLength : cardinal; virtual; abstract;
+      procedure SetLength( len : cardinal ); virtual; abstract;
       property item[ ix : idx ] : T
 	read GetItem write SetItem; default;
 
