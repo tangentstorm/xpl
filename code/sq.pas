@@ -23,18 +23,20 @@ interface uses xpc, cr, stacks;
       procedure SetLength( len : cardinal ); virtual; abstract;
       property item[ ix : idx ] : T
 	read GetItem write SetItem; default;
+      property length : cardinal read GetLength;
 
       { --- begin nested type ----------------------------------- }
     type NSeqCursor = class( TInterfacedObject, ICursor<T> )
-      private type SSeq = ISequence<T,idx>;
+      private type SSeq = GSeq<T,idx>;
       public
 	constructor create( seq : SSeq );
+	destructor destroy; override;
 
 	// reference<t>
 	function get_value : t;
         procedure set_value( v : t );
-        function is_readable : boolean;        virtual;
-        function is_writable : boolean;        virtual;
+        function is_readable : boolean; virtual;
+        function is_writable : boolean; virtual;
         property value : t read get_value write set_value;
 
         // iterator<t>
@@ -68,7 +70,7 @@ interface uses xpc, cr, stacks;
       { --- end nested type ----------------------------------- }
   public
     function make_cursor : NSeqcursor; virtual;
-    function GetEnumerator : NSeqcursor;
+    function GetEnumerator :NSeqCursor;
   end;
 
 implementation
@@ -80,16 +82,23 @@ implementation
     marks := idxStack.Create(32);
   end;
 
+  destructor GSeq<T,Idx>.NSeqcursor.destroy;
+  begin
+    _seq := nil;
+    marks.free;
+  end;
+
  // reference<t>
   function GSeq<T,Idx>.NSeqcursor.get_value : T;
   begin
-    result := _seq[ _idx ];
+    result := _seq[ _idx - 1 ]; // -1 because 0 indicates not started
   end;
 
   procedure GSeq<T,Idx>.NSeqcursor.set_value( v : t );
   begin
-    _seq[ _idx ] := v;
+    _seq[ _idx - 1 ] := v;
   end;
+
   function GSeq<T,Idx>.NSeqcursor.is_readable : boolean;
   begin
     result := true;

@@ -1,6 +1,6 @@
 {$mode delphi}
 {$i test_arrays.def }
-implementation uses arrays, sysutils;
+implementation uses arrays, sysutils, cw;
 
 type TInt32Array = GEqArray<Int32>;
 var ints : TInt32Array;
@@ -29,6 +29,19 @@ procedure test_find;
     ints.append( 33 );
     chk.that(ints.Find( 33, i ), 'should have found 33');
     chk.equal( i, 2 );
+  end;
+
+procedure test_forloop;
+  var count : Int32 = 0; i, j : cardinal;
+  begin
+    ints.append( 123 );
+    ints.append( 456 );
+    for i in ints do inc(count);
+    chk.equal(count, 2);
+
+    { regression test: what about looping twice? }
+    for j in ints do inc(count);
+    chk.equal(count, 4);
   end;
 
 end.
