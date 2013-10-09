@@ -68,6 +68,8 @@ procedure test_elements;
     ints.Append(elem);
     elem.Append(ints);
     elem.Append(elem);
+    //  TODO: pretty sure there's a memory leak here.
+    // The fix would be to add a proper destructor to TRing.
     elem.Free;
     ints.Free;
   end;
