@@ -3,7 +3,7 @@
 
 {$mode delphi}{$i xpc.inc}
 unit rings;
-interface uses xpc, sysutils, stacks;
+interface uses xpc, sysutils, stacks, dicts;
 
   const kMaxDepth = 16;
   { GNode : link class with .nextLink, .prevLink }
@@ -119,8 +119,13 @@ interface uses xpc, sysutils, stacks;
       function LastCell: GCellNode<T>;
     public
       constructor Create;
-      procedure Append( val : T );
-      procedure Insert( val : T );
+    public { interface for adding nodes }
+      procedure Append( n : GNode<T> ); overload;
+      procedure Insert( n : GNode<T> ); overload;
+      // TODO: procedure InsertAt( i : cardinal; val : GNode<T> ); overload;
+    public { interface for adding / removing values }
+      procedure Append( val : T ); overload;
+      procedure Insert( val : T ); overload;
       procedure InsertAt( i : cardinal; val : T );
       procedure DeleteAt( i : cardinal );
       procedure Remove( val : T );
@@ -141,6 +146,29 @@ interface uses xpc, sysutils, stacks;
     public
       function GetEnumerator : IRingCursor<T>;
     end;
+  // !! The meta-data might not be the same type as the
+  // actual data. (For example, you may want to represent
+  // a mapping of keys of one type to data of another).
+  //
+  // It may make sense to use a second type parameter here,
+  // but for now, I'm just going to use variants.
+  type
+     GElement<T> = class( GRing<T> )
+       protected
+         _tag  : variant;
+         _attr : TVarDict;
+       public
+         constructor Create; overload;
+         constructor Create( aTag : variant ); overload;
+         procedure SetTag( val: variant );
+         function GetTag : variant;
+         procedure SetAttr( key : string; val: variant );
+         function GetAttr( key : string ) : variant;
+         property Attrs[ key : string ] : variant
+           read GetAttr write SetAttr; default; // use .items for values
+         property tag : variant
+           read GetTag write SetTag;
+     end;
 
 implementation
   { -- link ( internal type ) -- }
@@ -263,17 +291,32 @@ implementation
       for item in self do action( item );
     end;
   
+  
   { Insert : add to the start of the list, right after the clasp }
-  procedure GRing<T>.Insert( val : T );
-    var ln : GCellNode<T>;
+  procedure GRing<T>.Insert( n : GNode<T> );
     begin
       inc(_count);
-      ln := GCellNode<T>.Create( val );
-      ln.PrevLink := _clasp;
-      ln.NextLink := _clasp.NextLink;
-      _clasp.NextLink.PrevLink := ln;
-      _clasp.NextLink := ln;
-    end; { Insert }
+      n.PrevLink := _clasp;
+      n.NextLink := _clasp.NextLink;
+      _clasp.NextLink.PrevLink := n;
+      _clasp.NextLink := n;
+    end;
+  
+  { Append : add to the end of the list, right before the clasp }
+  procedure GRing<T>.Append( n : GNode<T> );
+    begin
+      inc(_count);
+      n.NextLink := _clasp;
+      n.PrevLink := _clasp.PrevLink;
+      _clasp.PrevLink.NextLink := n;
+      _clasp.PrevLink := n;
+    end;
+  
+  { Insert : add to the start of the list, right after the clasp }
+  procedure GRing<T>.Insert( val : T );
+    begin
+      self.Insert(GCellNode<T>.Create( val ));
+    end;
   
   procedure GRing<T>.InsertAt( i : cardinal; val : T );
     var cur : IRingCursor<T>;
@@ -302,15 +345,9 @@ implementation
   
   { Append : add to the end of the list, right before the clasp }
   procedure GRing<T>.Append( val : T );
-    var ln : GNode<T>;
     begin
-      inc(_count);
-      ln := GCellNode<T>.Create( val );
-      ln.NextLink := _clasp;
-      ln.PrevLink := _clasp.PrevLink;
-      _clasp.PrevLink.NextLink := ln;
-      _clasp.PrevLink := ln;
-    end; { Append }
+      self.Append(GCellNode<T>.Create( val ));
+    end;
   procedure GRing<T>.Remove( val : T );
     var c : IRingCursor<T>; found : boolean = false;
     begin
@@ -600,6 +637,41 @@ implementation
       // todo: temp.free
     end
   end;
+  
+  
+  constructor GElement<T>.Create;
+    begin
+      inherited Create;
+      _attr := TVarDict.Create;
+    end;
+  
+  constructor GElement<T>.Create( aTag : variant );
+    begin
+      self.Create;
+      self.tag := aTag;
+    end;
+  
+  
+  procedure GElement<T>.SetTag( val: variant );
+    begin
+      _tag := val
+    end;
+  
+  function GElement<T>.GetTag : variant;
+    begin
+      result := _tag
+    end;
+  
+  
+  procedure GElement<T>.SetAttr( key : string; val: variant );
+    begin
+      _attr[ key ] := val
+    end;
+  
+  function GElement<T>.GetAttr( key : string ) : variant;
+    begin
+      result := _attr[ key ]
+    end;
   
 initialization
 end.

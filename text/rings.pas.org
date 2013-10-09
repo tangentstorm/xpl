@@ -78,23 +78,6 @@ Since all siblings share a parent, only clasp nodes actually need a parent point
     end;
 #+end_src
 
-** =GTagNode<T>= adds a tag and attributes (like an Element in xml)
-
-*** TODO #+name: GClaspNode
-#+begin_src pascal
-  // !! The meta-data might not be the same type as the
-  // actual data. (For example, you may want to represent
-  // a mapping of keys of one type to data of another).
-  //
-  // It may make sense to use a second type parameter here,
-  // but for now, I'm just going to use variants.
-  type GTagNode<T> = class( GRing<T> )
-    constructor Create( tag : variant );
-    constructor SetItem( key : string; val: variant );
-    constructor GetItem( key : string; val: variant );
-  end;
-#+end_src
-
 * =IRingCursor<T>= interface for ring cursors
 This is partially to break circular dependencies, and also partially because cursors are fairly disposable and using the interface allows them to be refcounted and automatically garbage collected.
 
@@ -124,7 +107,6 @@ This is partially to break circular dependencies, and also partially because cur
     property current  : T read GetValue;
   end;
 #+end_src
-
 * =GRing<T>.TCursor= walks the structure
 
 As an alternative to looking up the parent nodes, if you started at the hub and are walking downward, you can simply maintain a stack of parent nodes. This module provides a =GRing<T>.TCursor= for maintaining such a stack.
@@ -169,7 +151,6 @@ As an alternative to looking up the parent nodes, if you started at the hub and 
       function MovePrev : boolean; // not part of for..in
     end;
 #+end_src
-
 * =GRing<T>= the main ring type
 #+name: GRing
 #+begin_src pascal
@@ -197,8 +178,13 @@ As an alternative to looking up the parent nodes, if you started at the hub and 
       function LastCell: GCellNode<T>;
     public
       constructor Create;
-      procedure Append( val : T );
-      procedure Insert( val : T );
+    public { interface for adding nodes }
+      procedure Append( n : GNode<T> ); overload;
+      procedure Insert( n : GNode<T> ); overload;
+      // TODO: procedure InsertAt( i : cardinal; val : GNode<T> ); overload;
+    public { interface for adding / removing values }
+      procedure Append( val : T ); overload;
+      procedure Insert( val : T ); overload;
       procedure InsertAt( i : cardinal; val : T );
       procedure DeleteAt( i : cardinal );
       procedure Remove( val : T );
@@ -219,6 +205,34 @@ As an alternative to looking up the parent nodes, if you started at the hub and 
     public
       function GetEnumerator : IRingCursor<T>;
     end;
+#+end_src
+
+* =GElement<T>= a ring with a tag and attributes (like an Element in xml)
+#+name: GElement
+#+begin_src pascal
+  // !! The meta-data might not be the same type as the
+  // actual data. (For example, you may want to represent
+  // a mapping of keys of one type to data of another).
+  //
+  // It may make sense to use a second type parameter here,
+  // but for now, I'm just going to use variants.
+  type
+     GElement<T> = class( GRing<T> )
+       protected
+         _tag  : variant;
+         _attr : TVarDict;
+       public
+         constructor Create; overload;
+         constructor Create( aTag : variant ); overload;
+         procedure SetTag( val: variant );
+         function GetTag : variant;
+         procedure SetAttr( key : string; val: variant );
+         function GetAttr( key : string ) : variant;
+         property Attrs[ key : string ] : variant
+           read GetAttr write SetAttr; default; // use .items for values
+         property tag : variant
+           read GetTag write SetTag;
+     end;
 #+end_src
 
 
@@ -496,6 +510,8 @@ Values are stored in cell nodes.
 
 #+end_src
 ** =GRing<T>=
+
+*** Constructor, accessors
 #+name: GRing.methods
 #+begin_src pascal
 
@@ -536,7 +552,7 @@ Values are stored in cell nodes.
 
 #+end_src
 
-** Length, Find, ForEach
+*** Length, Find, ForEach
 #+name: GRing.methods
 #+begin_src pascal
 
@@ -571,21 +587,41 @@ Values are stored in cell nodes.
 
 #+end_src
 
-** Insert / Append
+*** Insert / Append (nodes)
+#+name: GRing.methods
+#+begin_src pascal
+  
+  { Insert : add to the start of the list, right after the clasp }
+  procedure GRing<T>.Insert( n : GNode<T> );
+    begin
+      inc(_count);
+      n.PrevLink := _clasp;
+      n.NextLink := _clasp.NextLink;
+      _clasp.NextLink.PrevLink := n;
+      _clasp.NextLink := n;
+    end;
+  
+  { Append : add to the end of the list, right before the clasp }
+  procedure GRing<T>.Append( n : GNode<T> );
+    begin
+      inc(_count);
+      n.NextLink := _clasp;
+      n.PrevLink := _clasp.PrevLink;
+      _clasp.PrevLink.NextLink := n;
+      _clasp.PrevLink := n;
+    end;
+  
+#+end_src
+
+*** Insert / Append (values)
 #+name: GRing.methods
 #+begin_src pascal
   { Insert : add to the start of the list, right after the clasp }
   procedure GRing<T>.Insert( val : T );
-    var ln : GCellNode<T>;
     begin
-      inc(_count);
-      ln := GCellNode<T>.Create( val );
-      ln.PrevLink := _clasp;
-      ln.NextLink := _clasp.NextLink;
-      _clasp.NextLink.PrevLink := ln;
-      _clasp.NextLink := ln;
-    end; { Insert }
-
+      self.Insert(GCellNode<T>.Create( val ));
+    end;
+  
   procedure GRing<T>.InsertAt( i : cardinal; val : T );
     var cur : IRingCursor<T>;
     begin
@@ -594,7 +630,7 @@ Values are stored in cell nodes.
       else while cur.index < i do cur.MoveNext;
       cur.InjectNext( val );
     end; { InsertAt }
-
+  
   procedure GRing<T>.DeleteAt( i : cardinal );
     var c : IRingCursor<T>; n : cardinal;
     begin
@@ -610,22 +646,16 @@ Values are stored in cell nodes.
           c.DeleteNext;
         end;
     end; { DeleteAt }
-
+  
   { Append : add to the end of the list, right before the clasp }
   procedure GRing<T>.Append( val : T );
-    var ln : GNode<T>;
     begin
-      inc(_count);
-      ln := GCellNode<T>.Create( val );
-      ln.NextLink := _clasp;
-      ln.PrevLink := _clasp.PrevLink;
-      _clasp.PrevLink.NextLink := ln;
-      _clasp.PrevLink := ln;
-    end; { Append }
+      self.Append(GCellNode<T>.Create( val ));
+    end;
 #+end_src
 
 
-*** removing nodes
+**** removing nodes
 #+name: GRing.methods
 #+begin_src pascal
   procedure GRing<T>.Remove( val : T );
@@ -750,6 +780,60 @@ Values are stored in cell nodes.
     end; { Last }
 #+end_src
 
+** =GElement<T>=
+
+*** constructor
+#+name: GElement.methods
+#+begin_src pascal
+  
+  constructor GElement<T>.Create;
+    begin
+      inherited Create;
+      _attr := TVarDict.Create;
+    end;
+  
+  constructor GElement<T>.Create( aTag : variant );
+    begin
+      self.Create;
+      self.tag := aTag;
+    end;
+  
+#+end_src
+
+*** tag accesors
+#+name: GElement.methods
+#+begin_src pascal
+  
+  procedure GElement<T>.SetTag( val: variant );
+    begin
+      _tag := val
+    end;
+  
+  function GElement<T>.GetTag : variant;
+    begin
+      result := _tag
+    end;
+  
+#+end_src
+
+*** attribute accessors
+#+name: GElement.methods
+#+begin_src pascal
+  
+  procedure GElement<T>.SetAttr( key : string; val: variant );
+    begin
+      _attr[ key ] := val
+    end;
+  
+  function GElement<T>.GetAttr( key : string ) : variant;
+    begin
+      result := _attr[ key ]
+    end;
+  
+#+end_src
+
+
+
 
 * OUTPUT =rings.pas=
 #+begin_src pascal :tangle "../code/rings.pas" :noweb tangle
@@ -758,7 +842,7 @@ Values are stored in cell nodes.
 
   {$mode delphi}{$i xpc.inc}
   unit rings;
-  interface uses xpc, sysutils, stacks;
+  interface uses xpc, sysutils, stacks, dicts;
 
     const kMaxDepth = 16;
     <<GNode>>
@@ -766,6 +850,7 @@ Values are stored in cell nodes.
     <<GClaspNode>>
     <<IRingCursor>>
     <<GRing>>
+    <<GElement>>
 
   implementation
     <<GNode.methods>>
@@ -774,6 +859,7 @@ Values are stored in cell nodes.
     <<IRingCursor.methods>>
     <<GRing.methods>>
     <<GCursor.methods>>
+    <<GElement.methods>>
   initialization
   end.
 #+end_src
