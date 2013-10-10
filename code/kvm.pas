@@ -4,7 +4,7 @@
 
 {$mode objfpc}{$i xpc.inc}
 unit kvm;
-interface uses xpc, grids, terminal;
+interface uses xpc, grids, terminal, sysutils;
 
   type ITerm = interface
     function  Width : word;
@@ -99,7 +99,7 @@ interface uses xpc, grids, terminal;
       attr : TTextAttr;
       curs : TPoint;
       grid : TScreenGrid;
-    public
+   public
       constructor Create( w, h : word );
       destructor Destroy; override;
       function  Cursor : TPoint;
@@ -126,12 +126,52 @@ interface uses xpc, grids, terminal;
       procedure ShowCursor;
       procedure HideCursor;
     private
-      x, y : word;
       attr : word;
     public
       constructor Create;
       procedure ResetColor;
     end;
+  type TTermProxy = class  (TInterfacedObject, ITerm)
+    protected
+      _term : ITerm;
+    public
+      constructor Create( term : ITerm);
+      function  Width : word; virtual;
+      function  Height: word; virtual;
+      function  WhereX : word; virtual;
+      function  WhereY : word; virtual;
+      procedure ClrScr; virtual;
+      procedure ClrEol; virtual;
+      procedure Fg( color : byte ); virtual;
+      procedure Bg( color : byte ); virtual;
+      procedure Emit( wc : widechar ); virtual;
+      procedure GotoXY( x, y : word ); virtual;
+      procedure InsLine; virtual;
+      procedure DelLine; virtual;
+      procedure SetTextAttr( value : word ); virtual;
+      function  GetTextAttr : word; virtual;
+      procedure ShowCursor; virtual;
+      procedure HideCursor; virtual;
+      property  TextAttr : word read GetTextAttr write SetTextAttr;
+      function  MaxX  : word; { not virtual because it's derived from Width }
+      function  MaxY  : word; { not virtual because it's derived from Height }
+    end;
+  type
+    TSubTerm = class (TTermProxy)
+      protected
+        _x, _y, _w, _h : word;
+      public
+        constructor Create(term : ITerm; x, y, w, h : word );
+        function  Width : word; override;
+        function  Height: word; override;
+        function  WhereX : word; override;
+        function  WhereY : word; override;
+        procedure ClrScr; override;
+        procedure ClrEol; override;
+        procedure GotoXY( x, y : word ); override;
+        procedure InsLine; override;
+        procedure DelLine; override;
+      end;
 
   procedure fg( c : char );
   procedure bg( c : char );
@@ -340,6 +380,110 @@ implementation
   procedure TAnsiTerm.HideCursor; // !! xterm / dec terminals
     begin
       write(#27, '[?25l');
+    end;
+  
+  
+  constructor TTermProxy.Create( term : ITerm );
+    begin
+      inherited Create;
+      _term := term;
+    end;
+  
+  function  TTermProxy.Width  : word; begin result := _term.Width end;
+  function  TTermProxy.Height : word; begin result := _term.Height end;
+  function  TTermProxy.WhereX : word; begin result := _term.WhereX end;
+  function  TTermProxy.WhereY : word; begin result := _term.WhereY end;
+  function  TTermProxy.MaxX   : word; begin result := self.Width-1 end;
+  function  TTermProxy.MaxY   : word; begin result := self.Height-1 end;
+  
+  
+  procedure TTermProxy.ClrScr; begin _term.ClrScr end;
+  procedure TTermProxy.ClrEol; begin _term.ClrEol end;
+  
+  procedure TTermProxy.Fg( color : byte );    begin _term.Fg( color ) end;
+  procedure TTermProxy.Bg( color : byte );    begin _term.Bg( color ) end;
+  
+  procedure TTermProxy.Emit( wc : widechar ); begin _term.Emit( wc ) end;
+  procedure TTermProxy.GotoXY( x, y : word ); begin _term.GotoXY( x, y ) end;
+  
+  procedure TTermProxy.InsLine; begin _term.InsLine end;
+  procedure TTermProxy.DelLine; begin _term.DelLine end;
+  
+  procedure TTermProxy.ShowCursor; begin _term.ShowCursor end;
+  procedure TTermProxy.HideCursor; begin _term.HideCursor end;
+  
+  procedure TTermProxy.SetTextAttr( value : word );
+     begin
+       _term.TextAttr := value
+     end;
+  function  TTermProxy.GetTextAttr : word;
+    begin
+      result := _term.TextAttr
+    end;
+  
+  
+  constructor TSubTerm.Create(term : ITerm; x, y, w, h : word );
+    begin
+      inherited Create(term);
+      _x := x;
+      _y := y;
+      _w := w;
+      _h := h;
+    end;
+  
+  function  TSubTerm.Width : word;
+    begin
+      result := _w
+    end;
+  
+  function  TSubTerm.Height: word;
+    begin
+      result := _h
+    end;
+  
+  function  TSubTerm.WhereX : word;
+    begin
+      result := _term.WhereX - _x
+    end;
+  
+  function  TSubTerm.WhereY : word;
+    begin
+      result := _term.WhereY - _y
+    end;
+  
+  procedure TSubTerm.ClrScr;
+    var y : word; i : integer;
+    begin
+      for y := 0 to maxY do
+        begin
+          gotoxy(0, y);
+          for i := 1 to self.width do emit(' ');
+        end;
+      gotoxy(0, 0);
+    end;
+  
+  procedure TSubTerm.ClrEol;
+    var curx, cury, i : word;
+    begin
+      curx := self.WhereX;
+      cury := self.WhereY;
+      for i := curx to self.maxX do _term.emit(' ');
+      self.gotoxy( curx, cury );
+    end;
+  
+  procedure TSubTerm.GotoXY( x, y : word );
+    begin
+      _term.GotoXY( _x + x, _y + y );
+    end;
+  
+  procedure TSubTerm.InsLine;
+    begin
+      raise Exception.Create('TSubTerm.InsLine not yet implemented. :/');
+    end;
+  
+  procedure TSubTerm.DelLine;
+    begin
+      raise Exception.Create('TSubTerm.DelLine not yet implemented. :/');
     end;
   
   
