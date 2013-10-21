@@ -62,11 +62,11 @@ A terminal cell combines a text attribute with a 16-bit WideChar.
 
 ** TScreenGrid
 
-A terminal's display buffer is essentially a grid of such cells. I'm using my [[https://github.com/tangentstorm/xpl/blob/master/code/grids.pas][generic =TGrid= class]] here to avoid duplicating code.
+A terminal's display buffer is essentially a grid of such cells. I'm using my [[https://github.com/tangentstorm/xpl/blob/master/code/grids.pas][generic =GGrid2d= class]] here to avoid duplicating code.
 
 #+name: TScreenGrid
 #+begin_src pascal
-  type TScreenGrid = class (specialize TGrid<TScreenCell>)
+  type TScreenGrid = class (specialize GGrid2d<TScreenCell>)
     private
       function GetAttr( const x, y : word ) : TTextAttr;
       function GetChar( const x, y : word ) : WideChar;
@@ -561,11 +561,11 @@ This is a contrcete implementation of ITerm.
 CRT was the original console library for turbo pascal. It uses 1-based cordinates, and is limited to 16 colors.
 
 ** interface
-#+begin_src pascal :tangle "~/x/code/crt.pas" :noweb tangle
+#+begin_src pascal :tangle "../code/ucrt.pas" :noweb tangle
 
 
 
-  { --- warning!! generated file. edit ~/b/web/kvm.org instead!! --- }
+  { --- warning!! generated file. edit ../text/kvm.pas.org instead!! --- }
 
 
   {$mode objfpc}
@@ -786,21 +786,21 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
 #+end_src
 
 * OUTPUT =kvm.pas=
-#+begin_src pascal :tangle "~/x/code/kvm.pas" :noweb tangle
-
-
-  { --- warning!! generated file. edit ~/../kvm.pas.org instead!! --- }
-
-
+#+begin_src pascal :tangle "../code/kvm.pas" :noweb tangle
+  
+  
+  { --- warning!! generated file. edit ../text/kvm.pas.org instead!! --- }
+  
+  
   {$mode objfpc}{$i xpc.inc}
   unit kvm;
-  interface uses xpc, grids, terminal, sysutils;
-
+  interface uses xpc, ugrid2d, terminal, sysutils;
+  
     <<ITerm>>
     {$DEFINE unitscope}
     <<ITerm-Members>>
     {$UNDEF unitscope}
-
+  
     <<TTextAttr>>
     <<TScreenCell>>
     <<TScreenGrid>>
@@ -810,13 +810,13 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
     <<TAnsiTerm>>
     <<TTermProxy>>
     <<TSubTerm>>
-
+  
     <<extras>>
   var work : ITerm;
-
+  
   implementation
     <<@kvm:impl>>
-
+  
   <<lifecycle>>
   end.
 #+end_src

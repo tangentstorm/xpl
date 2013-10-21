@@ -1,10 +1,11 @@
 { Generic Grid Class }
-{$mode objfpc}{$i xpc.inc}
-unit grids;
+{$mode delphi}{$i xpc.inc}
+{$PointerMath on}
+unit ugrid2d;
 interface uses xpc, sysutils;
 
 type
-  generic TGrid<T> = class
+  GGrid2d<T> = class
     type P = ^T;
   private
     _w, _h   : cardinal;
@@ -13,18 +14,18 @@ type
     _dynamic : boolean;
     _data    : P;
   public
-    constructor Create;
-    constructor Create( w, h : cardinal; s : cardinal = 0 );
-    constructor CreateAt( w, h, s : cardinal; at : pointer );
+    constructor Create; overload; reintroduce;
+    constructor Create( w, h : cardinal; s : cardinal = 0 ); overload;
+    constructor CreateAt( w, h, s : cardinal; at : pointer ); overload;
     destructor Destroy; override;
   public { 2D interface }
     function xyToI( x, y : cardinal ) : cardinal; inline;
-    procedure SetItem( x, y : cardinal; value : T );
-    function GetItem( x, y : cardinal ) : T;
+    procedure SetItem( x, y : cardinal; value : T ); overload;
+    function GetItem( x, y : cardinal ) : T; overload;
     property at2[ x, y : cardinal ]: T read GetItem write SetItem; default;
   public { 1D array interface }
-    procedure SetItem( i : cardinal; value : T );
-    function GetItem( i : cardinal ) : T;
+    procedure SetItem( i : cardinal; value : T ); overload;
+    function GetItem( i : cardinal ) : T; overload;
     property at[ i : cardinal ]: T read GetItem write SetItem;
   public { Sizing interface }
     procedure Resize( w, h : cardinal );
@@ -42,51 +43,51 @@ type
 
 implementation
 
-constructor TGrid.Create;
+constructor GGrid2d<T>.Create;
 begin
   CreateAt(16, 16, 0, nil );
 end;
 
-constructor TGrid.Create( w, h : cardinal; s : cardinal = 0 );
+constructor GGrid2d<T>.Create( w, h : cardinal; s : cardinal = 0 );
 begin
   CreateAt( w, h, s, nil );
 end;
 
-constructor TGrid.CreateAt( w, h, s : cardinal; at : pointer );
+constructor GGrid2d<T>.CreateAt( w, h, s : cardinal; at : pointer );
 begin
+  inherited create;
   _ramsize := 0;
   _count   := 0;
   _dynamic := ( at = nil );
   _data    := at;
-  ReSize( w, h );
-  if _dynamic then FillDWord( _data[0], _ramsize div sizeof(dword), 0 );
+  Resize( w, h );
 end;
 
 
 { 2D interface }
 
-function TGrid.xyToI( x, y : cardinal ) : cardinal; inline;
+function GGrid2d<T>.xyToI( x, y : cardinal ) : cardinal; inline;
   begin
     result := y * _w + x
   end;
 
-procedure TGrid.SetItem( x, y : cardinal; value : T );
+procedure GGrid2d<T>.SetItem( x, y : cardinal; value : T );
   begin
     _data[ xyToI( x, y ) ] := value;
   end;
 
-function TGrid.GetItem( x, y : cardinal ) : T;
+function GGrid2d<T>.GetItem( x, y : cardinal ) : T;
 begin
   result := _data[ xyToI( x, y ) ];
 end;
 
 { 1D direct interface }
-procedure TGrid.SetItem( i : cardinal; value : T );
+procedure GGrid2d<T>.SetItem( i : cardinal; value : T );
 begin
   _data[ i ] := value;
 end;
 
-function TGrid.GetItem( i : cardinal ) : T;
+function GGrid2d<T>.GetItem( i : cardinal ) : T;
 begin
   result := _data[ i ];
 end;
@@ -94,7 +95,7 @@ end;
 
 {$IFDEF DumpGrids}
 { This is ifdeffed because I don't know how to convert arbitrary types to strings. :/ }
-function TGrid.ToString : string;
+function GGrid2d<T>.ToString : string;
   var x, y : word;
   begin
     for y := 0 to h-1 do begin
@@ -103,21 +104,21 @@ function TGrid.ToString : string;
     end
   end;
 
-procedure TGrid.Dump;
+procedure GGrid2d<T>.Dump;
 begin
   writeln( self.ToString )
 end;
 {$ENDIF}
 
-procedure TGrid.Fill( value : T );
+procedure GGrid2d<T>.Fill( value : T );
   var i : word;
 begin
   for i := 0 to _count- 1 do self.at[ i ] := value
 end;
 
-{TODO: TGrid.Resize should probably only deal with count/ramsize }
-{TODO: add TGrid.Reshape(w,h,s) and handle creating the whitespace }
-procedure TGrid.Resize( w, h : cardinal );
+{TODO: GGrid2d.Resize should probably only deal with count/ramsize }
+{TODO: add GGrid2d.Reshape(w,h,s) and handle creating the whitespace }
+procedure GGrid2d<T>.Resize( w, h : cardinal );
   var temp : pointer; newsize, newcount : cardinal;
 begin
   _w := w; _h := h;
@@ -130,7 +131,9 @@ begin
 	{ move the old data }
 	Move( _data, temp, _ramsize );
 	FreeMem(_data, _ramsize );
-	{ TODO fill new space with zeros }
+	{ TODO fill new space with zeros.
+          (unfortunately, sizeof(T) is broken in 2.6.2 for generics. }
+        //if _dynamic then FillDWord( _data[0], _ramsize div sizeof(T), 0 );
 	_data := temp;
       end
     else
@@ -145,7 +148,7 @@ begin
   _count := newcount;
 end;
 
-destructor TGrid.Destroy;
+destructor GGrid2d<T>.Destroy;
 begin
   if _dynamic then FreeMem( _data, _ramsize );
   _data := nil;

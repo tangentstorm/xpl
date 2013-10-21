@@ -1,6 +1,12 @@
 {$mode objfpc}
 unit terminal;
-interface uses baseunix, termio;
+interface 
+{$ifdef UNIX}
+  uses baseunix, termio;
+{$else}
+  {$define VIDEO_FALLBACK}
+  uses video;
+{$endif}
 
   procedure OnResizeIgnore (const w, h : byte ); { default handler }
   procedure GetXY( var x, y : byte );
@@ -18,7 +24,29 @@ procedure OnResizeIgnore (const w, h : byte );
   begin
     { do nothing }
   end;
-  
+
+{$ifdef VIDEO_FALLBACK}
+
+procedure GetXY( var x, y : byte );
+  begin
+    x := video.cursorX;
+    y := video.cursorY;
+  end;
+
+procedure GetWH( var w, h : byte );
+  var mode : video.TVideoMode;
+  begin
+    video.GetVideoMode(mode);
+    w := mode.col;
+    h := mode.row;
+  end;
+
+procedure SetRawMode(b:boolean);
+  begin
+  end;
+
+{$else}{-- custom implementation --}
+
 procedure GetWH( var w, h :  byte );
   var winsize : termio.TWinSize;
   begin
@@ -151,14 +179,17 @@ procedure GetXY(var x, y : byte);
 {---------------------------------------------------------------------}
 { end crt extract                                                     }
 {---------------------------------------------------------------------}
+{$endif}{ end of custom implementation, vs VIDEO_FALLBACK }
 
 initialization
   GetWH( w, h );
   OnResize := @OnResizeIgnore;
+
   SetRawMode( true );
   GetXY( startX, startY );
   SetRawMode( false );
 
+{$ifdef UNIX}
   { callback for window/terminal size change }
   if baseunix.fpSignal( baseunix.SigWinCh,
 		        baseunix.SignalHandler( @OnResizeSignal ))
@@ -168,4 +199,5 @@ initialization
       writeln( 'Error registering terminal resize signal. ', fpGetErrno, '.' );
       halt( 1 );
     end;
+{$endif}
 end.

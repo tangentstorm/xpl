@@ -1,10 +1,10 @@
 
-{ --- warning!! generated file. edit ~/../kvm.pas.org instead!! --- }
+{ --- warning!! generated file. edit ../text/kvm.pas.org instead!! --- }
 
 
 {$mode objfpc}{$i xpc.inc}
 unit kvm;
-interface uses xpc, grids, terminal, sysutils;
+interface uses xpc, ugrid2d, terminal, sysutils;
 
   type ITerm = interface
     function  Width : word;
@@ -57,7 +57,7 @@ interface uses xpc, grids, terminal, sysutils;
       ch   : widechar;
       attr : TTextAttr;
     end;
-  type TScreenGrid = class (specialize TGrid<TScreenCell>)
+  type TScreenGrid = class (specialize GGrid2d<TScreenCell>)
     private
       function GetAttr( const x, y : word ) : TTextAttr;
       function GetChar( const x, y : word ) : WideChar;
@@ -529,8 +529,11 @@ implementation
     begin result := work.TextAttr end;
 
 initialization
-  work := TAnsiTerm.Create;
-  work.GotoXY( terminal.startX, terminal.startY );
+  if TTextRec(output).Mode = fmOutput then
+    begin
+      work := TAnsiTerm.Create;
+      work.GotoXY( terminal.startX, terminal.startY );
+    end;
 finalization
   { work is destroyed automatically by reference count }
 end.

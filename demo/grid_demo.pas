@@ -1,9 +1,9 @@
 {$DEFINE DumpGrids}
 program grid_demo;
-uses grids, chk;
+uses ugrid2d, chk;
 
 type
-  TCharGrid = specialize TGrid<Char>;
+  TCharGrid = specialize GGrid2d<Char>;
 
 const
   hex = '0123456789ABCDEF';
