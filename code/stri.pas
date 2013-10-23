@@ -4,14 +4,17 @@
 unit stri; { string interface }
 interface uses xpc, sysutils, strutils;
 
-  function pad( s : string; len : integer; ch : char ) : string;
-  function lpad( s : string; len : integer; ch : char ) : string;
-  function rpad( s : string; len : integer; ch : char ) : string;
+  function pad( s : string; len : cardinal; ch : char ) : string;
+    deprecated;
+  function lpad( s : string; len : cardinal; ch : char=' ') : string;
+  function rpad( s : string; len : cardinal; ch : char=' ') : string;
+  function lfit( s : string; len : cardinal; ch : char=' ') : string;
+  function rfit( s : string; len : cardinal; ch : char=' ') : string;
   function unpad( s : string; ch : char ) : string;
-  function chntimes( c : char; n : byte ) : string;
-  function ntimes( const s : string; n : byte ) : string;
-  function flushrt( s : string; n : byte; ch : char ) : string;
-  function trunc( s : string; len : byte ) : string;
+  function chntimes( c : char; n : cardinal ) : string;
+  function ntimes( const s : string; n : cardinal ) : string;
+  function flushrt( s : string; n : cardinal; ch : char ) : string;
+  function trunc( s : string; len : cardinal ) : string;
   function UpStr( const s : string ) : String;
   function DnCase( ch : char ) : Char;
   function DnStr( const s : string ) : String;
@@ -23,48 +26,48 @@ interface uses xpc, sysutils, strutils;
 implementation
 
 
-function chntimes( c : char; n : byte ) : string; inline;
-  var i : byte; s : string = '';
+function chntimes( c : char; n : cardinal ) : string; inline;
+  var i : cardinal; s : string = '';
 begin
   for i := 1 to n do s := s + c;
   result := s;
 end;
 
-function ntimes( const s : string; n : byte ) : string; inline;
-  var i : byte;
+function ntimes( const s : string; n : cardinal ) : string; inline;
+  var i : cardinal;
 begin
   result := s;
   for i := 1 to n - 1 do result := result + s;
 end;
 
 { todo : profile this. }
-function flushrt( s : string; n : byte; ch : char ) : string;
+function flushrt( s : string; n : cardinal; ch : char ) : string;
 begin
   if length( s ) < n then insert( chntimes( ch, n-length( s )), s, 1 );
   result := s;
 end;
 
-function rpad( s : string; len : integer; ch : char ) : string;
+function rpad( s : string; len : cardinal; ch : char=' ' ) : string;
   begin
     if length( s ) > len then s := trunc( s, len );
     while length( s ) < len do s := s + ch;
     result := s;
   end;
-
-function lpad( s : string; len : integer; ch : char ) : string;
+  
+function lpad( s : string; len : cardinal; ch : char=' ') : string;
   begin
     if length( s ) > len then s := trunc( s, len );
     while length( s ) < len do s := ch + s;
     result := s;
   end;
 
-function pad( s : string; len : integer; ch : char ) : string; inline;
+function pad( s : string; len : cardinal; ch : char) : string; inline;
   begin
     result := rpad( s, len, ch)
   end;
 
 function unpad( s : string; ch : char ) : string;
-  var i : integer;
+  var i : cardinal;
 begin
   i := length( s );
   while ( i > 0 ) and ( s[ i ] = ch ) do dec( i );
@@ -72,9 +75,23 @@ begin
   result := s;
 end;
 
-function trunc( s : string; len : byte ) : string;
+function trunc( s : string; len : cardinal ) : string;
 begin
   if length( s ) > len then setlength( s, len );
+  result := s;
+end;
+
+function lfit( s : string; len : cardinal; ch : char = ' ' ) : string;
+begin
+  if length( s ) > len then setlength( s, len )
+  else s := lpad(s, len, ch);
+  result := s;
+end;
+
+function rfit( s : string; len : cardinal; ch : char = ' ' ) : string;
+begin
+  if length( s ) > len then setlength( s, len )
+  else s := rpad(s, len, ch);
   result := s;
 end;
 
