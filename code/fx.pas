@@ -1,14 +1,16 @@
 {$mode objfpc}{$i xpc.inc}
 unit fx;
-interface uses xpc, cw, stri, cli, kvm;
+interface uses xpc, cw, stri, kvm, kbd;
+
+{  TODO: port all these over to kvm.ITerm }
 
   Type
     { 80x50 screen }
     ScreenType	= array[ 0..7999 ] of byte;
     VGAtype	= array [ 0..319, 0..200 ] of byte;
     Cel		= array[ 0 .. 0 ] of byte;
-    PCel	= ^Cel;                                     { ^TextPicture }
-  ScreenTypePtr	= ^ScreenType;
+    PCel	= ^Cel;          { ^TextPicture }
+    ScreenTypePtr= ^ScreenType;
 
 
   Var
@@ -37,6 +39,8 @@ interface uses xpc, cw, stri, cli, kvm;
 
   { ■ screen/window handling commands }
   procedure fillscreen( at : word; uc : string );
+  procedure fillscreen( chars : string );
+
   procedure fillbox( a1, b1, a2, b2 : byte; atch : word );
   procedure slidedown( x1, x2, y1, y2 : byte;
 		      offwhat	      : screentypeptr );
@@ -154,22 +158,33 @@ implementation
 
 
 
-  procedure fillScreen( at : Word; uc:string); {ATTR then unicode Char}
-    var
-      i	: byte;
-      s	: string;
+procedure fillScreen( at : Word; uc:string); {ATTR then unicode Char}
+  var i	: byte; s : string;
   begin
     s := ntimes( uc, kvm.maxX-2 );
     for i := kvm.maxY-1 downto 1 do colorxy( 0, i, at, s );
     readln;
-  end; { FillScreen }
+  end;
+
+procedure fillscreen( chars : string );
+  var y, x, len : cardinal; line : string;
+  begin
+    len := length(chars);
+    setlength(line, kvm.width);
+    for y := 0 to kvm.maxY do
+      begin
+        gotoxy(0,y);
+        for x := 1 to kvm.width do line[x] := chars[random(len)+1];
+        write(line);
+      end
+  end;
 
 
-  procedure fillBox( a1, b1, a2, b2 : Byte; atCh : Word );
-    var
-      count : Word;
-      a :     Byte;
-      s :     string;
+procedure fillBox( a1, b1, a2, b2 : Byte; atCh : Word );
+  var
+    count : Word;
+    a :     Byte;
+    s :     string;
   begin
     a := hi( atCh );
     s := chntimes( chr( lo( atch ) ), a2 - a1 + 1 );
@@ -179,10 +194,10 @@ implementation
 
   { TODO fix the massive duplication in the cw.slidexxx/scrollxxx commands }
 
-  procedure slidedown( x1, x2, y1, y2 : Byte; offwhat : screentypeptr );
-    var
-      count, count2 : Byte;
-      thingy, offset, len : Word;
+procedure slidedown( x1, x2, y1, y2 : Byte; offwhat : screentypeptr );
+  var
+    count, count2 : Byte;
+    thingy, offset, len : Word;
   begin
     len := ( x2 - x1 + 1 ) * 2;
     for count := pred( y1 ) to pred( y2 ) do
@@ -202,16 +217,16 @@ implementation
   end; { slidedown }
 
 
-  procedure slidedownoff( offwhat : screentypeptr );
+procedure slidedownoff( offwhat : screentypeptr );
   begin
     slidedown( 1, 80, 1, 25, offwhat );
   end; { slidedownoff }
 
 
-  procedure scrollup1( x1, x2, y1, y2 : Byte; offwhat : screentypeptr );
-    var
-      count : Byte;
-      offset, len : Word;
+procedure scrollup1( x1, x2, y1, y2 : Byte; offwhat : screentypeptr );
+  var
+    count : Byte;
+    offset, len : Word;
   begin
     dec( x1 );
     dec( x2 );
@@ -232,10 +247,10 @@ implementation
   end; { scrollup1 }
 
 
-  procedure scrolldown1( x1, x2, y1, y2 : Byte; offwhat : screentypeptr );
-    var
-      count	  : Byte;
-      offset, len : Word;
+procedure scrolldown1( x1, x2, y1, y2 : Byte; offwhat : screentypeptr );
+  var
+    count	  : Byte;
+    offset, len : Word;
   begin
     dec( x1 );
     dec( x2 );
@@ -256,10 +271,10 @@ implementation
   end; { scrolldown1 }
 
 
-  procedure scrolldown( x1, x2, y1, y2 : Byte; offwhat : screentypeptr );
-    var
-      count, count2 : Byte;
-      thingy, offset, len : Word;
+procedure scrolldown( x1, x2, y1, y2 : Byte; offwhat : screentypeptr );
+  var
+    count, count2 : Byte;
+    thingy, offset, len : Word;
   begin
     x1  := pred( x1 );
     x2  := pred( x2 );
@@ -280,16 +295,16 @@ implementation
   end; { scrolldown }
 
 
-  procedure scrolldownoff( offwhat : screentypeptr );
+procedure scrolldownoff( offwhat : screentypeptr );
   begin
     slidedown( 1, 80, 1, 25, offwhat );
   end; { scrolldownoff }
 
 
-  procedure scrollright( x1, x2, y1, y2 : Byte; offwhat : screentypeptr );
-    var
-      count, count2 : Byte;
-      thingy, len : Word;
+procedure scrollright( x1, x2, y1, y2 : Byte; offwhat : screentypeptr );
+  var
+    count, count2 : Byte;
+    thingy, len : Word;
   begin
     x1  := pred( x1 );
     x2  := pred( x2 );
@@ -306,11 +321,10 @@ implementation
   end; { scrollright }
 
 
-  procedure scrollrightoff( offwhat : screentypeptr );
+procedure scrollrightoff( offwhat : screentypeptr );
   begin
     scrollright( 1, 80, 1, 25, offwhat );
   end; { scrollrightoff }
-
 
 initialization
 end.
