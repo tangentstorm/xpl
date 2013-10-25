@@ -1,18 +1,17 @@
 unit cli;
 interface uses xpc, cw, kvm, kbd;
 
-  procedure hitakey;
-  function yesno : Boolean;
+  procedure HitAKey;
+  function YesNo : Boolean;
 
 implementation
 
 
-  procedure HitAKey;
-    var
-      tc : Byte;
+procedure HitAKey;
+  var tc : word;
   begin
     tc := kvm.textAttr;
-    cwrite( '|r(|R(|Y(|W Hit a Key|G! |Y)|R)|r)' );
+    cwrite( '|!k|r(|R(|Y(|W Hit a Key|G! |Y)|R)|r)' );
     while KeyPressed do ReadKey;
     ReadKey;
     cwrite( '' );
@@ -20,9 +19,9 @@ implementation
   end; { HitAKey }
 
 
-  function yesno : Boolean;
+function YesNo : Boolean;
   begin
     yesno := upCase( readkey ) = 'Y';
-  end; { yesno }
+  end; { YesNo }
 
 end.
