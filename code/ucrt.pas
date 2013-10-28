@@ -1,5 +1,5 @@
 
-{ --- warning!! generated file. edit ~/b/web/kvm.org instead!! --- }
+{ --- warning!! generated file. edit ../text/kvm.pas.org instead!! --- }
 
 
 {$mode objfpc}

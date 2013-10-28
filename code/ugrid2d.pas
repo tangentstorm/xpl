@@ -7,7 +7,7 @@ interface uses xpc, sysutils;
 type
   GGrid2d<T> = class
     type P = ^T;
-  private
+  protected
     _w, _h   : cardinal;
     _count   : cardinal;  { how many items? }
     _ramsize : cardinal;  { how much ram have we allocated, in bytes? }

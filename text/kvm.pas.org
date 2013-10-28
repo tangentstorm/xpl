@@ -48,25 +48,25 @@ For our text attributes, we're going to use 256 colors. This strikes a good bala
     end;
 #+end_src
 
-** TScreenCell
+** TTermCell
 
 A terminal cell combines a text attribute with a 16-bit WideChar.
 
-#+name: TScreenCell
+#+name: TTermCell
 #+begin_src pascal
-  type TScreenCell = record
+  type TTermCell = record
       ch   : widechar;
       attr : TTextAttr;
     end;
 #+end_src
 
-** TScreenGrid
+** TTermGrid
 
 A terminal's display buffer is essentially a grid of such cells. I'm using my [[https://github.com/tangentstorm/xpl/blob/master/code/grids.pas][generic =GGrid2d= class]] here to avoid duplicating code.
 
-#+name: TScreenGrid
+#+name: TTermGrid
 #+begin_src pascal
-  type TScreenGrid = class (specialize GGrid2d<TScreenCell>)
+  type TTermGrid = class (specialize GGrid2d<TTermCell>)
     private
       function GetAttr( const x, y : word ) : TTextAttr;
       function GetChar( const x, y : word ) : WideChar;
@@ -81,13 +81,13 @@ A terminal's display buffer is essentially a grid of such cells. I'm using my [[
 #+name: @kvm:impl
 #+begin_src pascal
 
-  function TScreenGrid.GetAttr( const x, y : word ) : TTextAttr;
+  function TTermGrid.GetAttr( const x, y : word ) : TTextAttr;
     begin
       result.fg := self[ x, y ].attr.fg;
       result.bg := self[ x, y ].attr.bg;
     end;
 
-  procedure TScreenGrid.SetAttr( const x, y  : word;
+  procedure TTermGrid.SetAttr( const x, y  : word;
                                const value : TTextAttr );
     begin
       with _data[ xyToI( x, y ) ].attr do
@@ -97,12 +97,12 @@ A terminal's display buffer is essentially a grid of such cells. I'm using my [[
         end
     end;
 
-  function TScreenGrid.GetChar( const x, y : word ) : WideChar;
+  function TTermGrid.GetChar( const x, y : word ) : WideChar;
     begin
       result := self[ x, y ].ch;
     end;
 
-  procedure TScreenGrid.SetChar( const x, y  : word;
+  procedure TTermGrid.SetChar( const x, y  : word;
                                const value : WideChar );
     begin
       _data[ xyToI( x, y ) ].ch := value;
@@ -128,22 +128,27 @@ A terminal's display buffer is essentially a grid of such cells. I'm using my [[
   end;
 #+end_src
 
-* =TScreenTerm=
+* =TGridTerm=
 This is a contrcete implementation of ITerm.
 
-#+name: TScreenTerm
+#+name: TGridTerm
 #+begin_src pascal
-  type TScreenTerm = class  (TInterfacedObject, ITerm) // (TAbstractTerminal)
+  type TGridTerm = class  (TInterfacedObject, ITerm) // (TAbstractTerminal)
     public
       <<ITerm-Members>>
     private
       attr : TTextAttr;
       curs : TPoint;
-      grid : TScreenGrid;
-   public
+      _grid : TTermGrid;
+    public
       constructor Create( w, h : word );
       destructor Destroy; override;
       function  Cursor : TPoint;
+      function GetCell( x, y : word ) : TTermCell;
+      procedure PutCell( x, y : word; cell : TTermCell );
+      property grid : TTermGrid read _grid;
+      property cells[ x, y : word ] : TTermCell
+        read GetCell write PutCell; default;
     end;
 #+end_src
 
@@ -151,81 +156,91 @@ This is a contrcete implementation of ITerm.
 
 #+name: @kvm:impl
 #+begin_src pascal
-
-  constructor TScreenTerm.Create( w, h : word );
+  
+  constructor TGridTerm.Create( w, h : word );
     begin
     end;
-
-  destructor TScreenTerm.Destroy;
+  
+  destructor TGridTerm.Destroy;
     begin
     end;
-
-  function  TScreenTerm.Width  : word; begin result := grid.w      end;
-  function  TScreenTerm.Height : word; begin result := grid.h      end;
-  function  TScreenTerm.MaxX   : word; begin result := width - 1   end;
-  function  TScreenTerm.MaxY   : word; begin result := height - 1  end;
-  function  TScreenTerm.WhereX : word; begin result := cursor.x    end;
-  function  TScreenTerm.WhereY : word; begin result := cursor.y    end;
-
-  function  TScreenTerm.GetTextAttr : word;
+  
+  function  TGridTerm.Width  : word; begin result := grid.w      end;
+  function  TGridTerm.Height : word; begin result := grid.h      end;
+  function  TGridTerm.MaxX   : word; begin result := width - 1   end;
+  function  TGridTerm.MaxY   : word; begin result := height - 1  end;
+  function  TGridTerm.WhereX : word; begin result := cursor.x    end;
+  function  TGridTerm.WhereY : word; begin result := cursor.y    end;
+  
+  function  TGridTerm.GetTextAttr : word;
     begin
       result := word(attr)
     end;
-
-  procedure TScreenTerm.SetTextAttr( value : word );
+  
+  procedure TGridTerm.SetTextAttr( value : word );
     begin
       attr := TTextAttr(value)
     end;
-
-  procedure TScreenTerm.Fg( color : byte );
+  
+  procedure TGridTerm.Fg( color : byte );
     begin
       attr.fg := color
     end;
-
-  procedure TScreenTerm.Bg( color : byte );
+  
+  procedure TGridTerm.Bg( color : byte );
     begin
       attr.bg := color
     end;
-
-  procedure TScreenTerm.ClrScr;
+  
+  procedure TGridTerm.ClrScr;
     begin
     end;
-
-  procedure TScreenTerm.ClrEol;
+  
+  procedure TGridTerm.ClrEol;
     begin
     end;
-
-  procedure TScreenTerm.GotoXY( x, y : word );
+  
+  procedure TGridTerm.GotoXY( x, y : word );
     begin
       cursor.x := x;
       cursor.y := y;
     end;
-
-  procedure TScreenTerm.Emit( wc : widechar );
+  
+  procedure TGridTerm.Emit( wc : widechar );
     begin
     end;
-
-  procedure TScreenTerm.InsLine;
+  
+  procedure TGridTerm.InsLine;
     begin
     end;
-
-  procedure TScreenTerm.DelLine;
+  
+  procedure TGridTerm.DelLine;
     begin
     end;
-
-  function TScreenTerm.Cursor : TPoint;
+  
+  function TGridTerm.Cursor : TPoint;
     begin
       result := curs
     end;
-
-  procedure TScreenTerm.ShowCursor;
+  
+  procedure TGridTerm.ShowCursor;
     begin
     end;
-
-  procedure TScreenTerm.HideCursor;
+  
+  procedure TGridTerm.HideCursor;
     begin
     end;
-
+  
+  function TGridTerm.GetCell( x, y : word ) : TTermCell;
+    begin
+      result := _grid[x,y]
+    end;
+  
+  procedure TGridTerm.PutCell( x, y : word; cell : TTermCell );
+    begin
+      _grid[x,y] := cell;
+    end;
+  
 #+end_src
 
 * =TAnsiTerm=
@@ -347,7 +362,6 @@ This is a contrcete implementation of ITerm.
 
 #+end_src
 
-
 * =TTermProxy= : generic base class for decorators
 ** interface
 
@@ -423,8 +437,6 @@ This is a contrcete implementation of ITerm.
     end;
 
 #+END_SRC
-
-
 
 * =TSubTerm= : a window inside a terminal
 ** interface
@@ -517,6 +529,19 @@ This is a contrcete implementation of ITerm.
       end;
 
 #+END_SRC
+
+* =TTermCell= and =TTermGrid=
+:PROPERTIES:
+:TS:       <2013-10-28 04:31PM>
+:ID:       pigd7l616ag0
+:END:
+
+#+name: TTermCell
+#+begin_src python
+  
+
+
+#+end_src
 
 
 
@@ -666,7 +691,6 @@ CRT was the original console library for turbo pascal. It uses 1-based cordinate
 
 #+end_src
 
-
 *** TODO finish implementing these
 #+name: @crt:impl
 #+begin_src pascal
@@ -700,9 +724,6 @@ CRT was the original console library for turbo pascal. It uses 1-based cordinate
   procedure nosound; begin end;
 
 #+end_src
-
-
-
 
 * APPENDIX Convenience Routines
 
@@ -787,36 +808,36 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
 
 * OUTPUT =kvm.pas=
 #+begin_src pascal :tangle "../code/kvm.pas" :noweb tangle
-  
-  
+
+
   { --- warning!! generated file. edit ../text/kvm.pas.org instead!! --- }
-  
-  
+
+
   {$mode objfpc}{$i xpc.inc}
   unit kvm;
   interface uses xpc, ugrid2d, terminal, sysutils;
-  
+
     <<ITerm>>
     {$DEFINE unitscope}
     <<ITerm-Members>>
     {$UNDEF unitscope}
-  
+
     <<TTextAttr>>
-    <<TScreenCell>>
-    <<TScreenGrid>>
+    <<TTermCell>>
+    <<TTermGrid>>
     <<TPoint>>
     <<TRect>>
-    <<TScreenTerm>>
+    <<TGridTerm>>
     <<TAnsiTerm>>
     <<TTermProxy>>
     <<TSubTerm>>
-  
+
     <<extras>>
   var work : ITerm;
-  
+
   implementation
     <<@kvm:impl>>
-  
+
   <<lifecycle>>
   end.
 #+end_src

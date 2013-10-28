@@ -53,11 +53,14 @@ interface uses xpc, ugrid2d, terminal, sysutils;
       bg : byte;
       fg : byte;
     end;
-  type TScreenCell = record
+  type TTermCell = record
       ch   : widechar;
       attr : TTextAttr;
     end;
-  type TScreenGrid = class (specialize GGrid2d<TScreenCell>)
+    
+  
+  
+  type TTermGrid = class (specialize GGrid2d<TTermCell>)
     private
       function GetAttr( const x, y : word ) : TTextAttr;
       function GetChar( const x, y : word ) : WideChar;
@@ -74,7 +77,7 @@ interface uses xpc, ugrid2d, terminal, sysutils;
     x, y : cardinal;
     w, h : cardinal;
   end;
-  type TScreenTerm = class  (TInterfacedObject, ITerm) // (TAbstractTerminal)
+  type TGridTerm = class  (TInterfacedObject, ITerm) // (TAbstractTerminal)
     public
       function  Width : word;
       function  Height: word;
@@ -98,11 +101,16 @@ interface uses xpc, ugrid2d, terminal, sysutils;
     private
       attr : TTextAttr;
       curs : TPoint;
-      grid : TScreenGrid;
-   public
+      _grid : TTermGrid;
+    public
       constructor Create( w, h : word );
       destructor Destroy; override;
       function  Cursor : TPoint;
+      function GetCell( x, y : word ) : TTermCell;
+      procedure PutCell( x, y : word; cell : TTermCell );
+      property grid : TTermGrid read _grid;
+      property cells[ x, y : word ] : TTermCell
+        read GetCell write PutCell; default;
     end;
   type TAnsiTerm = class (TInterfacedObject, ITerm)
     public
@@ -179,13 +187,13 @@ var work : ITerm;
 
 implementation
   
-  function TScreenGrid.GetAttr( const x, y : word ) : TTextAttr;
+  function TTermGrid.GetAttr( const x, y : word ) : TTextAttr;
     begin
       result.fg := self[ x, y ].attr.fg;
       result.bg := self[ x, y ].attr.bg;
     end;
   
-  procedure TScreenGrid.SetAttr( const x, y  : word;
+  procedure TTermGrid.SetAttr( const x, y  : word;
                                const value : TTextAttr );
     begin
       with _data[ xyToI( x, y ) ].attr do
@@ -195,90 +203,100 @@ implementation
         end
     end;
   
-  function TScreenGrid.GetChar( const x, y : word ) : WideChar;
+  function TTermGrid.GetChar( const x, y : word ) : WideChar;
     begin
       result := self[ x, y ].ch;
     end;
   
-  procedure TScreenGrid.SetChar( const x, y  : word;
+  procedure TTermGrid.SetChar( const x, y  : word;
                                const value : WideChar );
     begin
       _data[ xyToI( x, y ) ].ch := value;
     end;
   
   
-  constructor TScreenTerm.Create( w, h : word );
+  constructor TGridTerm.Create( w, h : word );
     begin
     end;
   
-  destructor TScreenTerm.Destroy;
+  destructor TGridTerm.Destroy;
     begin
     end;
   
-  function  TScreenTerm.Width  : word; begin result := grid.w      end;
-  function  TScreenTerm.Height : word; begin result := grid.h      end;
-  function  TScreenTerm.MaxX   : word; begin result := width - 1   end;
-  function  TScreenTerm.MaxY   : word; begin result := height - 1  end;
-  function  TScreenTerm.WhereX : word; begin result := cursor.x    end;
-  function  TScreenTerm.WhereY : word; begin result := cursor.y    end;
+  function  TGridTerm.Width  : word; begin result := grid.w      end;
+  function  TGridTerm.Height : word; begin result := grid.h      end;
+  function  TGridTerm.MaxX   : word; begin result := width - 1   end;
+  function  TGridTerm.MaxY   : word; begin result := height - 1  end;
+  function  TGridTerm.WhereX : word; begin result := cursor.x    end;
+  function  TGridTerm.WhereY : word; begin result := cursor.y    end;
   
-  function  TScreenTerm.GetTextAttr : word;
+  function  TGridTerm.GetTextAttr : word;
     begin
       result := word(attr)
     end;
   
-  procedure TScreenTerm.SetTextAttr( value : word );
+  procedure TGridTerm.SetTextAttr( value : word );
     begin
       attr := TTextAttr(value)
     end;
   
-  procedure TScreenTerm.Fg( color : byte );
+  procedure TGridTerm.Fg( color : byte );
     begin
       attr.fg := color
     end;
   
-  procedure TScreenTerm.Bg( color : byte );
+  procedure TGridTerm.Bg( color : byte );
     begin
       attr.bg := color
     end;
   
-  procedure TScreenTerm.ClrScr;
+  procedure TGridTerm.ClrScr;
     begin
     end;
   
-  procedure TScreenTerm.ClrEol;
+  procedure TGridTerm.ClrEol;
     begin
     end;
   
-  procedure TScreenTerm.GotoXY( x, y : word );
+  procedure TGridTerm.GotoXY( x, y : word );
     begin
       cursor.x := x;
       cursor.y := y;
     end;
   
-  procedure TScreenTerm.Emit( wc : widechar );
+  procedure TGridTerm.Emit( wc : widechar );
     begin
     end;
   
-  procedure TScreenTerm.InsLine;
+  procedure TGridTerm.InsLine;
     begin
     end;
   
-  procedure TScreenTerm.DelLine;
+  procedure TGridTerm.DelLine;
     begin
     end;
   
-  function TScreenTerm.Cursor : TPoint;
+  function TGridTerm.Cursor : TPoint;
     begin
       result := curs
     end;
   
-  procedure TScreenTerm.ShowCursor;
+  procedure TGridTerm.ShowCursor;
     begin
     end;
   
-  procedure TScreenTerm.HideCursor;
+  procedure TGridTerm.HideCursor;
     begin
+    end;
+  
+  function TGridTerm.GetCell( x, y : word ) : TTermCell;
+    begin
+      result := _grid[x,y]
+    end;
+  
+  procedure TGridTerm.PutCell( x, y : word; cell : TTermCell );
+    begin
+      _grid[x,y] := cell;
     end;
   
   
@@ -529,11 +547,8 @@ implementation
     begin result := work.TextAttr end;
 
 initialization
-  if TTextRec(output).Mode = fmOutput then
-    begin
-      work := TAnsiTerm.Create;
-      work.GotoXY( terminal.startX, terminal.startY );
-    end;
+  work := TAnsiTerm.Create;
+  work.GotoXY( terminal.startX, terminal.startY );
 finalization
   { work is destroyed automatically by reference count }
 end.
