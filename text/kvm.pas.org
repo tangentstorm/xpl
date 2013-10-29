@@ -157,66 +157,67 @@ This is a contrcete implementation of ITerm.
 
 #+name: @kvm:impl
 #+begin_src pascal
-
+  
   constructor TGridTerm.Create( w, h : word );
     begin
       inherited create;
       _grid := TTermGrid.Create( w, h );
       _curs := TPoint.Create; _curs.x := 0; _curs.y := 0;
     end;
-
+  
   destructor TGridTerm.Destroy;
     begin;
       _grid.Free;
       inherited destroy;
     end;
-
+  
   function  TGridTerm.Width  : word; begin result := grid.w      end;
   function  TGridTerm.Height : word; begin result := grid.h      end;
   function  TGridTerm.MaxX   : word; begin result := width - 1   end;
   function  TGridTerm.MaxY   : word; begin result := height - 1  end;
   function  TGridTerm.WhereX : word; begin result := _curs.x    end;
   function  TGridTerm.WhereY : word; begin result := _curs.y    end;
-
+  
   function  TGridTerm.GetTextAttr : word;
     begin
       result := word(attr)
     end;
-
+  
   procedure TGridTerm.SetTextAttr( value : word );
     begin
       attr := TTextAttr(value)
     end;
-
+  
   procedure TGridTerm.Fg( color : byte );
     begin
       attr.fg := color
     end;
-
+  
   procedure TGridTerm.Bg( color : byte );
     begin
       attr.bg := color
     end;
-
+  
   procedure TGridTerm.ClrScr;
     var cell : TTermCell;
     begin
       cell.ch := ' ';
       cell.attr := attr;
-      _grid.fill(cell)
+      _grid.fill(cell);
+      gotoxy(0,0);
     end;
-
+  
   procedure TGridTerm.ClrEol;
     begin
       raise Exception.Create('TODO: TGridTerm.ClrEol');
     end;
-
+  
   procedure TGridTerm.GotoXY( x, y : word );
     begin
       _curs.x := x;
       _curs.y := y;
     end;
-
+  
   procedure TGridTerm.Emit( wc : widechar );
     var cell : TTermCell;
     begin
@@ -231,48 +232,48 @@ This is a contrcete implementation of ITerm.
           // todo: scroll
         end;
     end;
-
+  
   procedure TGridTerm.Emit( s : string );
     var ch : char;
     begin
       for ch in s do Emit(ch);
     end;
-
+  
   procedure TGridTerm.InsLine;
     begin
       raise Exception.Create('TODO: TGridTerm.InsLine');
     end;
-
+  
   procedure TGridTerm.DelLine;
     begin
       raise Exception.Create('TODO: TGridTerm.DelLine');
     end;
-
+  
   function TGridTerm.Cursor : TPoint;
     begin
       result := _curs
     end;
-
+  
   procedure TGridTerm.ShowCursor;
     begin
       pass
     end;
-
+  
   procedure TGridTerm.HideCursor;
     begin
       pass
     end;
-
+  
   function TGridTerm.GetCell( x, y : word ) : TTermCell;
     begin
       result := _grid[x,y]
     end;
-
+  
   procedure TGridTerm.PutCell( x, y : word; cell : TTermCell );
     begin
       _grid[x,y] := cell;
     end;
-
+  
 #+end_src
 
 * =TAnsiTerm=

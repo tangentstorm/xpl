@@ -32,9 +32,12 @@ procedure test_cells;
 
 procedure test_clrscr;
   begin
+    term.gotoxy(1,1);
     term.grid.chars[0,0] := 'x';
     term.clrscr;
-    chk.equal(' ', term.grid.chars[0,0])
+    chk.equal(' ', term.grid.chars[0,0]);
+    chk.equal(term.wherex, 0);
+    chk.equal(term.wherey, 0);
   end;
 
 procedure test_gotoxy;

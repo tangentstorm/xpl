@@ -262,7 +262,8 @@ implementation
     begin
       cell.ch := ' ';
       cell.attr := attr;
-      _grid.fill(cell)
+      _grid.fill(cell);
+      gotoxy(0,0);
     end;
   
   procedure TGridTerm.ClrEol;
