@@ -18,6 +18,7 @@ interface uses xpc, ugrid2d, terminal, sysutils;
     procedure Fg( c : byte );
     procedure Bg( c : byte );
     procedure Emit( wc : widechar );
+    procedure Emit( s : string );
     procedure GotoXY( x, y : word );
     procedure InsLine;
     procedure DelLine;
@@ -39,6 +40,7 @@ interface uses xpc, ugrid2d, terminal, sysutils;
   procedure Fg( color : byte );
   procedure Bg( color : byte );
   procedure Emit( wc : widechar ); {$IFNDEF unitscope}virtual;{$ENDIF}
+  procedure Emit( s : string ); {$IFNDEF unitscope}virtual;{$ENDIF}
   procedure GotoXY( x, y : word );
   procedure InsLine;
   procedure DelLine;
@@ -57,9 +59,6 @@ interface uses xpc, ugrid2d, terminal, sysutils;
       ch   : widechar;
       attr : TTextAttr;
     end;
-    
-  
-  
   type TTermGrid = class (specialize GGrid2d<TTermCell>)
     private
       function GetAttr( const x, y : word ) : TTextAttr;
@@ -67,8 +66,8 @@ interface uses xpc, ugrid2d, terminal, sysutils;
       procedure SetAttr( const x, y : word; const value : TTextAttr );
       procedure SetChar( const x, y : word; const value : WideChar );
     public
-      property attr[ x, y : word ] : TTextAttr read GetAttr write SetAttr;
-      property char[ x, y : word ] : WideChar read GetChar write SetChar;
+      property attrs[ x, y : word ] : TTextAttr read GetAttr write SetAttr;
+      property chars[ x, y : word ] : WideChar read GetChar write SetChar;
     end;
   type TPoint = class
     x, y : cardinal;
@@ -90,6 +89,7 @@ interface uses xpc, ugrid2d, terminal, sysutils;
       procedure Fg( color : byte );
       procedure Bg( color : byte );
       procedure Emit( wc : widechar ); {$IFNDEF unitscope}virtual;{$ENDIF}
+      procedure Emit( s : string ); {$IFNDEF unitscope}virtual;{$ENDIF}
       procedure GotoXY( x, y : word );
       procedure InsLine;
       procedure DelLine;
@@ -100,7 +100,7 @@ interface uses xpc, ugrid2d, terminal, sysutils;
       procedure HideCursor;
     private
       attr : TTextAttr;
-      curs : TPoint;
+      _curs : TPoint;
       _grid : TTermGrid;
     public
       constructor Create( w, h : word );
@@ -125,6 +125,7 @@ interface uses xpc, ugrid2d, terminal, sysutils;
       procedure Fg( color : byte );
       procedure Bg( color : byte );
       procedure Emit( wc : widechar ); {$IFNDEF unitscope}virtual;{$ENDIF}
+      procedure Emit( s : string ); {$IFNDEF unitscope}virtual;{$ENDIF}
       procedure GotoXY( x, y : word );
       procedure InsLine;
       procedure DelLine;
@@ -153,6 +154,7 @@ interface uses xpc, ugrid2d, terminal, sysutils;
       procedure Fg( color : byte ); virtual;
       procedure Bg( color : byte ); virtual;
       procedure Emit( wc : widechar ); virtual;
+      procedure Emit( s : string ); virtual;
       procedure GotoXY( x, y : word ); virtual;
       procedure InsLine; virtual;
       procedure DelLine; virtual;
@@ -217,18 +219,23 @@ implementation
   
   constructor TGridTerm.Create( w, h : word );
     begin
+      inherited create;
+      _grid := TTermGrid.Create( w, h );
+      _curs := TPoint.Create; _curs.x := 0; _curs.y := 0;
     end;
   
   destructor TGridTerm.Destroy;
-    begin
+    begin;
+      _grid.Free;
+      inherited destroy;
     end;
   
   function  TGridTerm.Width  : word; begin result := grid.w      end;
   function  TGridTerm.Height : word; begin result := grid.h      end;
   function  TGridTerm.MaxX   : word; begin result := width - 1   end;
   function  TGridTerm.MaxY   : word; begin result := height - 1  end;
-  function  TGridTerm.WhereX : word; begin result := cursor.x    end;
-  function  TGridTerm.WhereY : word; begin result := cursor.y    end;
+  function  TGridTerm.WhereX : word; begin result := _curs.x    end;
+  function  TGridTerm.WhereY : word; begin result := _curs.y    end;
   
   function  TGridTerm.GetTextAttr : word;
     begin
@@ -251,42 +258,68 @@ implementation
     end;
   
   procedure TGridTerm.ClrScr;
+    var cell : TTermCell;
     begin
+      cell.ch := ' ';
+      cell.attr := attr;
+      _grid.fill(cell)
     end;
   
   procedure TGridTerm.ClrEol;
     begin
+      raise Exception.Create('TODO: TGridTerm.ClrEol');
     end;
   
   procedure TGridTerm.GotoXY( x, y : word );
     begin
-      cursor.x := x;
-      cursor.y := y;
+      _curs.x := x;
+      _curs.y := y;
     end;
   
   procedure TGridTerm.Emit( wc : widechar );
+    var cell : TTermCell;
     begin
+      cell.ch := wc;
+      cell.attr := attr;
+      _grid[_curs.x, _curs.y] := cell;
+      inc(_curs.x);
+      if _curs.x >= self.width then
+        begin
+          _curs.x := 0;
+          inc(_curs.y);
+          // todo: scroll
+        end;
+    end;
+  
+  procedure TGridTerm.Emit( s : string );
+    var ch : char;
+    begin
+      for ch in s do Emit(ch);
     end;
   
   procedure TGridTerm.InsLine;
     begin
+      raise Exception.Create('TODO: TGridTerm.InsLine');
     end;
   
   procedure TGridTerm.DelLine;
     begin
+      raise Exception.Create('TODO: TGridTerm.DelLine');
     end;
   
   function TGridTerm.Cursor : TPoint;
     begin
-      result := curs
+      result := _curs
     end;
   
   procedure TGridTerm.ShowCursor;
     begin
+      pass
     end;
   
   procedure TGridTerm.HideCursor;
     begin
+      pass
     end;
   
   function TGridTerm.GetCell( x, y : word ) : TTermCell;
@@ -375,6 +408,11 @@ implementation
       { TODO: handle escaped characters }
       write( wc )
     end;
+  procedure TAnsiTerm.Emit( s : string );
+    var ch : char;
+    begin
+      for ch in s do emit(ch);
+    end;
   
   { TODO }
   procedure TAnsiTerm.InsLine;
@@ -422,6 +460,7 @@ implementation
   procedure TTermProxy.Bg( color : byte );    begin _term.Bg( color ) end;
   
   procedure TTermProxy.Emit( wc : widechar ); begin _term.Emit( wc ) end;
+  procedure TTermProxy.Emit( s : string ); begin _term.Emit( s ) end;
   procedure TTermProxy.GotoXY( x, y : word ); begin _term.GotoXY( x, y ) end;
   
   procedure TTermProxy.InsLine; begin _term.InsLine end;
@@ -533,6 +572,7 @@ implementation
   procedure Bg( color : byte );    begin work.Bg( color ) end;
   
   procedure Emit( wc : widechar ); begin work.Emit( wc ) end;
+  procedure Emit( s : string ); begin work.Emit( s ) end;
   procedure GotoXY( x, y : word ); begin work.GotoXY( x, y ) end;
   
   procedure InsLine; begin work.InsLine end;
