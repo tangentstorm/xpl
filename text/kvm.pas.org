@@ -3,9 +3,7 @@
 #+date: <2013-06-08 Sat>
 
 * Goals
-This module implements an enhanced terminal device, with support for
-
-# My personal goal is to replace crt.
+This module implements an enhanced terminal device with support for unicode and a 256 color palette.
 
 * =ITerm= : abstract screen interface
 
