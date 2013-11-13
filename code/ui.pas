@@ -113,7 +113,7 @@ type
 
 
   zInput = class ( ZObj )
-    public
+    public { todo: encapsulate these... }
       tcol,                 { text color  }
       acol,                 { arrow color (scroller) }
       maxlen,               { max text length }
@@ -125,6 +125,7 @@ type
       escexits, tovr,       { type over toggle }
       frst,                 { first key to be pressed }
       isdone : Boolean;     { end-loop flag }
+    public
       constructor create;
       constructor create( a, b, tl, dl, tc, ac : integer; esc : Boolean;
   		       start : String );
@@ -133,8 +134,9 @@ type
       procedure show; override;
       procedure handle( ch : Char ); virtual;
       procedure handlestripped( ch : Char ); virtual;
-      function value : String;
       function get : String;
+    published
+      property value : string read work write work;
     public
       procedure fw_token;
       procedure bw_token;
@@ -155,6 +157,12 @@ type
       procedure left;
       procedure right;
       function at_end : boolean;
+    public type
+      TStringCallback = procedure (s : string) of object;
+    protected
+      _OnAccept : TStringCallback;
+    published
+      property OnAccept : TStringCallBack read _OnAccept write _OnAccept;
     end;
 
   zPassword = class ( zInput )

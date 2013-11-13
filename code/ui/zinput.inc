@@ -91,6 +91,7 @@ procedure zinput.accept;
 begin
   back := work;
   finish;
+  if assigned(_OnAccept) then _OnAccept(work);
 end;
 
 procedure zinput.cancel;
@@ -270,11 +271,6 @@ end;
 procedure zinput.finish;
 begin
   isdone := true;
-end;
-
-function zinput.value : String;
-begin
-  result:= work;
 end;
 
 function zinput.get : String;

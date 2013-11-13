@@ -1,20 +1,20 @@
-{$i test_ui_zinput.def }
+{$i test_ui_zinput.def }{$h+}
 implementation uses xpc, ui;
 
   var inp : ui.zinput;
 
-  procedure setup;
+procedure setup;
   begin
     inp := ui.zinput.create;
   end;
 
-  procedure test_create;
+procedure test_create;
   begin
     chk.equal( inp.value, '' );
     chk.equal( inp.cpos, 0 );
   end;
 
-  procedure test_insert;
+procedure test_insert;
   begin
     chk.equal( inp.cpos, 0 );
     inp.insert( 'a' );
@@ -25,7 +25,7 @@ implementation uses xpc, ui;
     chk.equal( inp.value, 'ab' );
   end;
 
-  procedure test_backspace;
+procedure test_backspace;
   begin
     chk.equal( inp.cpos, 0 );
     inp.backspace;
@@ -54,7 +54,7 @@ implementation uses xpc, ui;
     chk.equal( inp.value, '' );
   end;
 
-  procedure test_str_to_end;
+procedure test_str_to_end;
   begin
     //  movecursor should probably be renamed to 'setcursor' (or just use a property)
     inp.work := 'hello world';
@@ -66,9 +66,33 @@ implementation uses xpc, ui;
   end; { test_str_to_end }
 
 
-  procedure test_movement;
+procedure test_movement;
   begin
     inp.to_start; chk.equal( inp.cpos, 0 );
+  end;
+
+type
+  TStringCatcher = class
+    _s : string;
+    procedure SetValue(s:string);
+    property value : string read _s write SetValue;
+  end;
+
+procedure TStringCatcher.SetValue(s : string);
+  begin
+    _s := s
+  end;
+
+procedure test_OnAccept;
+  var s : TStringCatcher;
+  begin
+    s := TStringCatcher.Create;
+    s.value := '';
+    inp.value := 'hello world';
+    inp.Accept; // make sure default handler doesn't crash.
+    inp.OnAccept := @s.SetValue;
+    inp.Accept;
+    chk.equal( s.value, 'hello world' );
   end;
 
 end.
