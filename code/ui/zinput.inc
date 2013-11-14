@@ -193,10 +193,10 @@ begin
     ^G : ;
     ^H : backspace;
     ^I : ;
-    ^J : ;
+    ^J : accept;
     ^K : del_to_end;
     ^L : smudge;
-    ^M : ;
+    ^M : accept;
     ^N : ;
     ^O : ;
     ^P : ;
