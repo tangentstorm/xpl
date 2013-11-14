@@ -1,6 +1,7 @@
 // geometry unit
 {$mode delphi}
 unit ugeom2d;
+interface
 
 // A 2d rectangle with no particular location.
 type
@@ -12,7 +13,7 @@ type
     procedure Resize( w, h : cardinal );
     property w : cardinal read GetW write SetW;
     property h : cardinal read GetH write SetH;
-  end;	  
-  
+  end;
+implementation
 begin
 end.
