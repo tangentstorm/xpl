@@ -290,7 +290,7 @@ function zMenu.shortcut( ch : Char ) : zchoice;
 begin
   { TODO : find should return the content, not the node }
 
-  result := mChoices.find( @match_shortcut );
+  result := mChoices.find( match_shortcut );
   if Assigned( result ) and not result.enabled then
     result := nil
 end;
@@ -301,7 +301,7 @@ function zMenu.valuecut( v : Word ) : zChoice;
     result := zchoice( node ).v = v;
   end;
 begin
-  result := zChoice( mChoices.find( @match_valcut ));
+  result := zChoice( mChoices.find( match_valcut ));
   if Assigned( result ) and not result.enabled then
     result := nil;
 end;

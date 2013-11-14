@@ -1,11 +1,11 @@
 {$i test_ui_zinput.def }{$h+}
 implementation uses xpc, ui;
 
-  var inp : ui.zinput;
+  var inp : ui.ZInput;
 
 procedure setup;
   begin
-    inp := ui.zinput.create;
+    inp := ui.ZInput.Create(Nil);
   end;
 
 procedure test_create;

@@ -1,6 +1,7 @@
-constructor zObj.create;
+
+constructor zObj.create(aOwner : TComponent);
 begin
-  inherited create(nil);
+  inherited create(aOwner);
   x := 0;
   y := 0;
   x2 := 1;

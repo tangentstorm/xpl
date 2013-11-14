@@ -1,4 +1,4 @@
-{$mode objfpc}{$i xpc.inc}
+{$mode delphi}{$i xpc.inc}
 unit ui;
 interface uses classes, xpc, cw, ll, kvm, mou, kbd, stri, fx, num, cli, sysutils;
 
@@ -10,8 +10,8 @@ type
     public
       x, y, x2, y2 : Byte; { TODO : mX, mY, etc }
       is_dirty : boolean;
-      constructor create;
-      constructor create( a, b, a2, b2 : Byte );
+      constructor create( aOwner : TComponent ); override; overload;
+      constructor create( a, b, a2, b2 : Byte ); overload;
       procedure smudge; // mark for redraw
       procedure show; virtual;
       procedure showNormal; virtual;
@@ -77,7 +77,7 @@ type
       function value : Byte;
       function get : Byte;
     protected type
-      choicelist = specialize ll.List<zChoice>;
+      choicelist = ll.List<zChoice>;
     protected
       mChoices : choicelist;
       mCurrent : choicelist.cursor;
@@ -126,9 +126,9 @@ type
       frst,                 { first key to be pressed }
       isdone : Boolean;     { end-loop flag }
     public
-      constructor create;
+      constructor create( aOwner : TComponent ); override; overload;
       constructor create( a, b, tl, dl, tc, ac : integer; esc : Boolean;
-  		       start : String );
+		       start : String ); overload;
       constructor default( a, b, tl, dl : integer; start : String='' );
       procedure reset;
       procedure show; override;

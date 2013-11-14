@@ -4,10 +4,16 @@
 const bullets = [' ', '/', '\', '-'];
 
 
-constructor zinput.create;
-begin
-  inherited create;
-end;
+constructor zinput.Create(aOwner : TComponent);
+  begin
+    maxlen := 64;
+    dlen   := 64;
+    tcol   := $07;
+    acol   := $70;
+    escexits := false;
+    back := '';
+    self.reset;
+  end;
 
 constructor zinput.create(
   a, b, tl, dl, tc, ac : integer; esc : Boolean; start : String );
@@ -30,9 +36,8 @@ end;
 procedure zinput.reset;
 begin
   work := back;
-  frst := true;
-  cpos := 1;
-  d1st := 1;
+  cpos := 0;
+  d1st := 0;
   setovr( false );
   isdone := false;
 end;
@@ -106,17 +111,18 @@ begin
   { TODO: if tovr then //doscursorbig else} kvm.ShowCursor;
 
   if length( work ) > dlen
-    then colorxy( self.x + dlen, self.y, acol, '»' )
-    else colorxy( self.x + dlen, self.y, acol, ' ' );
-
+    then cw.cxy( acol, self.x + dlen, self.y, '»' )
+    else cw.cxy( acol, self.x + dlen, self.y, ' ' );
   if cpos = maxlen + 1 then kvm.HideCursor;
 
   while cpos > d1st + dlen do inc( d1st );
   while cpos < d1st do dec( d1st );
 
   v := pad( copy( work, d1st, dlen ), dlen, ' ' );
-  colorxy( self.x, self.y, tcol, v );
+  cw.cxy( tcol, self.x, self.y, v );
   gotoxy( self.x + cpos - d1st, self.y );
+
+  is_dirty := false;
 end;
 
 
@@ -161,12 +167,7 @@ end;
 
 procedure zinput.insert( ch : char );
 begin
-  if frst then begin
-      work := ch;
-      cpos := 2;
-      smudge;
-    end
-  else if tovr then
+  if tovr then
     begin
       if cpos <= length( work ) then work[cpos] := ch
       else work := work + ch;
@@ -220,7 +221,6 @@ begin
     else if ch = #0 then handleStripped( ReadKey )
     else self.insert( ch )
   end;
-  frst := false;
 end;
 
 
@@ -251,7 +251,7 @@ begin
   case ch of
     kbd.BKSP    : backspace;
     kbd.ENTER   : accept;
-    ^x	   : while ( cpos > 1 ) do backspace;
+    ^X          : while ( cpos > 1 ) do backspace;
     kbd.ESC     : if escexits then cancel;
     kbd.HOME    : to_start;
     kbd.LEFT    : left;
@@ -264,7 +264,6 @@ begin
     kbd.C_END   : del_to_end;
     kbd.C_DEL   : fw_del_token;
   end;
-  frst := false;
 end;
 
 
