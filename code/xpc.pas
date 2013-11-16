@@ -31,6 +31,9 @@ interface uses sysutils;
     procedure debug( args : array of const );
   end;
   var log : logger;
+
+  type ENotImplementedError = class(Exception);
+
 
 implementation
 
