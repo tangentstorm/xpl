@@ -1,6 +1,6 @@
 {$mode objfpc}{$i xpc.inc}
 unit cw; { colorwrite }
-interface uses xpc, num, stri, kvm;
+interface uses xpc, num, ustr, kvm;
 
   const trg = '|'; // trigger char
 
@@ -170,7 +170,7 @@ procedure cwcommand( cn : command; s : string );
       cwloadcol	   : kvm.textattr := sav.c;
       cwchntimes   : begin
 		       cwrite( normaltext( chntimes( s[1], s2n(s[2]+s[3])) ));
-		       //write( stri.ntimes( copy( s, 1, n-2 ), s2n( copy( s, n-1, 2 ))));
+		       //write( ustr.ntimes( copy( s, 1, n-2 ), s2n( copy( s, n-1, 2 ))));
 		     end;
       cwgotoxy	   : begin
 		       if length( s ) <> 4 then exit;
@@ -389,7 +389,7 @@ function normaltext( s : string; esc : char = trg ) : string;
 
 function cpadstr( s : string; len : byte; ch : char ) : string;
   begin
-    if clength( s ) > len then s := stri.trunc( s, len );
+    if clength( s ) > len then s := ustr.trunc( s, len );
     while clength( s ) < len do s := s + ch;
     cpadstr := s;
   end;

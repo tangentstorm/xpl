@@ -275,7 +275,7 @@ end;
 function zinput.get : String;
 begin
   Reset;
-  repeat handle( readkey ) until isDone;
+  repeat show; handle( readkey ) until isDone;
   result := work;
 end;
 

@@ -1,6 +1,6 @@
 {$mode objfpc}{$i xpc.inc}
 unit fx;
-interface uses xpc, cw, stri, kvm, kbd;
+interface uses xpc, cw, ustr, kvm, kbd;
 
 {  TODO: port all these over to kvm.ITerm }
 
@@ -63,9 +63,9 @@ implementation
   procedure txtline( a, b, x, y, c : byte );
   begin
     if a = x then
-      colorxyv( a, b, c, stri.ntimes( '│',  y - b + 1 ) )
+      colorxyv( a, b, c, ustr.ntimes( '│',  y - b + 1 ) )
     else if b = y then
-      colorxy( a, b, c, stri.ntimes( '─', x - a + 1 ) );
+      colorxy( a, b, c, ustr.ntimes( '─', x - a + 1 ) );
   end;
 
   procedure Rectangle( a, b, x, y : byte; c : word );
@@ -114,13 +114,13 @@ implementation
     c := cw.cur.c;
     w := a2 - a1 - 1;
     z := chntimes( ' ', w );
-    cwritexy( a1, b1, '|W|!w█' + stri.ntimes( '▀', w ) + '|K█');
+    cwritexy( a1, b1, '|W|!w█' + ustr.ntimes( '▀', w ) + '|K█');
     for i := 2 to b2 - b1 do
     begin
       colorxy( a1, b1 + i, $7F ,'█' + z );
       colorxy( a2, b1 + i, $78, '█' );
     end;
-    cwritexy( a1, b2, '|W|!w█|K' + stri.ntimes( '▄', w ) + '|K█');
+    cwritexy( a1, b2, '|W|!w█|K' + ustr.ntimes( '▄', w ) + '|K█');
     greyshadow(a1,b1+1,a2,b2+1);
     cw.cur.c := c;
   end;
@@ -129,13 +129,13 @@ implementation
     var i, w  : byte;
   begin
     w := a2 - a1 - 1;
-    cwritexy( a1, b1, '|W~w█' + stri.ntimes( '▀', w ) + '|K█');
+    cwritexy( a1, b1, '|W~w█' + ustr.ntimes( '▀', w ) + '|K█');
     for i := 1 to b2 - b1 - 1 do
     begin
       colorxy( a1, b1 + i, $7F ,'█' );
       colorxy( a2, b1 + i, $78, '█' );
     end;
-    cwritexy( a1, b2, '|W~w█|K' + stri.ntimes( '▄', w ) + '|K█');
+    cwritexy( a1, b2, '|W~w█|K' + ustr.ntimes( '▄', w ) + '|K█');
   end;
   
   procedure Button(A1,B1,A2,B2 : byte);

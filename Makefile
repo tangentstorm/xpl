@@ -76,8 +76,8 @@ gen/%.ppu: /%.pas
 
 ll:   bin/ll.ppu
 cw:   bin/cw.ppu
-fs:   bin/fs.ppu    stri
-stri: bin/stri.ppu
+fs:   bin/fs.ppu    ustr
+ustr: bin/ustr.ppu
 num:  bin/num.ppu
 
 #-- demos --------------------------------------

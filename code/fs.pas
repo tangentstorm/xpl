@@ -1,7 +1,6 @@
 {$mode objfpc}{$i xpc.inc}
 unit fs;   { file system routines }
-interface uses stri
-  {$IFDEF FPC}, sysutils{$ENDIF};
+interface uses ustr, sysutils;
 
   function exists( path : string ) : boolean;
 
@@ -73,7 +72,7 @@ implementation
   begin
     {$I-}
     system.assign( f, path );
-    system.reset( f, sizeof( byte ));
+    system.reset( f, 1 );
     {$I+}
     error := ioresult;
   end;
@@ -95,7 +94,7 @@ implementation
      { http://stackoverflow.com/questions/14428556/is-it-possible-to-read-and-write-from-to-file-opening-it-only-once }
     system.FileMode := fmOpenReadWrite;
     system.assign( f, path );
-    system.reset( f );
+    system.reset( f, 1 );
     {$I+}
     error := ioresult;
   end;
@@ -179,7 +178,7 @@ implementation
   procedure idxinit( var f : file; tenchars : string; num : longint );
     var z : longint;
   begin
-    tenchars := stri.pad( tenchars, 10, ' ' );
+    tenchars := ustr.lpad( tenchars, 10, ' ' );
     blockwrite( f, tenchars[1], 10 ); { file header }
     savelongint( f, num ); { number of entries }
     for z := 0 to num do savelongint( f, 0 ); { num # of zeroes }

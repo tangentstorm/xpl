@@ -1,11 +1,11 @@
 { all of these are by michal j. wallace, circa 1992.
   extracted from crtstuff.pas and updated 2012 }
 {$mode objfpc}{$i xpc.inc}
-unit stri; { string interface }
+unit ustr; { string interface }
 interface uses xpc, sysutils, strutils;
 
   function pad( s : string; len : cardinal; ch : char ) : string;
-    deprecated;
+    deprecated 'use rpad';
   function lpad( s : string; len : cardinal; ch : char=' ') : string;
   function rpad( s : string; len : cardinal; ch : char=' ') : string;
   function lfit( s : string; len : cardinal; ch : char=' ') : string;
