@@ -1,5 +1,5 @@
 {$mode objfpc}
-unit dirs;
+unit udir;
 interface uses sysutils;
 
 type
