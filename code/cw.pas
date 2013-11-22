@@ -323,7 +323,7 @@ procedure cwcommand( cn : command; s : string );
 
   procedure StWriteln( s : string );
   begin
-    stwrite( s + #13 );
+    stwrite( s ); writeln;
   end;
 
   procedure StWritexy( x, y : byte; s : string );
