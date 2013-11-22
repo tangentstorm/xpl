@@ -45,7 +45,6 @@ interface uses xpc, num, stri, kvm;
   var
     cur, sav	       : point;
     scr		       : rect;
-    min, max	       : point;
     cwcommandmode      : boolean;  { cwrite command mode? }
     cwcurrenttask      : command;  { cwrite current command }
     cwnchexpected      : byte;     { cwrite #chars expected }
@@ -86,6 +85,8 @@ interface uses xpc, num, stri, kvm;
   procedure StWritexy( x, y : byte; s : String );
 
 implementation
+var
+    min, max	       : point;
 
 function point.getc : byte;
   begin
@@ -124,19 +125,18 @@ procedure Colorxyv( x, y : byte; c : word; const s : string );
     var i : byte;
   begin
     for i := 1 to length( s ) do begin
-      colorxy( x, y + i - 1, c, s[ i ]);
+      cxy( c, x, y + i - 1, s[ i ]);
     end;
   end;
 
 { centered colorxy }
 procedure colorxyc( x, y : byte; c : word; const s : string );
   begin
-    colorxy( x + 1 - length( s ) div 2, y, c, s );
+    cxy( c, x + 1 - length( s ) div 2, y, s );
   end;
 
 procedure cwcommand( cn : command; s : string );
   const digits = ['0','1','2','3','4','5','6','7','8','9'];
-  var n : integer;
   begin
     case cn of
       cwfg : if s[ 1 ] in ccolset then
@@ -156,7 +156,7 @@ procedure cwcommand( cn : command; s : string );
 		     end;
       cwBS	   : if cur.x <> 1 then
 		     begin
-		       colorxy( cur.x - 1, cur.y, cur.c, ' ' );
+		       cxy( cur.c, cur.x - 1, cur.y, ' ' );
 		       dec( cur.x );
 		     end;
       cwclrscr	   : begin
@@ -169,7 +169,6 @@ procedure cwcommand( cn : command; s : string );
       cwsavecol	   : sav.c := kvm.textattr;
       cwloadcol	   : kvm.textattr := sav.c;
       cwchntimes   : begin
-		       n := length( s );
 		       cwrite( normaltext( chntimes( s[1], s2n(s[2]+s[3])) ));
 		       //write( stri.ntimes( copy( s, 1, n-2 ), s2n( copy( s, n-1, 2 ))));
 		     end;
