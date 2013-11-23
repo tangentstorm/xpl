@@ -11,20 +11,21 @@ unit ublockdrive;
 interface uses log, fs, sysutils;
 
 type
-  TBlock = array [ 0..1023 ] of byte;
+  TBlock   = array [ 0..1023 ] of byte;
+  TBlock32 = array [ 0..255 ] of Int32;
   TBlockDrive = class
   private
     _path : string;
     _file : file of TBlock;
   public
-    constructor Create;
+    constructor Create( path : string );
     procedure Wipe;
     procedure Grow( n : byte );
     procedure Load( i : cardinal; var b : TBlock );
     procedure Save( i : cardinal; var b : TBlock );
     function BlockCount : cardinal;
     function ByteCount : cardinal;
-    destructor Destroy;
+    destructor Destroy; override;
   published
     property path : string read _path write _path;
   end;
@@ -33,7 +34,7 @@ implementation
 var
   empty_block : TBlock;
 
-constructor TBlockDrive.init ( path : string );
+constructor TBlockDrive.Create( path : string );
   begin
     // change to fs.open when it's ready
     fs.update( _file, path );
@@ -63,14 +64,14 @@ procedure TBlockDrive.save ( i : cardinal; var b : TBlock );
     write( _file, b );
   end;
 
-function TBlockDrive.block_count : cardinal;
+function TBlockDrive.BlockCount : cardinal;
   begin
     result := filesize( _file )
   end;
 
-function TBlockDrive.byte_count : cardinal;
+function TBlockDrive.ByteCount : cardinal;
   begin
-    result := self.block_count * sizeOf( TBlock );
+    result := self.BlockCount * sizeOf( TBlock );
   end;
 
 destructor TBlockDrive.Destroy;
