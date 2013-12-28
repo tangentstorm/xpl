@@ -9,8 +9,10 @@ interface uses xpc, ugrid2d, terminal, sysutils;
   type ITerm = interface
     function  Width : word;
     function  Height: word;
-    function  MaxX  : word;
-    function  MaxY  : word;
+    function  MaxX  : word; deprecated;
+    function  MaxY  : word; deprecated;
+    function  XMax  : word;
+    function  YMax  : word;
     function  WhereX: word;
     function  WhereY: word;
     procedure ClrScr;
@@ -31,8 +33,10 @@ interface uses xpc, ugrid2d, terminal, sysutils;
   {$DEFINE unitscope}
   function  Width : word;
   function  Height: word;
-  function  MaxX  : word;
-  function  MaxY  : word;
+  function  MaxX  : word; deprecated;
+  function  MaxY  : word; deprecated;
+  function  XMax  : word;
+  function  YMax  : word;
   function  WhereX : word;
   function  WhereY : word;
   procedure ClrScr;
@@ -80,8 +84,10 @@ interface uses xpc, ugrid2d, terminal, sysutils;
     public
       function  Width : word;
       function  Height: word;
-      function  MaxX  : word;
-      function  MaxY  : word;
+      function  MaxX  : word; deprecated;
+      function  MaxY  : word; deprecated;
+      function  XMax  : word;
+      function  YMax  : word;
       function  WhereX : word;
       function  WhereY : word;
       procedure ClrScr;
@@ -116,8 +122,10 @@ interface uses xpc, ugrid2d, terminal, sysutils;
     public
       function  Width : word;
       function  Height: word;
-      function  MaxX  : word;
-      function  MaxY  : word;
+      function  MaxX  : word; deprecated;
+      function  MaxY  : word; deprecated;
+      function  XMax  : word;
+      function  YMax  : word;
       function  WhereX : word;
       function  WhereY : word;
       procedure ClrScr;
@@ -163,8 +171,10 @@ interface uses xpc, ugrid2d, terminal, sysutils;
       procedure ShowCursor; virtual;
       procedure HideCursor; virtual;
       property  TextAttr : word read GetTextAttr write SetTextAttr;
-      function  MaxX  : word; { not virtual because it's derived from Width }
-      function  MaxY  : word; { not virtual because it's derived from Height }
+      function  MaxX  : word; deprecated;
+      function  MaxY  : word; deprecated;
+      function  XMax  : word; virtual;
+      function  YMax  : word; virtual;
     end;
   type
     TSubTerm = class (TTermProxy)
@@ -230,10 +240,12 @@ implementation
       inherited destroy;
     end;
   
-  function  TGridTerm.Width  : word; begin result := grid.w      end;
-  function  TGridTerm.Height : word; begin result := grid.h      end;
-  function  TGridTerm.MaxX   : word; begin result := width - 1   end;
-  function  TGridTerm.MaxY   : word; begin result := height - 1  end;
+  function  TGridTerm.Width  : word; begin result := grid.w     end;
+  function  TGridTerm.Height : word; begin result := grid.h     end;
+  function  TGridTerm.MaxX   : word; begin result := xMax       end;
+  function  TGridTerm.MaxY   : word; begin result := yMax       end;
+  function  TGridTerm.XMax   : word; begin result := width - 1  end;
+  function  TGridTerm.YMax   : word; begin result := height - 1 end;
   function  TGridTerm.WhereX : word; begin result := _curs.x    end;
   function  TGridTerm.WhereY : word; begin result := _curs.y    end;
   
@@ -344,8 +356,10 @@ implementation
   
   function  TAnsiTerm.Width  : word; begin result := terminal.w end;
   function  TAnsiTerm.Height : word; begin result := terminal.h end;
-  function  TAnsiTerm.MaxX   : word; begin result := width  - 1  end;
-  function  TAnsiTerm.MaxY   : word; begin result := height - 1  end;
+  function  TAnsiTerm.MaxX   : word; begin result := xMax end;
+  function  TAnsiTerm.MaxY   : word; begin result := yMax end;
+  function  TAnsiTerm.XMax   : word; begin result := width - 1  end;
+  function  TAnsiTerm.YMax   : word; begin result := height - 1 end;
   
   function  TAnsiTerm.WhereX : word;
     var bx, by : byte;
@@ -450,8 +464,10 @@ implementation
   function  TTermProxy.Height : word; begin result := _term.Height end;
   function  TTermProxy.WhereX : word; begin result := _term.WhereX end;
   function  TTermProxy.WhereY : word; begin result := _term.WhereY end;
-  function  TTermProxy.MaxX   : word; begin result := self.Width-1 end;
-  function  TTermProxy.MaxY   : word; begin result := self.Height-1 end;
+  function  TTermProxy.MaxX   : word; begin result := _term.xMax end;
+  function  TTermProxy.MaxY   : word; begin result := _term.yMax end;
+  function  TTermProxy.xMax   : word; begin result := _term.xMax end;
+  function  TTermProxy.yMax   : word; begin result := _term.yMax end;
   
   
   procedure TTermProxy.ClrScr; begin _term.ClrScr end;
@@ -563,6 +579,8 @@ implementation
   function  Height : word; begin result := work.Height end;
   function  MaxX   : word; begin result := work.MaxX end;
   function  MaxY   : word; begin result := work.MaxY end;
+  function  xMax   : word; begin result := work.XMax end;
+  function  yMax   : word; begin result := work.YMax end;
   function  WhereX : word; begin result := work.WhereX end;
   function  WhereY : word; begin result := work.WhereY end;
   
