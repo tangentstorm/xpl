@@ -1,6 +1,18 @@
-// wrapper for the invokes the 'dialog' command for freebsd/linux
-// http://invisible-island.net/dialog/
-//
+{ wrapper functions to invoke the 'dialog' command for freebsd/linux
+
+  http://invisible-island.net/dialog/
+
+  this unit is in the public domain.
+
+  example usage:
+
+  program dlg;
+  uses udlg;
+  begin
+    writeln(udlg.menu('hello', 20, 50, 18, ['a','apple','b','banana']));
+  end.
+
+}
 {$WARNING Parameters to dlg commands are not sanitized. do not use in real code! (TODO)}
 {$h+}{$mode delphi}{ dialog example }
 unit udlg;
