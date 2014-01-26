@@ -1,4 +1,4 @@
-{$mode delphi}
+{$i xpc.inc}{$mode delphi}
 unit ukm;
 interface uses classes, xpc, kbd;
 
