@@ -1,6 +1,6 @@
-{$mode delphi}{$h+}
+{$i xpc.inc}{$mode delphi}{$h+}
 unit uapp;
-interface uses kvm, ukm, custapp, xpc;
+interface uses xpc, cx, kvm, ukm, custapp;
 
 type
   TCustomApp = class (TCustomApplication)
@@ -23,12 +23,13 @@ type
 
 implementation
 
-  procedure run(app : TCustomApp);
+
+procedure run(app : TCustomApp);
   begin
     app.Initialize;
-    app.km := TKeyMap.Create(app); app.keys(app.km);
     if app.init then
       begin
+	app.km := TKeyMap.Create(app); app.keys(app.km);
 	app.draw; app.Run; app.done;
 	fg('w'); bg('k'); clrscr; showcursor;
       end
@@ -37,43 +38,43 @@ implementation
     app.Free
   end;
 
-  function TCustomApp.init : boolean;
+function TCustomApp.init : boolean;
   begin
     result := true // meaning 'success'
   end;
 
-  procedure TCustomApp.keys(km : ukm.TKeyMap);
+procedure TCustomApp.keys(km : ukm.TKeyMap);
   begin
     km.cmd[ ^C ] := self.quit;
   end;
 
-  procedure TCustomApp.step;
+procedure TCustomApp.step;
   begin
   end;
 
-  procedure TCustomApp.draw;
+procedure TCustomApp.draw;
   begin
   end;
 
-  procedure TCustomApp.done;
+procedure TCustomApp.done;
   begin
   end;
 
-  procedure TCustomApp.quit;
+procedure TCustomApp.quit;
   begin
     self.Terminate
   end;
 
-  constructor TCustomApp.Create;
+constructor TCustomApp.Create;
   begin
     inherited Create(Nil);
   end;
 
-  procedure TCustomApp.Initialize;
+procedure TCustomApp.Initialize;
   begin
   end;
 
-  procedure TCustomApp.DoRun;
+procedure TCustomApp.DoRun;
   begin
     km.HandleKeys;
     self.step;
