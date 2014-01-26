@@ -1,4 +1,3 @@
-
 { --- warning!! generated file. edit ../text/kvm.pas.org instead!! --- }
 
 
@@ -464,10 +463,10 @@ implementation
   function  TTermProxy.Height : word; begin result := _term.Height end;
   function  TTermProxy.WhereX : word; begin result := _term.WhereX end;
   function  TTermProxy.WhereY : word; begin result := _term.WhereY end;
-  function  TTermProxy.MaxX   : word; begin result := _term.xMax end;
-  function  TTermProxy.MaxY   : word; begin result := _term.yMax end;
-  function  TTermProxy.xMax   : word; begin result := _term.xMax end;
-  function  TTermProxy.yMax   : word; begin result := _term.yMax end;
+  function  TTermProxy.MaxX   : word; begin result := self.xMax end;
+  function  TTermProxy.MaxY   : word; begin result := self.yMax end;
+  function  TTermProxy.xMax   : word; begin result := self.width-1 end;
+  function  TTermProxy.yMax   : word; begin result := self.height-1 end;
   
   
   procedure TTermProxy.ClrScr; begin _term.ClrScr end;
@@ -579,8 +578,8 @@ implementation
   function  Height : word; begin result := work.Height end;
   function  MaxX   : word; begin result := work.MaxX end;
   function  MaxY   : word; begin result := work.MaxY end;
-  function  xMax   : word; begin result := work.XMax end;
-  function  yMax   : word; begin result := work.YMax end;
+  function  XMax   : word; begin result := work.XMax end;
+  function  YMax   : word; begin result := work.YMax end;
   function  WhereX : word; begin result := work.WhereX end;
   function  WhereY : word; begin result := work.WhereY end;
   

@@ -453,10 +453,10 @@ This is a contrcete implementation of ITerm.
   function  TTermProxy.Height : word; begin result := _term.Height end;
   function  TTermProxy.WhereX : word; begin result := _term.WhereX end;
   function  TTermProxy.WhereY : word; begin result := _term.WhereY end;
-  function  TTermProxy.MaxX   : word; begin result := _term.xMax end;
-  function  TTermProxy.MaxY   : word; begin result := _term.yMax end;
-  function  TTermProxy.xMax   : word; begin result := _term.xMax end;
-  function  TTermProxy.yMax   : word; begin result := _term.yMax end;
+  function  TTermProxy.MaxX   : word; begin result := self.xMax end;
+  function  TTermProxy.MaxY   : word; begin result := self.yMax end;
+  function  TTermProxy.xMax   : word; begin result := self.width-1 end;
+  function  TTermProxy.yMax   : word; begin result := self.height-1 end;
 
 
   procedure TTermProxy.ClrScr; begin _term.ClrScr end;
