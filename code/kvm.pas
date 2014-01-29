@@ -408,7 +408,7 @@ implementation
     var curx, cury, i : byte;
     begin
       terminal.getxy( curx, cury );
-      for i := curx to maxX do write(' ');
+      for i := curx to xMax do write(' ');
       gotoxy( curx, cury );
     end;
   
@@ -527,7 +527,7 @@ implementation
   procedure TSubTerm.ClrScr;
     var y : word; i : integer;
     begin
-      for y := 0 to maxY do
+      for y := 0 to yMax do
         begin
           gotoxy(0, y);
           for i := 1 to self.width do emit(' ');
@@ -540,7 +540,7 @@ implementation
     begin
       curx := self.WhereX;
       cury := self.WhereY;
-      for i := curx to self.maxX do _term.emit(' ');
+      for i := curx to xMax do _term.emit(' ');
       self.gotoxy( curx, cury );
     end;
   
@@ -576,10 +576,10 @@ implementation
   
   function  Width  : word; begin result := work.Width end;
   function  Height : word; begin result := work.Height end;
-  function  MaxX   : word; begin result := work.MaxX end;
-  function  MaxY   : word; begin result := work.MaxY end;
-  function  XMax   : word; begin result := work.XMax end;
-  function  YMax   : word; begin result := work.YMax end;
+  function  MaxX   : word; begin result := work.xMax end;
+  function  MaxY   : word; begin result := work.yMax end;
+  function  XMax   : word; begin result := work.xMax end;
+  function  YMax   : word; begin result := work.yMax end;
   function  WhereX : word; begin result := work.WhereX end;
   function  WhereY : word; begin result := work.WhereY end;
   
