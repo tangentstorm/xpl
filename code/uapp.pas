@@ -1,6 +1,6 @@
 {$i xpc.inc}{$mode delphi}{$h+}
 unit uapp;
-interface uses xpc, cx, kvm, ukm, custapp, sysutils, classes;
+interface uses xpc, cx, cli, kvm, ukm, custapp, sysutils, classes;
 
 type
   ESetupFailure = class (Exception) end;
@@ -13,6 +13,7 @@ type
     procedure draw; virtual;
     procedure done; virtual;
     procedure quit;
+    procedure fail(why:string);
   published
     property OnQuit : TNotifyEvent read _quit write _quit;
   end;
@@ -26,31 +27,38 @@ type
   TAppRunner = class (custapp.TCustomApplication)
     app : TCustomApp;
     km : TKeyMap;
+    procedure AppQuit(Sender:TObject);
+  published
     procedure DoRun; override;
   end;
-  
+
 procedure TAppRunner.DoRun;
   begin
     km.HandleKeys;
     app.step;
   end;
-  
-procedure run(appClass : CCustomApp);
-  var run : TAppRunner;
+
+procedure TAppRunner.AppQuit(Sender:TObject);
   begin
-    run := TAppRunner.Create(Nil);
-    run.app := appClass.Create(run);
-    with run do
-      try app.init;
+    self.terminate;
+  end;
+
+procedure run(appClass : CCustomApp);
+  var runner : TAppRunner; ca : TCustomApp;
+  begin
+    runner := TAppRunner.Create(Nil);
+    with runner do
+      try app := appClass.Create(runner);
+          app.init; app.OnQuit := AppQuit;
           km := TKeyMap.Create(app); app.keys(km);
-          app.draw; run; app.done;
+          app.draw; while not terminated do dorun; app.done;
           fg('w'); bg('k'); clrscr; showcursor;
       except
         on e:ESetupFailure do writeln(e.message);
       end;
-    run.free;
+    runner.free;
   end;
-  
+
 procedure TCustomApp.init;
   begin
     pass
@@ -76,9 +84,15 @@ procedure TCustomApp.done;
     pass
   end;
 
+procedure TCustomApp.fail(why:string);
+  begin
+    raise ESetupFailure.Create(why);
+  end;
+
 procedure TCustomApp.quit;
   begin
-    if assigned(_quit) then _quit(self) else halt;
+    if assigned(_quit) then _quit(self)
+    else customapplication.terminate;
   end;
 
 begin
