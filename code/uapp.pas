@@ -44,7 +44,7 @@ procedure TAppRunner.AppQuit(Sender:TObject);
   end;
 
 procedure run(appClass : CCustomApp);
-  var runner : TAppRunner; ca : TCustomApp;
+  var runner : TAppRunner;
   begin
     runner := TAppRunner.Create(Nil);
     with runner do
@@ -52,7 +52,6 @@ procedure run(appClass : CCustomApp);
           app.init; app.OnQuit := AppQuit;
           km := TKeyMap.Create(app); app.keys(km);
           app.draw; while not terminated do dorun; app.done;
-          fg('w'); bg('k'); clrscr; showcursor;
       except
         on e:ESetupFailure do writeln(e.message);
       end;
@@ -61,7 +60,7 @@ procedure run(appClass : CCustomApp);
 
 procedure TCustomApp.init;
   begin
-    pass
+    kvm.clrscr;
   end;
 
 procedure TCustomApp.keys(km : ukm.TKeyMap);
@@ -81,7 +80,7 @@ procedure TCustomApp.draw;
 
 procedure TCustomApp.done;
   begin
-    pass
+    fg('w'); bg('k'); clrscr; showcursor;
   end;
 
 procedure TCustomApp.fail(why:string);
