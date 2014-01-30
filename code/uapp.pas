@@ -1,46 +1,59 @@
 {$i xpc.inc}{$mode delphi}{$h+}
 unit uapp;
-interface uses xpc, cx, kvm, ukm, custapp;
+interface uses xpc, cx, kvm, ukm, custapp, sysutils, classes;
 
 type
-  TCustomApp = class (TCustomApplication)
+  ESetupFailure = class (Exception) end;
+  TCustomApp = class (TComponent)
+    private _quit : TNotifyEvent;
   public
-    err: string;
-    constructor Create; reintroduce;
-    function  init : boolean; virtual;
     procedure keys(km : ukm.TKeyMap); virtual;
+    procedure init; virtual;
     procedure step; virtual;
     procedure draw; virtual;
-    procedure quit; virtual;
     procedure done; virtual;
-  protected {  todo: hide these inside uapp }
-    km : TKeyMap;
-    procedure Initialize; override;
-    procedure DoRun; override;
+    procedure quit;
+  published
+    property OnQuit : TNotifyEvent read _quit write _quit;
   end;
+  CCustomApp = class of TCustomApp;
 
-  procedure run(app : TCustomApp);
+  procedure run(appClass : CCustomApp);
 
 implementation
 
-
-procedure run(app : TCustomApp);
-  begin
-    app.Initialize;
-    if app.init then
-      begin
-	app.km := TKeyMap.Create(app); app.keys(app.km);
-	app.draw; app.Run; app.done;
-	fg('w'); bg('k'); clrscr; showcursor;
-      end
-    else if app.err <> '' then writeln(app.err)
-    else pass;
-    app.Free
+type
+  TAppRunner = class (custapp.TCustomApplication)
+    app : TCustomApp;
+    km : TKeyMap;
+    procedure DoRun; override;
   end;
-
-function TCustomApp.init : boolean;
+  
+procedure TAppRunner.DoRun;
   begin
-    result := true // meaning 'success'
+    km.HandleKeys;
+    app.step;
+  end;
+  
+procedure run(appClass : CCustomApp);
+  var run : TAppRunner;
+  begin
+    run := TAppRunner.Create(Nil);
+    run.app := appClass.Create(run);
+    with run do
+      try app.init;
+          km := TKeyMap.Create(app); app.keys(km);
+          app.draw; run; app.done;
+          fg('w'); bg('k'); clrscr; showcursor;
+      except
+        on e:ESetupFailure do writeln(e.message);
+      end;
+    run.free;
+  end;
+  
+procedure TCustomApp.init;
+  begin
+    pass
   end;
 
 procedure TCustomApp.keys(km : ukm.TKeyMap);
@@ -50,34 +63,22 @@ procedure TCustomApp.keys(km : ukm.TKeyMap);
 
 procedure TCustomApp.step;
   begin
+    pass
   end;
 
 procedure TCustomApp.draw;
   begin
+    pass
   end;
 
 procedure TCustomApp.done;
   begin
+    pass
   end;
 
 procedure TCustomApp.quit;
   begin
-    self.Terminate
-  end;
-
-constructor TCustomApp.Create;
-  begin
-    inherited Create(Nil);
-  end;
-
-procedure TCustomApp.Initialize;
-  begin
-  end;
-
-procedure TCustomApp.DoRun;
-  begin
-    km.HandleKeys;
-    self.step;
+    if assigned(_quit) then _quit(self) else halt;
   end;
 
 begin
