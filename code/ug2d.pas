@@ -1,6 +1,6 @@
-// geometry unit
+// 2d geometry unit
 {$i xpc.inc}{$mode delphi}
-unit ugeom2d;
+unit ug2d;
 interface
 
 // A 2d rectangle with no particular location.
