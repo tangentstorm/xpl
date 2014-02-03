@@ -286,9 +286,10 @@ implementation
     end; { Find }
   
   procedure GRing<T>.ForEach( action : GNodeAction );
-    var item : T;
-    begin
-      for item in self do action( item );
+    var item, ref : T;
+    begin // without ref, we get this error in recent 2.7.1 builds...
+         // Error:Illegal assignment to for-loop variable "item"
+      for item in self do begin ref := item; action( ref ) end;
     end;
   
   
