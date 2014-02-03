@@ -8,7 +8,8 @@ interface uses sysutils;
     On	 = true;
     Off	 = false;
 
-  procedure pass;
+  procedure pass; deprecated 'use "ok" instead of "pass"';
+  procedure ok;
 
   { some handy debug routines }
   procedure die( msg :  string );
@@ -40,6 +41,9 @@ implementation
   procedure pass; inline;
   begin
   end; { pass }
+  procedure ok; inline;
+  begin
+  end; { ok }
 
   procedure die( msg :  string );
   begin
