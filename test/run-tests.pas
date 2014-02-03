@@ -1,4 +1,4 @@
-{$i xpc.inc}
+{$i xpc.inc}{$mode delphi}
 program run_tests;
 uses xpc, cw, cx, sysutils {$i run-tests.use }; // includes test_*.pas
 
@@ -20,7 +20,7 @@ var
   broken   : integer;
   problems : array of problem;
   trace	   : boolean = false;
-	   
+
 procedure setup;
 begin
   if (paramstr( 1 ) = '--trace')
