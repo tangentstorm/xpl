@@ -67,12 +67,14 @@ var
   { these do padding operations with color-encoded strings. often
     in console mode, what we really want is width in characters on
     the screen, not the length of the actual string in memory. }
-  function cLength( s : string ) : integer; deprecated'use cwlen';
   function cwlen( s : string ) : integer;    { length - color codes }
+  function cwpad( s : string ; len : byte; ch : char=' ') : string;
+  function cwesc( s : string ) : string;
   function cstrip( s : string ) : string;
-  function normaltext( s : string; esc : char = trg ) : string;
+
+  function cLength( s : string ) : integer; deprecated'use cwlen';
   function cpadstr(s:string;len:byte;ch:char):string; deprecated'use cwpad';
-  function cwpad( s : string; len : byte; ch : char=' ') : string;
+  function normaltext(s:string;esc:char=trg) : string; deprecated'use cwesc';
 
   { these highlight punctuation and box drawing
     characters using a standard palette }
@@ -160,7 +162,7 @@ procedure cwcommand( cn : command; s : string );
       cwclreol	   : kvm.clreol;
       cwsavecol	   : sav.c := kvm.textattr;
       cwloadcol	   : kvm.textattr := sav.c;
-      cwchntimes   : cwrite( normaltext( chntimes( s[1], s2n(s[2]+s[3])) ));
+      cwchntimes   : cwrite( cwesc( chntimes( s[1], s2n(s[2]+s[3])) ));
       cwgotoxy	   : begin
 		       if length( s ) <> 4 then exit;
 		       if ( s[ 1 ] in digits )
@@ -365,16 +367,21 @@ function cstrip( s : string ) : string;
   end;
 
 
-{  probably want to rename this to 'escape' }
 function normaltext( s : string; esc : char = trg ) : string;
-    var i : integer;
+  begin
+    if esc <> trg then begin writeln( 'esc must be ', trg ); halt end;
+    result := cwesc( s );
+  end;
+
+function cwesc( s : string ) : string;
+  var i : integer;
   begin
     result := '';
     for i := 1 to length( s ) do
-    begin
-      if s[ i ] = trg then result := result + esc;
-      result := result + s[ i ];
-    end;
+      begin
+	if s[ i ] = trg then result := result + trg;
+	result := result + s[ i ];
+      end;
   end;
 
 

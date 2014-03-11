@@ -16,4 +16,9 @@ procedure test_cwpad;
     chk.equal('  ', cwpad('', 2));
   end;
 
+procedure test_cwesc;
+  begin
+    chk.equal('||g', cwesc('|g'));
+  end;
+
 end.
