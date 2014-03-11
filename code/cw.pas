@@ -56,7 +56,7 @@ var
 
   { primitives : these write text in solid colors }
   procedure cxy(c : word; x, y : byte; const s : string );
-  procedure colorxy(x,y:byte;c:word;const s:string); deprecated'uese cxy';
+  procedure colorxy(x,y:byte;c:word;const s:string); deprecated'use cxy';
   procedure colorxyc( x, y : byte; c : word; const s : string );
   procedure colorxyv( x, y : byte; c : word; const s : string ); // [v]ertical
 
@@ -86,9 +86,6 @@ var
 
 implementation
 
-var
-  min, max : point;
-
 function point.getc : byte;
   begin
     result := (( bg and $0F ) shl 4 ) + ( fg and $0F );
@@ -104,7 +101,7 @@ procedure point.setc( value : byte );
 procedure wr( ch : unichar );
   begin
     emit(ch); inc( cur.x );
-    if cur.x >= (max.x - min.x) then cwrite( ^M );
+    if cur.x >= kvm.xMax then cwrite( ^M );
   end;
 
 procedure cxy(c: word; x, y :byte; const s : string); inline;
@@ -145,12 +142,12 @@ procedure cwcommand( cn : command; s : string );
 		 cur.bg := pos( s[ 1 ], ccolors ) - 1;
       cwCR	   : begin
 		       cur.x := 0;
-		       cur.y := inc2( cur.y, 1, max.y - min.y + 2);
+		       cur.y := cur.y + 1;
 		       { TODO: scroll up }
-		       if cur.y > max.y - min.y then
+		       if cur.y > kvm.yMax then
 		       begin
 			 // scrollup1( txmin, txmax, tymin, tymax, writeto );
-			 cur.y := max.y - min.y;
+			 cur.y := kvm.yMax;
 			 cwrite('|%');
 		       end
 		     end;
@@ -413,8 +410,4 @@ initialization
   scr.y := 0;
   scr.h := kvm.height;
   scr.w := kvm.width;
-  min.x := 0;
-  min.y := 0;
-  max.x := scr.w - 1;
-  max.y := scr.h - 1;
 end.
