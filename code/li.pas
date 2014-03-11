@@ -1,7 +1,7 @@
 {
 | a tiny lisp interpreter
 }
-{$mode objfpc}{$i xpc.inc}
+{$mode delphiunicode}{$i xpc.inc}
 unit li;
 interface uses classes, xpc, ascii, ll, num;
 
@@ -10,7 +10,7 @@ interface uses classes, xpc, ascii, ll, num;
     {TODO: come back to this once I have syntax
        for algebraic data types }
     node = class kind : kinds end;
-    nodelist = specialize ll.list< node >;
+    nodelist = ll.list< node >;
     LisNode = class( node )
       lis : nodelist;
       constructor create( _lis : nodelist );
@@ -208,7 +208,7 @@ implementation
       var
       x      : integer = 0;
       base   : byte = 10;
-      digits : set of char = [ '0' .. '9' ];
+      digits : set of ansichar = [ '0' .. '9' ];
     begin
       if ch = '0' then
         begin
@@ -349,7 +349,7 @@ implementation
       { we can't inline the temp value ( val ) because read_value
 	is also responsible for showing the prompt, and we need to
         keep the prompt and reply outputs separate. }
-      val := read_value( @from_prompt );
+      val := read_value( from_prompt );
       print( evaluate( val ));
       writeln;
     until done;

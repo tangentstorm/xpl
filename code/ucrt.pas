@@ -1,3 +1,4 @@
+
 { --- warning!! generated file. edit ../text/kvm.pas.org instead!! --- }
 
 

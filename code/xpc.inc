@@ -6,6 +6,7 @@
   {$longstrings on}             // strings act as dynamic arrays
   {$macro on}                   // allow simple compiler macros
   {$modeswitch nestedprocvars}  // allow 'is nested'
+  {$modeswitch unicodestrings}
 
   // memory layout
   {$packset 1}

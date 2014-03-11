@@ -1,18 +1,18 @@
-{$mode delphi}{$i xpc.inc}
+{$mode delphiunicode}{$i xpc.inc}
 unit ureflection;
-interface uses classes, typinfo, rttiutils, sysutils;
+interface uses xpc, classes, typinfo, rttiutils, sysutils;
 
 type
 
   IProperty = interface
-    function GetName : string;
-    property name : string read GetName;
+    function GetName : TStr;
+    property name : TStr read GetName;
 
     function GetTypeKind : TTypeKind;
     property typeKind : TTypeKind read GetTypeKind;
 
-    function GetTypeName : string;
-    property typeName : string read GetTypeName;
+    function GetTypeName : TStr;
+    property typeName : TStr read GetTypeName;
 
     function GetValue : variant;
     procedure SetValue( v : variant );
@@ -25,29 +25,29 @@ type
       _propinfo : PPropInfo;
     published
       constructor Create(instance : TObject; info : PPropInfo); overload;
-      function GetName : string;
+      function GetName : TStr;
       function GetTypeKind : TTypeKind;
-      function GetTypeName : string;
+      function GetTypeName : TStr;
       function GetValue : variant;
       procedure SetValue( v : variant );
     end;
 
-  TStringArray = array of string;
+  TStringArray = array of TStr;
   TProperties = array of IProperty;
 
   IReflection = interface;
   TChildren = array of IReflection;
 
   IReflection = interface
-    function GetClassName : string;
+    function GetClassName : TStr;
     function GetInstance : TObject;
     procedure SetInstance(obj : TObject);
     property instance : TObject read GetInstance write SetInstance;
     function PropNames : TStringArray;
-    function GetProp( s : string ) : variant;
-    procedure SetProp( s : string; v : variant );
-    property prop[ s : string ]: variant read GetProp write SetProp; default;
-    property ClassName : string read GetClassName;
+    function GetProp( s : TStr ) : variant;
+    procedure SetProp( s : TStr; v : variant );
+    property prop[ s : TStr ]: variant read GetProp write SetProp; default;
+    property ClassName : TStr read GetClassName;
     function GetProperties : TProperties;
     property properties : TProperties read GetProperties;
     function GetInstanceChildren : TChildren;
@@ -59,14 +59,14 @@ type
       _instance : TObject;
       _proplist : TPropInfoList;
     published
-      function GetClassName : string;
+      function GetClassName : TStr;
       function GetInstance : TObject;
       procedure SetInstance(obj : TObject);
       property instance : TObject read GetInstance write SetInstance;
       function PropNames : TStringArray;
-      function GetProp( s : string ) : variant;
-      procedure SetProp( s : string; v : variant );
-      property prop[ s : string ]: variant read GetProp write SetProp; default;
+      function GetProp( s : TStr ) : variant;
+      procedure SetProp( s : TStr; v : variant );
+      property prop[ s : TStr ]: variant read GetProp write SetProp; default;
       function GetProperties : TProperties;
       function GetInstanceChildren : TChildren;
     end;
@@ -91,9 +91,9 @@ procedure TProperty.SetValue( v : variant );
     SetPropValue(_instance, _propinfo.name, v);
   end;
 
-function TProperty.GetName : string;
+function TProperty.GetName : TStr;
   begin
-    result := _propinfo.name;
+    result := Utf8Decode(_propinfo.name);
   end;
 
 function TProperty.GetTypeKind : TTypeKind;
@@ -101,9 +101,9 @@ function TProperty.GetTypeKind : TTypeKind;
     result := _propinfo.proptype.kind;
   end;
 
-function TProperty.GetTypeName : string;
+function TProperty.GetTypeName : TStr;
   begin
-    result := _propinfo.proptype.name;
+    result := Utf8Decode(_propinfo.proptype.name);
   end;
 
 {-- TReflection -------------------------------------------------}
@@ -113,9 +113,9 @@ function TReflection.GetInstance : TObject;
     result := _instance
   end;
 
-function TReflection.GetClassName : string;
+function TReflection.GetClassName : TStr;
   begin
-    result := _instance.ClassName;
+    result := Utf8Decode(_instance.ClassName);
   end;
 
 procedure TReflection.SetInstance(obj : TObject);
@@ -130,7 +130,7 @@ function TReflection.PropNames : TStringArray;
   begin
     SetLength(result, _proplist.count);
     for i := 0 to _proplist.count - 1 do
-      result[i] := _proplist.items[i].name;
+      result[i] := Utf8Decode(_proplist.items[i].name);
   end;
 
 function TReflection.GetProperties : TProperties;
@@ -153,14 +153,14 @@ function TReflection.GetInstanceChildren : TChildren;
       end
   end;
 
-function TReflection.GetProp( s : string ) : variant;
+function TReflection.GetProp( s : TStr ) : variant;
   begin
-    result := GetPropValue(_instance, s);
+    result := GetPropValue(_instance, Utf8Encode(s));
   end;
 
-procedure TReflection.SetProp( s : string; v : variant );
+procedure TReflection.SetProp( s : TStr; v : variant );
   begin
-    SetPropValue(_instance, s, v);
+    SetPropValue(_instance, UTF8Encode(s), v);
   end;
 
 function reflect(obj : TObject ) : IReflection;

@@ -7,28 +7,31 @@ interface uses sysutils;
     No	 = false;
     On	 = true;
     Off	 = false;
+  type
+    TStr = UnicodeString;
+    TChr = WideChar;
 
   procedure pass; deprecated 'use "ok" instead of "pass"';
   procedure ok;
 
   { some handy debug routines }
-  procedure die( msg :  string );
-  procedure pause( msg : string );
-  procedure hexdump( data : string );
+  procedure die( msg :  TStr );
+  procedure pause( msg : TStr );
+  procedure hexdump( data : TStr );
 
   type set32 = set of 0 .. 31;
   type int32 = longint;
   function toint( s : set32 ) : int32;
-  function hex( x : int32; pad : byte = 0 ) : string;
+  function hex( x : int32; pad : byte = 0 ) : TStr;
   function min( a, b : int32 ): int32;
   function max( a, b : int32 ): int32;
 
-  function paramline : string;
+  function paramline : TStr;
   function fileparam : boolean;
 
   type thunk = procedure of object;
   type logger = object
-    procedure debug( arg : string );
+    procedure debug( arg : TStr );
     procedure debug( args : array of const );
   end;
   var log : logger;
@@ -45,7 +48,7 @@ implementation
   begin
   end; { ok }
 
-  procedure die( msg :  string );
+  procedure die( msg :  TStr );
   begin
     writeln;
     write( msg );
@@ -53,7 +56,7 @@ implementation
     halt;
   end;
 
-  procedure pause( msg : string );
+  procedure pause( msg : TStr );
   begin
     writeln;
     write( '---| ', msg, ' |---' );
@@ -63,8 +66,8 @@ implementation
 
 
 
-  procedure hexdump( data :  string );
-    var ch : char; hexstr, ascstr : string; i : integer;
+  procedure hexdump( data :  TStr );
+    var ch : TChr; hexstr, ascstr : TStr; i : integer;
   begin
     i := 0;
     hexstr := ''; ascstr := '';
@@ -108,22 +111,21 @@ implementation
     writeln( ')' );
   end;
 
-  procedure logger.debug( arg : string );
+  procedure logger.debug( arg : TStr );
   begin
     debug([arg]);
   end;
 
-  function hex( x : int32; pad : byte = 0 ) : string;
-    const digits = '0123456789ABCDEF';
-      len	=  length( digits );
-    var i, d : int32; count : byte;
+function hex( x : int32; pad : byte = 0 ) : TStr;
+  const hexits = '0123456789ABCDEF';
+  var i, d : int32; count : byte;
   begin
     result := '';
     count := 0;
     for i := 7 downto 0 do begin
       d := (( x shr ( i * 4 ))  mod 16 );
       if (count > 0) or ( d > 0 ) then begin
-	result += digits[ d + 1 ];
+	result += TChr(hexits[ d + 1 ]);
 	inc(count)
       end;
     end;
@@ -133,29 +135,27 @@ implementation
     end
   end;
 
-  function min( a, b :  int32 ) : int32;
+function min( a, b :  int32 ) : int32;
   begin
     if a < b then result := a else result := b;
   end;
 
-  function max( a, b :  int32 ) : int32;
+function max( a, b :  int32 ) : int32;
   begin
     if a > b then result := a else result := b;
   end;
 
 
-  function paramline : string;
-    var
-      i	: byte;
-      s	: string;
+function paramline : TStr;
+  var i	: byte; s : TStr;
   begin
     s := '';
     for i := 1 to paramcount do
-      s := s + paramstr( i )+ ' ';
+      s := s + Utf8Decode(paramstr( i )+ ' ');
     result := s;
   end; { paramline }
 
-  function fileparam : boolean;
+function fileparam : boolean;
   begin
     result := false;
     if (paramcount > 0) and fileexists( paramstr( 1 )) then begin

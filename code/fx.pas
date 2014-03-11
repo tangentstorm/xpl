@@ -1,4 +1,4 @@
-{$mode objfpc}{$i xpc.inc}
+{$mode delphiunicode}{$i xpc.inc}
 unit fx;
 interface uses xpc, cw, ustr, kvm, kbd;
 
@@ -9,8 +9,8 @@ Type
   ScreenType	= array[ 0..7999 ] of byte;
   VGAtype	= array[ 0..319, 0..200 ] of byte;
   Cel		= array[ 0 .. 0 ] of byte;
-  PCel	= ^Cel;          { ^TextPicture }
-  ScreenTypePtr= ^ScreenType;
+  PCel		= ^Cel;          { ^TextPicture }
+  ScreenTypePtr	= ^ScreenType;
 
 Var
   sw	     : word;           { width of screen * 2}
@@ -24,7 +24,7 @@ Var
   CursorAttr : word;           { cursorattribs }
 
   {■ ascii graphics }
-  procedure txtline( a, b, x, y, c : byte );
+  procedure txtline( a, b, x, y	: byte; c : word );
   procedure greyshadow( a1, b1, a2, b2 : byte );
   procedure Rectangle( a, b, x, y : byte; c : word );
   procedure Bar( a, b, x, y : byte; c : word );
@@ -35,8 +35,8 @@ Var
 
 
   { ■ screen/window handling commands }
-  procedure fillscreen( at : word; uc : string );
-  procedure fillscreen( chars : string );
+  procedure fillscreen( at : word; uc : TChr ); overload;
+  procedure fillscreen( chars : TStr ); overload;
 
   procedure fillbox( a1, b1, a2, b2 : byte; atch : word );
   procedure slidedown( x1, x2, y1, y2 : byte;
@@ -58,12 +58,12 @@ implementation
 
 //  break this into vl / hl
 
-procedure txtline( a, b, x, y, c : byte );
+procedure txtline( a, b, x, y : byte; c : word );
   begin
     if a = x then
-      cxy( c, a, b, ustr.ntimes( '│',  y - b + 1 ) )
+      cxy( c, a, b, ustr.chntimes( '│',  y - b + 1 ) )
     else if b = y then
-      cxy( c, a, b, ustr.ntimes( '─', x - a + 1 ) );
+      cxy( c, a, b, ustr.chntimes( '─', x - a + 1 ) );
   end;
 
 procedure Rectangle( a, b, x, y : byte; c : word );
@@ -107,7 +107,7 @@ procedure greyshadow( a1, b1, a2, b2 : byte );
   end;
 
 procedure metalbar( a1, b1, a2, b2 : byte );
-  var i, w, c  : byte; z : string;
+  var i, w, c  : byte; z : TStr;
   begin
     c := cw.cur.c;
     w := a2 - a1 - 1;
@@ -153,15 +153,15 @@ procedure blackshadow( a1, b1, a2, b2 : byte );
     colorxyv( a2 + 1, b1 + 1, $0F, chntimes( ' ', b2 - b1 + 1 ) );
   end;
 
-procedure fillScreen( at : Word; uc : string); {ATTR then unicode Char}
-  var i	: byte; s : string;
+procedure fillScreen( at : Word; uc : TChr); {ATTR then unicode Char}
+  var i	: byte; s : TStr;
   begin
     s := ntimes( uc, kvm.xMax );
     for i := 0 to kvm.yMax do cxy( at, 0, i, s );
   end;
 
-procedure fillscreen( chars : string );
-  var y, x, len : cardinal; line : string;
+procedure fillscreen( chars : TStr );
+  var y, x, len : cardinal; line : TStr;
   begin
     len := length(chars);
     setlength(line, kvm.width);
@@ -177,7 +177,7 @@ procedure fillBox( a1, b1, a2, b2 : Byte; atCh : Word );
   var
     count : Word;
     a :     Byte;
-    s :     string;
+    s :     TStr;
   begin
     a := hi( atCh );
     s := chntimes( chr( lo( atch ) ), a2 - a1 + 1 );

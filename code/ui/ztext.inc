@@ -1,6 +1,6 @@
 constructor zText.create( a, b : Byte; s, s2 : String );
 begin
-  inherited create( a, b, a + clength( s ), b );
+  inherited create( a, b, a + cwlen( s ), b );
   st1 := s;
   st2 := s2;
 end;

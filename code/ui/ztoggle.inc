@@ -15,8 +15,8 @@ end;
 procedure ztoggle.show;
 begin
   if value
-    then colorxy( mX, mY, tcol, truestr )
-    else colorxy( mX, mY, tcol, falsestr )
+    then cxy( tCol, mX, mY, truestr )
+    else cxy( tCol, mX, mY,  falsestr )
 end;
 
   

@@ -1,5 +1,5 @@
 {$i test_ui_zinput.def }{$h+}
-implementation uses xpc, ui;
+implementation uses xpc, ui, ustr;
 
   var inp : ui.ZInput;
 
@@ -73,12 +73,12 @@ procedure test_movement;
 
 type
   TStringCatcher = class
-    _s : string;
-    procedure SetValue(s:string);
-    property value : string read _s write SetValue;
+    _s : TStr;
+    procedure SetValue(s : TStr);
+    property value : TStr read _s write SetValue;
   end;
 
-procedure TStringCatcher.SetValue(s : string);
+procedure TStringCatcher.SetValue(s : TStr);
   begin
     _s := s
   end;

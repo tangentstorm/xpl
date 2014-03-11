@@ -17,16 +17,12 @@ var mv : Boolean;
 begin  
   mv := mvisible;
   mou.hide;
-  if value > min then
-    colorxy( x, y, acol, '®' )
-  else
-    colorxy( x, mY, acol, 'þ' );
-  colorxy( x + 1, mY, tcol, chntimes( ' ', x2 - x ) );
+  if value > min then cxy( acol, x, y, 'Â«' )
+  else cxy( acol, x, mY, 'â– ' );
+  cxy( tcol, x + 1, mY, chntimes( ' ', x2 - x ) );
   colorxyc( x + ( x2 - x ) div 2 - 1, mY, tcol, showstring );
-  if value < max then
-    colorxy( x2, mY, acol, '¯' )
-  else
-    colorxy( x2, mY, acol, 'þ' );
+  if value < max then cxy( acol, x2, mY, 'Â»' )
+  else cxy( acol, x2, mY, 'â– ' );
   mou.show_if( mv )
 end;
 

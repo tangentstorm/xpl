@@ -33,13 +33,11 @@ begin
   mChoices.insert( z );
 end;
 
-
 procedure zMenu.add( z : zchoice );
 begin
   if z = nil then exit;  { has to add in all the nexts! }
   mchoices.append( z );
 end;
-
 
 procedure zMenu.show;
 var
@@ -51,7 +49,6 @@ begin
   while cur.next( choice ) do begin
     choice.draw( mCurrent.index = cur.index );
   end;
-
   if submenu <> nil then submenu.show;
   begin
     oldIsMV := mvisible;
@@ -59,7 +56,6 @@ begin
     if oldIsMV then mou.show;
   end;
 end;
-
 
 procedure zMenu.seton( z : zChoice );
 begin
@@ -70,7 +66,6 @@ begin
       subactive := submenu.mCurrent <> nil
     end
 end;
-
 
 procedure zMenu.setto( z : zChoice );
 begin
@@ -130,7 +125,7 @@ begin
   end
 end; { handle }
 
-
+
 procedure ZMenu.Handlestripped( ch : Char );
   var old : cardinal;
 begin

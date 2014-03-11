@@ -1,6 +1,7 @@
 {$mode objfpc}{$i xpc.inc}
 unit num; { ■ number/conversion commands }
-interface uses xpc, sysutils;
+interface uses xpc, sysutils, ustr;
+
   function min( p, q : longint ) : longint;
   function max( p, q : longint ) : longint;
   function inc2( goesto, amt, max : longint ) : longint;
@@ -8,10 +9,10 @@ interface uses xpc, sysutils;
   function incwrap( goesto, amt, min, max : longint ) : longint;
   function decwrap( from, amt, min, max : longint ) : longint;
   function stepwrap( x, amt, min, max : longint ) : longint;
-  function h2s( w : word ) : string;
-  function s2h( s : string ) : word;
-  function n2s( x : longint ) : string;
-  function s2n( s : string ) : longint;
+  function h2s( w : word ) : TStr;
+  function s2h( s : TStr ) : word;
+  function n2s( x : longint ) : TStr;
+  function s2n( s : TStr ) : longint;
   function truth(p : longint ) : byte;
   function power(a, b : longint ) : longint;
   function sgn( x : longint ) : shortint;
@@ -28,6 +29,7 @@ implementation
     if p < q then max := q else max := p;
   end;
 
+  //  rename inc2->incmax (inc with clamp)
   function inc2( goesto, amt, max : longint ) : longint;
   begin
     if goesto + amt <= max then inc( goesto, amt )
@@ -65,8 +67,8 @@ implementation
     stepwrap := x;
   end;
 
-  function h2s( w : word ) : string;
-    var h : string;
+function h2s( w : word ) : TStr;
+  var h : TStr;
   begin
     h := '0123456789ABCDEF';
     h2s := '$' +
@@ -76,8 +78,8 @@ implementation
 	   h[ w mod 16 + 1 ];
   end;
 
-  function s2h( s : string ) : word;
-    var c : byte; v : word;
+function s2h( s : TStr ) : word;
+  var c : byte; v : word;
   begin
     v := 0;
     if s[ 1 ] = '$' then delete( s, 1, 1 );
@@ -92,28 +94,29 @@ implementation
     s2h := v;
   end;
 
-  function n2s( x : longint ) : string;
-    var s : string;
+function n2s( x : longint ) : TStr;
+  var s : TStr;
   begin
     str( x, s );
     n2s := s;
   end;
 
-  function s2n( s : String ) : longint;
-    var i, e : Integer;
+function s2n( s : TStr ) : longint;
+  var i, e : Integer;
   begin
     val( s, i, e );
-    if e <> 0 then raise Exception.create( 'bad number:' + s ) else s2n := i;
+    if e <> 0 then raise Exception.create( utf8encode('bad number:' + s) )
+    else s2n := i;
   end;
 
-  function truth( p : longint ) : byte;
+function truth( p : longint ) : byte;
   begin
     if boolean( p ) then truth := 1
     else truth := 0;
   end;
 
-  function power( a, b : longint ) : longint;
-    var c, d : longint;
+function power( a, b : longint ) : longint;
+  var c, d : longint;
   begin
     d := 1;
     if b > 0 then
@@ -122,7 +125,7 @@ implementation
     power := d;
   end;
 
-  function sgn( x : longint ) : shortint;
+function sgn( x : longint ) : shortint;
   begin
     if x > 0 then sgn :=  1;
     if x = 0 then sgn :=  0;

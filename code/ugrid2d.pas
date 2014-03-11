@@ -143,7 +143,7 @@ begin
 	  party image / array libraries, so we occasionally do want
 	  to just declare data has some particular shape in ram. }
       end;
-  if ( newsize < _ramsize ) then pass; { TODO }
+  if ( newsize < _ramsize ) then ok; { TODO }
   _ramsize := newsize;
   _count := newcount;
 end;

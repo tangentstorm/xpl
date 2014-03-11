@@ -1,13 +1,12 @@
-{$mode objfpc}{$i xpc.inc}
+{$mode delphiunicode}{$i xpc.inc}
 unit chk;
-interface uses sysutils, num;
+interface uses sysutils, num, xpc;
 type int = integer;
-type str = string;
 
-procedure fail( const msg : str );
-procedure that( pred : boolean; const msg : str );
-procedure equal( a, b : str; msg : str = 'strings did not match' );
-procedure equal( a, b : int; msg : str = 'numbers did not match' );
+procedure fail( const msg : TStr );
+procedure that( pred : boolean; const msg : TStr );
+procedure equal( a, b : TStr; msg : TStr = 'strings did not match' ); overload;
+procedure equal( a, b : int; msg : TStr = 'numbers did not match' ); overload;
 procedure report;
 
 implementation
@@ -18,9 +17,9 @@ procedure pass; inline;
 begin
 end;
 
-procedure fail ( const msg : str );
+procedure fail ( const msg : TStr );
 begin
-  raise EAssertionFailed.create( msg );
+  raise EAssertionFailed.create( Utf8Encode( msg ));
 end;
 
 function peek( pred : boolean ) : boolean;
@@ -30,18 +29,18 @@ begin
   peek := pred;
 end;
 
-procedure that( pred : boolean; const msg : str );
+procedure that( pred : boolean; const msg : TStr );
 begin
   if not peek( pred ) then fail( msg );
 end;
 
-procedure equal( a, b : str; msg : str = 'strings did not match' );
+procedure equal( a, b : TStr; msg : TStr = 'strings did not match' );
 begin
   if not peek( a = b ) then
     fail( msg + ': "' + a + '" <> "' + b + '"' );
 end;
 
-procedure equal( a, b : int; msg : str = 'numbers did not match' );
+procedure equal( a, b : int; msg : TStr = 'numbers did not match' );
 begin
   if not peek( a = b ) then
     fail( msg + ': ' + n2s(a) + ' <> '+ n2s(b) );

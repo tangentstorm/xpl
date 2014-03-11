@@ -1,4 +1,4 @@
-{$i test_cw.def }
+{$mode delphiunicode}{$i test_cw.def }
 implementation uses cw;
 
 procedure test_cwlen;

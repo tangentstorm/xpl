@@ -1,4 +1,4 @@
-{$i test_ustr.def }
+{$mode delphiunicode}{$i test_ustr.def }
 implementation uses ustr;
 
 procedure test_startswith;

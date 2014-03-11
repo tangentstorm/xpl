@@ -16,9 +16,9 @@ end;
 
 function zConfirmbox.get : Boolean;
 begin
-  fx.bar( mX, mY, mX + 1 + clength( str1 ), mY + 3, bcol );
-  fx.greyshadow( mX, mY, mX + 1 + clength( str1 ), mY + 3 );
+  fx.bar( mX, mY, mX + 1 + cwlen( str1 ), mY + 3, bcol );
+  fx.greyshadow( mX, mY, mX + 1 + cwlen( str1 ), mY + 3 );
   cwritexy( mX + 1, mY + 1, str1 );
-  ccenterxy( mX + clength( str1 ) div 2, mY + 2, str2 );
+  ccenterxy( mX + cwlen( str1 ) div 2, mY + 2, str2 );
   result := yesno;
 end;

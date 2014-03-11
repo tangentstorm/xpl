@@ -1,4 +1,4 @@
-{$i test_xpc.def }
+{$mode delphiunicode}{$i test_xpc.def }
 implementation uses xpc;
 
   procedure test_hex;

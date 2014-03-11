@@ -1,22 +1,21 @@
-{$i xpc.inc}{$mode delphi}
+{$i xpc.inc}{$mode delphiunicode}
 program run_tests;
-uses xpc, cw, cx, sysutils {$i run-tests.use }; // includes test_*.pas
+uses xpc, cw, cx, sysutils, ustr {$i run-tests.use }; // includes test_*.pas
 
 type
   outcome  = ( pass, fail, err );
   problem  = record
-	       test_name : string;
+	       test_name : TStr;
 	       result	 : outcome;
-	       error	 : string;
+	       error	 : TStr;
 	     end;
   testcase = procedure;
 const
-  colors : array[ outcome ] of string[ 2 ] = ( '|g', '|y', '|r' );
+  colors : array[ outcome ] of TStr = ( '|g', '|y', '|r' );
 
 var
-  overall  : outcome;
-  passed,  
-  failed,  
+  passed,
+  failed,
   broken   : integer;
   problems : array of problem;
   trace	   : boolean = false;
@@ -55,7 +54,7 @@ begin
     fail : begin inc( failed ); cwrite( '|y!' ) end;
     err  : begin inc( broken ); cwrite( '|rX' ) end;
   end; { case }
-  if trace then writeln;
+  if trace then readln;
 end;
 
 procedure report;

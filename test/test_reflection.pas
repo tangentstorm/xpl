@@ -1,4 +1,4 @@
-{$mode delphi}{$H+}
+{$mode delphiunicode}{$H+}
 {$i test_reflection.def }
 implementation uses classes, ureflection, variants;
 
@@ -44,7 +44,7 @@ procedure test_className;
   end;
 
 procedure test_propNames;
-  var props : array of string;
+  var props : TStringArray;
   begin
     props := rfl.propNames;
     chk.equal(4, length(props));

@@ -365,11 +365,12 @@ implementation
         end
       end
     end; { Remove }
-  
+    
   procedure GRing<T>.Drop;
       var temp : GNode<T>;
     begin
-      if IsEmpty then raise Exception.Create('attempted to drop from empty list')
+      if IsEmpty then raise 
+        Exception.Create(Utf8Encode('attempted to drop from empty list'))
       else begin
         temp := _clasp.PrevLink;
         _clasp.PrevLink := _clasp.PrevLink.PrevLink;
@@ -378,11 +379,11 @@ implementation
         temp.free;
       end
     end;
-  
+    
   function GRing<T>.IsEmpty : boolean;
     begin result := _count = 0
     end;
-  
+    
   function GRing<T>.FindNext(const start : GCellNode<T>;
                                var p     : GNodeStack;
                                out v     : GCellNode<T>) : boolean;
@@ -410,7 +411,7 @@ implementation
       until result or ( ln = _clasp );
       v := ln as GCellNode<T>;
     end;
-  
+    
   { should be exactly the same as above but s/Next/Prev/g }
   function GRing<T>.FindPrev(
                      const start : GCellNode<T>;
@@ -439,7 +440,7 @@ implementation
       until result or ( ln = _clasp );
       v := ln as GCellNode<T>;
     end;
-  
+    
   function GRing<T>.FirstCell : GCellNode<T>;
     var p : GNodeStack;
     begin
@@ -449,12 +450,12 @@ implementation
       else if not FindNext( _clasp, p, result ) then
         raise Exception.Create('nested empty list has no first member.')
     end;
-  
+    
   function GRing<T>.First : T;
     begin
       result := self.FirstCell.value;
     end;
-  
+    
   function GRing<T>.LastCell : GCellNode<T>;
     var p : GNodeStack;
     begin
@@ -464,7 +465,7 @@ implementation
       else if not FindPrev( _clasp, p, result ) then
         raise Exception.Create('nested empty list has no last member.')
     end;
-  
+    
   function GRing<T>.Last: T;
     begin
       result := self.LastCell.value;
@@ -578,8 +579,8 @@ implementation
           if position > 0 then
             for i := 1 to position do self.MoveNext
         end
-      else raise Exception.Create('out of bounds: '
-                                  + IntToStr(position))
+      else raise Exception.Create(Utf8Encode('out of bounds: ')
+                  + IntToStr(position))
     end;
   function GRing<T>.TCursor.GetValue : t;
   begin

@@ -1,4 +1,4 @@
-{$i test_ll.def }
+{$mode delphiunicode}{$i test_ll.def }
 { see also test_ll_cur for cursor tests }
 implementation uses ll, li, xpc;
 
@@ -18,12 +18,10 @@ implementation uses ll, li, xpc;
   begin
     chk.that( ls.is_empty, 'new list should be empty' );
     chk.equal( ls.length, 0, 'new list should have length 0' );
-    try
-      ls.first; chk.fail('.first should throw exception for empty list' )
-    except pass end;
-    try
-      ls.first; chk.fail('.last should throw exception for empty list' )
-    except pass end;
+    try ls.first; chk.fail('.first should throw exception for empty list' )
+    except ok end;
+    try ls.first; chk.fail('.last should throw exception for empty list' )
+    except ok end;
   end;
 
   procedure test_append;

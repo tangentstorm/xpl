@@ -1,4 +1,4 @@
-{$mode delphi}{$i xpc.inc}
+{$mode delphiunicode}{$i xpc.inc}{$H+}
 unit ui;
 interface uses classes, xpc, cw, ll, kvm, mou, kbd, ustr, fx, num, cli, sysutils;
 
@@ -23,8 +23,8 @@ type
 
   zText = class ( zObj )
     public
-      st1, st2 : String;
-      constructor Create( a, b : Byte; s, s2 : String );
+      st1, st2 : TStr;
+      constructor Create( a, b : Byte; s, s2 : TStr );
       procedure ShowNormal; override;
       procedure showInvert; override;
     end;
@@ -36,11 +36,11 @@ type
     public
       sc  : Char;            { shortcut character }
       v   : Byte;            { return value }
-      constructor createXY( a, b : Byte; s, s2 : String; ison : Boolean;
+      constructor createXY( a, b : Byte; s, s2 : TStr; ison : Boolean;
                         shortcut : char;
                         value : word;
                         submen : zObj );
-      constructor create( s, s2 : String; ison : Boolean;
+      constructor create( s, s2 : TStr; ison : Boolean;
                         shortcut : char;
                         value : word;
                         submen : zObj );
@@ -69,8 +69,8 @@ type
       procedure domousestuff; virtual;
       procedure dowhilelooping; virtual;
       procedure format( choice : zChoice ); virtual;
-      function normalstr( s : String ) : String; virtual;
-      function invertstr( s : String ) : String; virtual;
+      function normalstr( s : TStr ) : TStr; virtual;
+      function invertstr( s : TStr ) : TStr; virtual;
       function submenu : zMenu;
       function shortcut( ch : Char ) : zchoice;
       function valuecut( v : Word ) : zchoice;

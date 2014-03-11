@@ -648,7 +648,6 @@ implementation
     end;
   
   procedure TVideoTerm.ClrEol;
-    var curx, cury, i : byte;
     begin
     end;
   

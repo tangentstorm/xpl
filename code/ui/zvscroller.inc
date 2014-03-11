@@ -16,7 +16,7 @@ end;
 
 constructor zVScroller.default( a, b, _min, _max, strt : Byte );
 begin
-  create( a, b, _min, _max, strt, '³', 'þ', $08, $0A );
+  create( a, b, _min, _max, strt, 'â”‚', 'â– ', $08, $0A );
 end;
 
 
@@ -36,7 +36,7 @@ begin
   mv := mvisible;
   mou.hide;
   colorxyv( mX, mY, bat, chntimes( bch, max - min + 1 ) );
-  colorxy( mX, mY + value, hat, hch );
+  cxy( hat, mX, mY + value, hch );
   mou.show_if( mv )
 end;
 

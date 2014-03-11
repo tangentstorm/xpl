@@ -102,7 +102,7 @@ implementation uses cw, dos;
     mpresent := mousethere;
     if mpresent then begin
       resetmouse( mstatus, nb );
-      showmouse( TRUE );
+      //showmouse( TRUE );
       getmpos;
       getmpos; { initializes mx, my, lmx, lmy }
     end;
@@ -170,8 +170,7 @@ implementation uses cw, dos;
 
 
   procedure setgcurs( gcurs : gcursor );
-    var
-      o, s : WORD;
+//    var o, s : WORD;
   begin
     if not mpresent then begin
       EXIT;
@@ -192,11 +191,10 @@ implementation uses cw, dos;
 
 
   procedure settcurson( ch : CHAR; at : BYTE ); { uses special cursor }
-    var
-      w : WORD;
+//    var w : WORD;
   begin
-    w := ORD( ch ) + ( at shl 8 );
   (*
+    w := ORD( ch ) + ( at shl 8 );
     asm
       MOV     AX, $0A
       MOV     BX, 0 {software}

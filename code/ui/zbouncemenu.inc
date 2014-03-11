@@ -47,34 +47,34 @@ end;
 
 function zbouncemenu.normalstr( s : String ) : String;
 begin
-  s := cpadstr( s, width, ' ' );
-  result := '|!' + zbmb + '|' + zbmf + '³|' + zbmt + s + '|' + zbmf + '³';
+  s := cwpad( s, width, ' ' );
+  result := '|!' + zbmb + '|' + zbmf + 'â”‚|' + zbmt + s + '|' + zbmf + 'â”‚';
 end;
 
 
 function zbouncemenu.invertstr( s : String ) : String;
 begin
-  s := cpadstr( s, width, ' ' );
+  s := cwpad( s, width, ' ' );
   result :=
-    '|!' + zbmb + '|' + zbmf + '³|!' + zbhb + '|' + zbhf + s +
-    '|!' + zbmb + '|' + zbmf + '³';
+    '|!' + zbmb + '|' + zbmf + 'â”‚|!' + zbhb + '|' + zbhf + s +
+    '|!' + zbmb + '|' + zbmf + 'â”‚';
 end;
 
 
 function zbouncemenu.top : String;
 begin
-  result := '|!' + zbmb + '|' + zbmf + 'Ú' + chntimes( 'Ä', width ) + '¿';
+  result := '|!' + zbmb + '|' + zbmf + 'â”Œ' + chntimes( 'â”€', width ) + 'â”';
 end;
 
 
 function zbouncemenu.sepbar : String;
 begin
-  result := '|!' + zbmb + '|' + zbmf + 'Ã' + chntimes( 'Ä', width ) + '´';
+  result := '|!' + zbmb + '|' + zbmf + 'â”œ' + chntimes( 'â”€', width ) + 'â”¤';
 end;
 
 
 function zbouncemenu.bottom : String;
 begin
-  result := '|!' + zbmb + '|' + zbmf + 'À' + chntimes( 'Ä', width ) + 'Ù';
+  result := '|!' + zbmb + '|' + zbmf + 'â””' + chntimes( 'â”€', width ) + 'â”˜';
 end;
 

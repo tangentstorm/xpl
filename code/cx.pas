@@ -1,25 +1,27 @@
-{$mode objfpc}{$i xpc.inc}
+{$mode delphiunicode}{$i xpc.inc}
 unit cx; { colorized exceptions }
-interface uses cw, sysutils;
+interface uses xpc, cw, sysutils;
 
-  function stacktrace( e : exception ) : string;
+  function stacktrace( e : exception ) : TStr;
 
 implementation
 
-  // mostly taken from:
-  // http://wiki.lazarus.freepascal.org/Logging_exceptions#Dump_current_call_stack
-function stacktrace( e : exception ) : string;
+// mostly taken from:
+// http://wiki.lazarus.freepascal.org/Logging_exceptions#Dump_current_call_stack
+function stacktrace( e : exception ) : TStr;
   var
     i : integer;
     frames : ppointer;
   begin
     result := '|K';
-    if e <> nil then result := e.classname + ': |R' + e.message + lineending;
-    result += '|c' + backtracestrfunc( exceptaddr );
+    if e <> nil then
+      result := Utf8Decode(e.classname) + ': |R'
+	      + Utf8Decode(e.message) + lineending;
+    result += '|c' + Utf8Decode(backtracestrfunc( exceptaddr ));
     frames := exceptframes;
     for i := 0 to exceptframecount - 1 do begin
       if odd( i ) then result += '|c' else result += '|B';
-      result += lineending + backtracestrfunc( frames[ i ]);
+      result += lineending + Utf8Decode(backtracestrfunc( frames[ i ]));
     end;
     result += '|w' + lineending;
   end; { stacktrace }

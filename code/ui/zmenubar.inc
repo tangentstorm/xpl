@@ -86,7 +86,7 @@ begin
   choice.y  := ty;
   choice.y2 := ty;
   choice.x  := tx + width;
-  width      := width + clength( choice.st1 ) - 1;
+  width      := width + cwlen( choice.st1 ) - 1;
   choice.x2 := tx + width;
 end;
 

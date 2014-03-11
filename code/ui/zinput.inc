@@ -87,23 +87,27 @@ begin
   while (Length(work) > cpos) do self.del;
 end;
 
-function zinput.str_to_end : string;
-begin
-  result := rightstr( work, length(work) - cpos );
-end;
+//  TODO: proper rightstr() for unicode
+function zinput.str_to_end : TStr;
+  var i : cardinal;
+  begin result := '';
+    if cpos <= 0 then result := work
+    else if cpos+1 >= length(work) then ok
+    else for i := cpos+1 to length(work) do result += work[i]
+  end;
 
 procedure zinput.accept;
-begin
-  back := work;
-  finish;
-  if assigned(_OnAccept) then _OnAccept(work);
-end;
+  begin
+    back := work;
+    finish;
+    if assigned(_OnAccept) then _OnAccept(work);
+  end;
 
 procedure zinput.cancel;
-begin
-  work := back;
-  finish;
-end;
+  begin
+    work := back;
+    finish;
+  end;
 
 procedure zinput.show;
 var v : String;
@@ -113,12 +117,12 @@ begin
   if length( work ) > dlen
     then cw.cxy( acol, self.x + dlen, self.y, '»' )
     else cw.cxy( acol, self.x + dlen, self.y, ' ' );
-  if cpos = maxlen + 1 then kvm.HideCursor;
+  if cpos > maxlen then kvm.HideCursor;
 
   while cpos > d1st + dlen do inc( d1st );
   while cpos < d1st do dec( d1st );
 
-  v := pad( copy( work, d1st, dlen ), dlen, ' ' );
+  v := rpad( copy( work, d1st, dlen ), dlen, ' ' );
   cw.cxy( tcol, self.x, self.y, v );
   gotoxy( self.x + cpos - d1st, self.y );
 

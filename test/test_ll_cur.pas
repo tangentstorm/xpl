@@ -1,7 +1,8 @@
-{$i test_ll_cur.def } {$i xpc.inc}
+{$mode delphiunicode}{$i xpc.inc}
+{$i test_ll_cur.def }
 implementation uses ll, li, xpc;
 
-  type charlist = specialize list<char>;
+  type charlist = list<char>;
   var
     ls	: charlist;
     cur	: charlist.cursor;
@@ -17,7 +18,7 @@ implementation uses ll, li, xpc;
   function as_string : string;
   begin
     result := '';
-    if ls.is_empty then pass
+    if ls.is_empty then ok
     else for ch in ls do result += ch
   end;
 
