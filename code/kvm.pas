@@ -1,9 +1,14 @@
+
 { --- warning!! generated file. edit ../text/kvm.pas.org instead!! --- }
 
 
 {$mode objfpc}{$i xpc.inc}
 unit kvm;
-interface uses xpc, ugrid2d, terminal, sysutils;
+interface uses xpc, ugrid2d, sysutils,
+  {$ifdef VIDEOKVM}video
+  {$else}terminal
+  {$endif}
+  ;
 
   type ITerm = interface
     function  Width : word;
@@ -118,6 +123,36 @@ interface uses xpc, ugrid2d, terminal, sysutils;
         read GetCell write PutCell; default;
     end;
   type TAnsiTerm = class (TInterfacedObject, ITerm)
+    public
+      function  Width : word;
+      function  Height: word;
+      function  MaxX  : word; deprecated;
+      function  MaxY  : word; deprecated;
+      function  XMax  : word;
+      function  YMax  : word;
+      function  WhereX : word;
+      function  WhereY : word;
+      procedure ClrScr;
+      procedure ClrEol;
+      procedure Fg( color : byte );
+      procedure Bg( color : byte );
+      procedure Emit( wc : widechar ); {$IFNDEF unitscope}virtual;{$ENDIF}
+      procedure Emit( s : string ); {$IFNDEF unitscope}virtual;{$ENDIF}
+      procedure GotoXY( x, y : word );
+      procedure InsLine;
+      procedure DelLine;
+      procedure SetTextAttr( value : word );
+      function  GetTextAttr : word;
+      property  TextAttr : word read GetTextAttr write SetTextAttr;
+      procedure ShowCursor;
+      procedure HideCursor;
+    private
+      attr : word;
+    public
+      constructor Create;
+      procedure ResetColor;
+    end;
+  type TVideoTerm = class (TInterfacedObject, ITerm)
     public
       function  Width : word;
       function  Height: word;
@@ -304,7 +339,7 @@ implementation
     end;
   
   procedure TGridTerm.Emit( s : string );
-    var ch : char;
+    var ch : widechar;
     begin
       for ch in s do Emit(ch);
     end;
@@ -326,12 +361,12 @@ implementation
   
   procedure TGridTerm.ShowCursor;
     begin
-      pass
+      ok
     end;
   
   procedure TGridTerm.HideCursor;
     begin
-      pass
+      ok
     end;
   
   function TGridTerm.GetCell( x, y : word ) : TTermCell;
@@ -423,7 +458,7 @@ implementation
       write( wc )
     end;
   procedure TAnsiTerm.Emit( s : string );
-    var ch : char;
+    var ch : widechar;
     begin
       for ch in s do emit(ch);
     end;
@@ -560,6 +595,100 @@ implementation
     end;
   
   
+  constructor TVideoTerm.Create;
+    begin
+      attr := $0007
+    end;
+  
+  { TODO: find a way to get this data without the baggage incurred by
+    crt or video modules (breaking keyboard input or clearing the screen  }
+  
+  function  TVideoTerm.Width  : word; begin result := terminal.w end;
+  function  TVideoTerm.Height : word; begin result := terminal.h end;
+  function  TVideoTerm.MaxX   : word; begin result := xMax end;
+  function  TVideoTerm.MaxY   : word; begin result := yMax end;
+  function  TVideoTerm.XMax   : word; begin result := width - 1  end;
+  function  TVideoTerm.YMax   : word; begin result := height - 1 end;
+  
+  function  TVideoTerm.WhereX : word;
+    var bx, by : byte;
+    begin
+      terminal.getxy(bx, by);
+      result := bx;
+    end;
+  
+  function  TVideoTerm.WhereY : word;
+    var bx, by : byte;
+    begin
+      terminal.getxy(bx, by);
+      result := by;
+    end;
+  
+  function  TVideoTerm.GetTextAttr : word;
+    begin
+      result := attr;
+    end;
+  
+  procedure TVideoTerm.SetTextAttr( value : word );
+    begin
+      Fg(lo(value));
+      Bg(hi(value));
+    end;
+  
+  procedure TVideoTerm.Fg( color : byte );
+    begin
+    end;
+  
+  procedure TVideoTerm.Bg( color : byte );
+    begin
+    end;
+  
+  procedure TVideoTerm.ClrScr;
+    begin
+    end;
+  
+  procedure TVideoTerm.ClrEol;
+    var curx, cury, i : byte;
+    begin
+    end;
+  
+  procedure TVideoTerm.GotoXY( x, y : word );
+    begin
+    end;
+  
+  procedure TVideoTerm.Emit( wc : widechar );
+    begin
+      { TODO: handle escaped characters }
+      write( wc )
+    end;
+  procedure TVideoTerm.Emit( s : string );
+    var ch : widechar;
+    begin
+      for ch in s do emit(ch);
+    end;
+  
+  { TODO }
+  procedure TVideoTerm.InsLine;
+    begin
+    end;
+  
+  procedure TVideoTerm.DelLine;
+    begin
+    end;
+  
+  procedure TVideoTerm.ResetColor;
+    begin
+    end;
+  
+  procedure TVideoTerm.ShowCursor; // !! xterm / dec terminals
+    begin
+    end;
+  
+  procedure TVideoTerm.HideCursor; // !! xterm / dec terminals
+    begin
+    end;
+  
+  
   procedure bg( c :  char );
     var i : byte;
     begin
@@ -605,7 +734,7 @@ implementation
     begin result := work.TextAttr end;
 
 initialization
-  work := TAnsiTerm.Create;
+  work :={$ifdef VIDEOKVM}TVideoTerm.Create{$else}TAnsiTerm.Create{$endif};
   work.GotoXY( terminal.startX, terminal.startY );
 finalization
   { work is destroyed automatically by reference count }

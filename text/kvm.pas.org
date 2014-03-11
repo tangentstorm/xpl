@@ -157,20 +157,20 @@ This is a contrcete implementation of ITerm.
 
 #+name: @kvm:impl
 #+begin_src pascal
-  
+
   constructor TGridTerm.Create( w, h : word );
     begin
       inherited create;
       _grid := TTermGrid.Create( w, h );
       _curs := TPoint.Create; _curs.x := 0; _curs.y := 0;
     end;
-  
+
   destructor TGridTerm.Destroy;
     begin;
       _grid.Free;
       inherited destroy;
     end;
-  
+
   function  TGridTerm.Width  : word; begin result := grid.w     end;
   function  TGridTerm.Height : word; begin result := grid.h     end;
   function  TGridTerm.MaxX   : word; begin result := xMax       end;
@@ -179,27 +179,27 @@ This is a contrcete implementation of ITerm.
   function  TGridTerm.YMax   : word; begin result := height - 1 end;
   function  TGridTerm.WhereX : word; begin result := _curs.x    end;
   function  TGridTerm.WhereY : word; begin result := _curs.y    end;
-  
+
   function  TGridTerm.GetTextAttr : word;
     begin
       result := word(attr)
     end;
-  
+
   procedure TGridTerm.SetTextAttr( value : word );
     begin
       attr := TTextAttr(value)
     end;
-  
+
   procedure TGridTerm.Fg( color : byte );
     begin
       attr.fg := color
     end;
-  
+
   procedure TGridTerm.Bg( color : byte );
     begin
       attr.bg := color
     end;
-  
+
   procedure TGridTerm.ClrScr;
     var cell : TTermCell;
     begin
@@ -208,18 +208,18 @@ This is a contrcete implementation of ITerm.
       _grid.fill(cell);
       gotoxy(0,0);
     end;
-  
+
   procedure TGridTerm.ClrEol;
     begin
       raise Exception.Create('TODO: TGridTerm.ClrEol');
     end;
-  
+
   procedure TGridTerm.GotoXY( x, y : word );
     begin
       _curs.x := x;
       _curs.y := y;
     end;
-  
+
   procedure TGridTerm.Emit( wc : widechar );
     var cell : TTermCell;
     begin
@@ -234,48 +234,48 @@ This is a contrcete implementation of ITerm.
           // todo: scroll
         end;
     end;
-  
+
   procedure TGridTerm.Emit( s : string );
-    var ch : char;
+    var ch : widechar;
     begin
       for ch in s do Emit(ch);
     end;
-  
+
   procedure TGridTerm.InsLine;
     begin
       raise Exception.Create('TODO: TGridTerm.InsLine');
     end;
-  
+
   procedure TGridTerm.DelLine;
     begin
       raise Exception.Create('TODO: TGridTerm.DelLine');
     end;
-  
+
   function TGridTerm.Cursor : TPoint;
     begin
       result := _curs
     end;
-  
+
   procedure TGridTerm.ShowCursor;
     begin
-      pass
+      ok
     end;
-  
+
   procedure TGridTerm.HideCursor;
     begin
-      pass
+      ok
     end;
-  
+
   function TGridTerm.GetCell( x, y : word ) : TTermCell;
     begin
       result := _grid[x,y]
     end;
-  
+
   procedure TGridTerm.PutCell( x, y : word; cell : TTermCell );
     begin
       _grid[x,y] := cell;
     end;
-  
+
 #+end_src
 
 * =TAnsiTerm=
@@ -373,7 +373,7 @@ This is a contrcete implementation of ITerm.
       write( wc )
     end;
   procedure TAnsiTerm.Emit( s : string );
-    var ch : char;
+    var ch : widechar;
     begin
       for ch in s do emit(ch);
     end;
@@ -578,6 +578,120 @@ This is a contrcete implementation of ITerm.
 
 #+END_SRC
 
+* =TVideoTerm= : uses free pascal's =video= unit
+#+name: TVideoTerm
+#+begin_src pascal
+  type TVideoTerm = class (TInterfacedObject, ITerm)
+    public
+      <<ITerm-Members>>
+    private
+      attr : word;
+    public
+      constructor Create;
+      procedure ResetColor;
+    end;
+#+end_src
+
+#+name: @kvm:impl
+#+begin_src pascal
+
+  constructor TVideoTerm.Create;
+    begin
+      attr := $0007
+    end;
+
+  { TODO: find a way to get this data without the baggage incurred by
+    crt or video modules (breaking keyboard input or clearing the screen  }
+
+  function  TVideoTerm.Width  : word; begin result := terminal.w end;
+  function  TVideoTerm.Height : word; begin result := terminal.h end;
+  function  TVideoTerm.MaxX   : word; begin result := xMax end;
+  function  TVideoTerm.MaxY   : word; begin result := yMax end;
+  function  TVideoTerm.XMax   : word; begin result := width - 1  end;
+  function  TVideoTerm.YMax   : word; begin result := height - 1 end;
+
+  function  TVideoTerm.WhereX : word;
+    var bx, by : byte;
+    begin
+      terminal.getxy(bx, by);
+      result := bx;
+    end;
+
+  function  TVideoTerm.WhereY : word;
+    var bx, by : byte;
+    begin
+      terminal.getxy(bx, by);
+      result := by;
+    end;
+
+  function  TVideoTerm.GetTextAttr : word;
+    begin
+      result := attr;
+    end;
+
+  procedure TVideoTerm.SetTextAttr( value : word );
+    begin
+      Fg(lo(value));
+      Bg(hi(value));
+    end;
+
+  procedure TVideoTerm.Fg( color : byte );
+    begin
+    end;
+
+  procedure TVideoTerm.Bg( color : byte );
+    begin
+    end;
+
+  procedure TVideoTerm.ClrScr;
+    begin
+    end;
+
+  procedure TVideoTerm.ClrEol;
+    var curx, cury, i : byte;
+    begin
+    end;
+
+  procedure TVideoTerm.GotoXY( x, y : word );
+    begin
+    end;
+
+  procedure TVideoTerm.Emit( wc : widechar );
+    begin
+      { TODO: handle escaped characters }
+      write( wc )
+    end;
+  procedure TVideoTerm.Emit( s : string );
+    var ch : widechar;
+    begin
+      for ch in s do emit(ch);
+    end;
+
+  { TODO }
+  procedure TVideoTerm.InsLine;
+    begin
+    end;
+
+  procedure TVideoTerm.DelLine;
+    begin
+    end;
+
+  procedure TVideoTerm.ResetColor;
+    begin
+    end;
+
+  procedure TVideoTerm.ShowCursor; // !! xterm / dec terminals
+    begin
+    end;
+
+  procedure TVideoTerm.HideCursor; // !! xterm / dec terminals
+    begin
+    end;
+
+#+end_src
+
+
+
 * char mnemonics for ansi colors.
 
 #+name: extras
@@ -608,7 +722,7 @@ This is a contrcete implementation of ITerm.
 #+name: lifecycle
 #+begin_src pascal
   initialization
-    work := TAnsiTerm.Create;
+    work :={$ifdef VIDEOKVM}TVideoTerm.Create{$else}TAnsiTerm.Create{$endif};
     work.GotoXY( terminal.startX, terminal.startY );
   finalization
     { work is destroyed automatically by reference count }
@@ -854,7 +968,11 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
 
   {$mode objfpc}{$i xpc.inc}
   unit kvm;
-  interface uses xpc, ugrid2d, terminal, sysutils;
+  interface uses xpc, ugrid2d, sysutils,
+    {$ifdef VIDEOKVM}video
+    {$else}terminal
+    {$endif}
+    ;
 
     <<ITerm>>
     {$DEFINE unitscope}
@@ -868,6 +986,7 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
     <<TRect>>
     <<TGridTerm>>
     <<TAnsiTerm>>
+    <<TVideoTerm>>
     <<TTermProxy>>
     <<TSubTerm>>
 
