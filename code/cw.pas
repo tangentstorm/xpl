@@ -35,7 +35,7 @@ type
             x, y, fg, bg : word;
             procedure setc( value : word );
             function getc : word;
- 	    property c : word read getc write setc;
+	    property c : word read getc write setc;
 	  end;
 
 var
@@ -94,17 +94,33 @@ procedure point.setc( value : word );
     self.bg := hi( value );
   end; { point.setc }
 
-procedure wr( ch : TChr );
+procedure cwgoxy( x, y : byte ); inline;
   begin
-    emit(ch); inc( cur.x );
-    if cur.x > kvm.xMax then cwrite( ^M );
+    cur.x := x; cur.y := y; kvm.gotoxy( x, y )
   end;
-
-procedure cxy(c: word; x, y :byte; const s : TStr); inline;
+
+procedure cwnl;
+  begin
+    kvm.emit( lineending );
+    cwgoxy(0, cur.y + 1);
+  end;
+
+procedure cwe( ch : TChr ); inline; // cw-emit
+  begin
+    if (ch = ^M) or (cur.x > kvm.xMax) then cwnl;
+    if ch <> ^M then begin emit(ch); inc( cur.x ); end;
+  end;
+
+procedure cws( s : TStr ); // cw-string
   var i : integer;
   begin
-    kvm.GotoXY( x, y ); kvm.textattr := c;
-    for i := 1 to length(s) do wr( s[i] );
+    for i := 1 to length(s) do cwe( s[i] );
+  end; { cwr }
+
+
+procedure cxy(c: word; x, y :byte; const s : TStr); inline;
+  begin
+    cwgoxy( x, y ); kvm.textattr := c; cws( s );
   end; { cxy }
 
 procedure colorxy(x, y :byte; c: word; const s : TStr); inline;
@@ -143,8 +159,9 @@ procedure cwcommand( cn : command; s : TStr );
 		       begin
 			 // scrollup1( txmin, txmax, tymin, tymax, writeto );
 			 cur.y := kvm.yMax;
-			 cwrite('|%');
-		       end
+			 kvm.clreol;
+		       end;
+		       cwgoxy( cur.x, cur.y );
 		     end;
       cwBS	   : if cur.x <> 1 then
 		     begin
@@ -166,11 +183,9 @@ procedure cwcommand( cn : command; s : TStr );
 			 and ( s[ 2 ] in digits )
 			 and ( s[ 3 ] in digits )
 			 and ( s[ 4 ] in digits )
-			 then
-		       begin
-			 cur.x := s2n( s[ 1 ] + s[ 2 ]);
-			 cur.y := s2n( s[ 3 ] + s[ 4 ]);
-		       end;
+                       then
+			 cwgoxy(s2n( s[ 1 ] + s[ 2 ]),
+				s2n( s[ 3 ] + s[ 4 ]));
 		     end;
       cwsavexy	   : sav := cur;
       cwloadxy	   : cur := sav;
@@ -197,13 +212,13 @@ procedure cwcommand( cn : command; s : TStr );
       ch := s[ i + 1 ]; inc(i);
       { ch := s[ i + 1 ]; }
       { case ord( ch ) of }
-      { 	$00 .. $7F : bytes := 1; }
-      { 	$80 .. $BF , }
-      { 	$C0 .. $C1 : die( 'invalid utf-8 sequence' ); }
-      { 	$C2 .. $DF : bytes := 2; }
-      { 	$E0 .. $EF : bytes := 3; }
-      { 	$F0 .. $F7 : bytes := 4; }
-      { 	$F8 .. $FF : die( 'invalid utf-8 sequence' ); }
+      {		$00 .. $7F : bytes := 1; }
+      {		$80 .. $BF , }
+      {		$C0 .. $C1 : die( 'invalid utf-8 sequence' ); }
+      {		$C2 .. $DF : bytes := 2; }
+      {		$E0 .. $EF : bytes := 3; }
+      {		$F0 .. $F7 : bytes := 4; }
+      {		$F8 .. $FF : die( 'invalid utf-8 sequence' ); }
       { end; }
       { uch := copy( s, i + 1, bytes ); }
       { inc( i, bytes ); }
@@ -234,14 +249,14 @@ procedure cwcommand( cn : command; s : TStr );
 	  trg : cwcommandmode := true;
 	  ^J,
 	  ^M  : runcmd( cwcr );
-	  ^G  : write( '␇' ); // 'bell'
-	  ^L  : write( ntimes( '- ', kvm.width div 2 - 1 ));
+	  ^G  : cws('␇' ); // 'bell'
+	  ^L  : cws( ntimes( '- ', kvm.width div 2 - 1 ));
 	  ^H  : runcmd( cwbs );
-	  else wr( ch );
+	  else cwe( ch );
 	end
       else
 	case ch of
-	  '|' : wr( '|' );
+	  '|' : cwe( '|' );
 	  '_' : runcmd( cwcr );
 	  '!' : runcmd( cwbg, 1 );
 	  '@' : runcmd( cwgotoxy, 4 );
@@ -258,14 +273,14 @@ procedure cwcommand( cn : command; s : TStr );
 		      runcmd( cwrenegade, 2 ) // + next char = 2 total
 		    end;
 	  else if ch in ccolset then begin dec( i ); runcmd( cwfg, 1 ) end
-	  else wr( ch ); // ignore invalid triggers
+	  else cwe( ch ); // ignore invalid triggers
 	end
     end
   end;
 
 procedure cwriteln( s : TStr );
   begin
-    cwrite( s ); writeln;
+    cwrite( s ); cwnl;
   end;
 
 procedure cwriteln( args : array of const );
@@ -277,15 +292,12 @@ procedure cwriteln( args : array of const );
 	vtstring  : cwrite( Utf8Decode( args[ i ].vstring^ ));
 	vtansistring : cwrite( Utf8Decode( ansistring( args[ i ].vansistring )));
       end;
-    writeln;
+    cwnl;
   end;
 
 procedure cwritexy( x, y : byte; s : TStr );
   begin
-    cur.x := x;
-    cur.y := y;
-    kvm.gotoxy( x, y );
-    cwrite( s );
+    cwgoxy( x, y ); cwrite( s );
   end;
 
 procedure ccenterxy( x, y : byte; s : TStr );
@@ -310,7 +322,7 @@ procedure StWrite( s: TStr );
 
 procedure StWriteln( s : TStr );
   begin
-    stwrite( s ); writeln;
+    stwrite( s ); cwriteln('');
   end;
 
 procedure StWritexy( x, y : byte; s : TStr );
