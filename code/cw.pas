@@ -97,14 +97,13 @@ procedure point.setc( value : word );
 procedure wr( ch : TChr );
   begin
     emit(ch); inc( cur.x );
-    if cur.x >= kvm.xMax then cwrite( ^M );
+    if cur.x > kvm.xMax then cwrite( ^M );
   end;
 
 procedure cxy(c: word; x, y :byte; const s : TStr); inline;
   var i : integer;
   begin
-    kvm.textattr := c;
-    kvm.GotoXY( x, y );
+    kvm.GotoXY( x, y ); kvm.textattr := c;
     for i := 1 to length(s) do wr( s[i] );
   end; { cxy }
 

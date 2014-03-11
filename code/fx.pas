@@ -156,7 +156,7 @@ procedure blackshadow( a1, b1, a2, b2 : byte );
 procedure fillScreen( at : Word; uc : TChr); {ATTR then unicode Char}
   var i	: byte; s : TStr;
   begin
-    s := chntimes( uc, kvm.xMax );
+    s := chntimes( uc, kvm.width );
     for i := 0 to kvm.yMax do cxy( at, 0, i, s );
   end;
 
