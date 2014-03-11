@@ -352,7 +352,7 @@ implementation
   procedure GRing<T>.Remove( val : T );
     var c : IRingCursor<T>; found : boolean = false;
     begin
-      if not self.IsEmpty then pass
+      if not self.IsEmpty then ok
       else begin
         c := self.MakeCursor;
         repeat
