@@ -24,7 +24,7 @@ interface uses xpc, ugrid2d, sysutils,
     procedure Fg( c : byte );
     procedure Bg( c : byte );
     procedure Emit( wc : widechar );
-    procedure Emit( s : string );
+    procedure Emit( s : TStr );
     procedure GotoXY( x, y : word );
     procedure InsLine;
     procedure DelLine;
@@ -48,7 +48,7 @@ interface uses xpc, ugrid2d, sysutils,
   procedure Fg( color : byte );
   procedure Bg( color : byte );
   procedure Emit( wc : widechar ); {$IFNDEF unitscope}virtual;{$ENDIF}
-  procedure Emit( s : string ); {$IFNDEF unitscope}virtual;{$ENDIF}
+  procedure Emit( s : TStr ); {$IFNDEF unitscope}virtual;{$ENDIF}
   procedure GotoXY( x, y : word );
   procedure InsLine;
   procedure DelLine;
@@ -99,7 +99,7 @@ interface uses xpc, ugrid2d, sysutils,
       procedure Fg( color : byte );
       procedure Bg( color : byte );
       procedure Emit( wc : widechar ); {$IFNDEF unitscope}virtual;{$ENDIF}
-      procedure Emit( s : string ); {$IFNDEF unitscope}virtual;{$ENDIF}
+      procedure Emit( s : TStr ); {$IFNDEF unitscope}virtual;{$ENDIF}
       procedure GotoXY( x, y : word );
       procedure InsLine;
       procedure DelLine;
@@ -137,7 +137,7 @@ interface uses xpc, ugrid2d, sysutils,
       procedure Fg( color : byte );
       procedure Bg( color : byte );
       procedure Emit( wc : widechar ); {$IFNDEF unitscope}virtual;{$ENDIF}
-      procedure Emit( s : string ); {$IFNDEF unitscope}virtual;{$ENDIF}
+      procedure Emit( s : TStr ); {$IFNDEF unitscope}virtual;{$ENDIF}
       procedure GotoXY( x, y : word );
       procedure InsLine;
       procedure DelLine;
@@ -167,7 +167,7 @@ interface uses xpc, ugrid2d, sysutils,
       procedure Fg( color : byte );
       procedure Bg( color : byte );
       procedure Emit( wc : widechar ); {$IFNDEF unitscope}virtual;{$ENDIF}
-      procedure Emit( s : string ); {$IFNDEF unitscope}virtual;{$ENDIF}
+      procedure Emit( s : TStr ); {$IFNDEF unitscope}virtual;{$ENDIF}
       procedure GotoXY( x, y : word );
       procedure InsLine;
       procedure DelLine;
@@ -196,7 +196,7 @@ interface uses xpc, ugrid2d, sysutils,
       procedure Fg( color : byte ); virtual;
       procedure Bg( color : byte ); virtual;
       procedure Emit( wc : widechar ); virtual;
-      procedure Emit( s : string ); virtual;
+      procedure Emit( s : TStr ); virtual;
       procedure GotoXY( x, y : word ); virtual;
       procedure InsLine; virtual;
       procedure DelLine; virtual;
@@ -338,7 +338,7 @@ implementation
         end;
     end;
   
-  procedure TGridTerm.Emit( s : string );
+  procedure TGridTerm.Emit( s : TStr );
     var ch : widechar;
     begin
       for ch in s do Emit(ch);
@@ -454,13 +454,11 @@ implementation
   
   procedure TAnsiTerm.Emit( wc : widechar );
     begin
-      { TODO: handle escaped characters }
-      write( wc )
+      write( utf8encode( wc ))
     end;
-  procedure TAnsiTerm.Emit( s : string );
-    var ch : widechar;
+  procedure TAnsiTerm.Emit( s : TStr );
     begin
-      for ch in s do emit(ch);
+      write( utf8encode( s ))
     end;
   
   { TODO }
@@ -511,7 +509,7 @@ implementation
   procedure TTermProxy.Bg( color : byte );    begin _term.Bg( color ) end;
   
   procedure TTermProxy.Emit( wc : widechar ); begin _term.Emit( wc ) end;
-  procedure TTermProxy.Emit( s : string ); begin _term.Emit( s ) end;
+  procedure TTermProxy.Emit( s : TStr ); begin _term.Emit( s ) end;
   procedure TTermProxy.GotoXY( x, y : word ); begin _term.GotoXY( x, y ) end;
   
   procedure TTermProxy.InsLine; begin _term.InsLine end;
@@ -648,6 +646,7 @@ implementation
     end;
   
   procedure TVideoTerm.ClrEol;
+    var curx, cury, i : byte;
     begin
     end;
   
@@ -660,7 +659,7 @@ implementation
       { TODO: handle escaped characters }
       write( wc )
     end;
-  procedure TVideoTerm.Emit( s : string );
+  procedure TVideoTerm.Emit( s : TStr );
     var ch : widechar;
     begin
       for ch in s do emit(ch);
@@ -718,7 +717,7 @@ implementation
   procedure Bg( color : byte );    begin work.Bg( color ) end;
   
   procedure Emit( wc : widechar ); begin work.Emit( wc ) end;
-  procedure Emit( s : string ); begin work.Emit( s ) end;
+  procedure Emit( s : TStr ); begin work.Emit( s ) end;
   procedure GotoXY( x, y : word ); begin work.GotoXY( x, y ) end;
   
   procedure InsLine; begin work.InsLine end;

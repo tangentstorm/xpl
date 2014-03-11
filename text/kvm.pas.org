@@ -25,7 +25,7 @@ A screen tracks a cursor position, bounds, color.
     procedure Fg( c : byte );
     procedure Bg( c : byte );
     procedure Emit( wc : widechar );
-    procedure Emit( s : string );
+    procedure Emit( s : TStr );
     procedure GotoXY( x, y : word );
     procedure InsLine;
     procedure DelLine;
@@ -235,7 +235,7 @@ This is a contrcete implementation of ITerm.
         end;
     end;
 
-  procedure TGridTerm.Emit( s : string );
+  procedure TGridTerm.Emit( s : TStr );
     var ch : widechar;
     begin
       for ch in s do Emit(ch);
@@ -294,66 +294,66 @@ This is a contrcete implementation of ITerm.
 
 #+name: @kvm:impl
 #+begin_src pascal
-
+  
   constructor TAnsiTerm.Create;
     begin
       attr := $0007
     end;
-
+  
   { TODO: find a way to get this data without the baggage incurred by
     crt or video modules (breaking keyboard input or clearing the screen  }
-
+  
   function  TAnsiTerm.Width  : word; begin result := terminal.w end;
   function  TAnsiTerm.Height : word; begin result := terminal.h end;
   function  TAnsiTerm.MaxX   : word; begin result := xMax end;
   function  TAnsiTerm.MaxY   : word; begin result := yMax end;
   function  TAnsiTerm.XMax   : word; begin result := width - 1  end;
   function  TAnsiTerm.YMax   : word; begin result := height - 1 end;
-
+  
   function  TAnsiTerm.WhereX : word;
     var bx, by : byte;
     begin
       terminal.getxy(bx, by);
       result := bx;
     end;
-
+  
   function  TAnsiTerm.WhereY : word;
     var bx, by : byte;
     begin
       terminal.getxy(bx, by);
       result := by;
     end;
-
+  
   function  TAnsiTerm.GetTextAttr : word;
     begin
       result := attr;
     end;
-
+  
   procedure TAnsiTerm.SetTextAttr( value : word );
     begin
       Fg(lo(value));
       Bg(hi(value));
     end;
-
+  
   procedure TAnsiTerm.Fg( color : byte );
     begin
       attr := hi(attr) shl 8 + color;
       { xterm 256-color extensions }
       write( #27, '[38;5;', color , 'm' )
     end;
-
+  
   procedure TAnsiTerm.Bg( color : byte );
     begin
       attr := color shl 8 + lo(attr);
       { xterm 256-color extensions }
       write( #27, '[48;5;', color , 'm' )
     end;
-
+  
   procedure TAnsiTerm.ClrScr;
     begin
       write( #27, '[H', #27, '[J' )
     end;
-
+  
   procedure TAnsiTerm.ClrEol;
     var curx, cury, i : byte;
     begin
@@ -361,47 +361,45 @@ This is a contrcete implementation of ITerm.
       for i := curx to xMax do write(' ');
       gotoxy( curx, cury );
     end;
-
+  
   procedure TAnsiTerm.GotoXY( x, y : word );
     begin
       write( #27, '[', y + 1, ';', x + 1, 'H' )
     end;
-
+  
   procedure TAnsiTerm.Emit( wc : widechar );
     begin
-      { TODO: handle escaped characters }
-      write( wc )
+      write( utf8encode( wc ))
     end;
-  procedure TAnsiTerm.Emit( s : string );
-    var ch : widechar;
+  procedure TAnsiTerm.Emit( s : TStr );
     begin
-      for ch in s do emit(ch);
+      write( utf8encode( s ))
     end;
-
+  
   { TODO }
   procedure TAnsiTerm.InsLine;
     begin
     end;
-
+  
   procedure TAnsiTerm.DelLine;
     begin
     end;
-
+  
   procedure TAnsiTerm.ResetColor;
     begin
       write( #27, '[0m' )
     end;
-
+  
   procedure TAnsiTerm.ShowCursor; // !! xterm / dec terminals
     begin
       write(#27, '[?25h');
     end;
-
+  
   procedure TAnsiTerm.HideCursor; // !! xterm / dec terminals
     begin
       write(#27, '[?25l');
     end;
-
+  
 #+end_src
 
 * =TTermProxy= : generic base class for decorators
@@ -423,7 +421,7 @@ This is a contrcete implementation of ITerm.
       procedure Fg( color : byte ); virtual;
       procedure Bg( color : byte ); virtual;
       procedure Emit( wc : widechar ); virtual;
-      procedure Emit( s : string ); virtual;
+      procedure Emit( s : TStr ); virtual;
       procedure GotoXY( x, y : word ); virtual;
       procedure InsLine; virtual;
       procedure DelLine; virtual;
@@ -466,7 +464,7 @@ This is a contrcete implementation of ITerm.
   procedure TTermProxy.Bg( color : byte );    begin _term.Bg( color ) end;
 
   procedure TTermProxy.Emit( wc : widechar ); begin _term.Emit( wc ) end;
-  procedure TTermProxy.Emit( s : string ); begin _term.Emit( s ) end;
+  procedure TTermProxy.Emit( s : TStr ); begin _term.Emit( s ) end;
   procedure TTermProxy.GotoXY( x, y : word ); begin _term.GotoXY( x, y ) end;
 
   procedure TTermProxy.InsLine; begin _term.InsLine end;
@@ -661,7 +659,7 @@ This is a contrcete implementation of ITerm.
       { TODO: handle escaped characters }
       write( wc )
     end;
-  procedure TVideoTerm.Emit( s : string );
+  procedure TVideoTerm.Emit( s : TStr );
     var ch : widechar;
     begin
       for ch in s do emit(ch);
@@ -894,7 +892,7 @@ These follow the ITerm interface exactly.
   procedure Fg( color : byte );
   procedure Bg( color : byte );
   procedure Emit( wc : widechar ); {$IFNDEF unitscope}virtual;{$ENDIF}
-  procedure Emit( s : string ); {$IFNDEF unitscope}virtual;{$ENDIF}
+  procedure Emit( s : TStr ); {$IFNDEF unitscope}virtual;{$ENDIF}
   procedure GotoXY( x, y : word );
   procedure InsLine;
   procedure DelLine;
@@ -927,7 +925,7 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
   procedure Bg( color : byte );    begin work.Bg( color ) end;
 
   procedure Emit( wc : widechar ); begin work.Emit( wc ) end;
-  procedure Emit( s : string ); begin work.Emit( s ) end;
+  procedure Emit( s : TStr ); begin work.Emit( s ) end;
   procedure GotoXY( x, y : word ); begin work.GotoXY( x, y ) end;
 
   procedure InsLine; begin work.InsLine end;
