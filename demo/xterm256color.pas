@@ -4,7 +4,7 @@
 
 {$mode objfpc}{$i xpc.inc }
 program xterm256color;
-  uses xpc, kvm, stri;
+  uses xpc, kvm, ustr;
 
   procedure resetcolor;
   begin
@@ -23,10 +23,10 @@ program xterm256color;
   begin
     resetcolor;
     kvm.fg( color );
-    write('[');
+    write(':');
     kvm.bg( color );
     kvm.fg( 0 );
-    write(']');
+    write('-');
   end;
 
   var red, green, blue, gray, color, level : byte;
@@ -69,6 +69,7 @@ begin
 
   // first the system ones:
   writeln( 'System colors:');
+  writeln;
   for color := 0 to 7 do showcolor( color );
 
   resetcolor;
@@ -79,7 +80,9 @@ begin
   writeln;
 
   // now the color cube
+  writeln;
   writeln( 'Color cube, 6x6x6:' );
+  writeln;
   for green := 0 to 5 do begin
     for red := 0 to 5 do begin
       for blue := 0 to 5 do begin
@@ -92,10 +95,13 @@ begin
   end;
 
   // now the grayscale ramp
+  writeln;
   writeln( 'Grayscale ramp:' );
+  writeln;
   for color := 232 to 255 do showcolor( color );
 
   resetcolor;
+  writeln;
   writeln;
 
 end.
