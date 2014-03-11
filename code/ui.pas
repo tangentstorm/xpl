@@ -1,4 +1,4 @@
-{$mode delphiunicode}{$i xpc.inc}{$H+}
+{$mode delphiunicode}{$i xpc.inc}
 unit ui;
 interface uses classes, xpc, cw, ll, kvm, mou, kbd, ustr, fx, num, cli, sysutils;
 

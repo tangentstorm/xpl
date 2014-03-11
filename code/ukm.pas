@@ -1,4 +1,4 @@
-{$i xpc.inc}{$mode delphi}
+{$i xpc.inc}{$mode delphiunicode}
 unit ukm;
 interface uses classes, xpc, kbd;
 
@@ -78,7 +78,7 @@ procedure TKeyMap.SetKeyCrt( ch : widechar; e : TCrtKeyEvent );
   end;
 
 procedure TKeyMap.HandleKeys;
-  var ch : char;
+  var ch : TChr;
   procedure send(ext : boolean; e : TKeyboardEvent);
     begin
       // if ch >= #32 then s := ch else s := '^' + chr(ord(ch) + ord('@'));
@@ -87,7 +87,7 @@ procedure TKeyMap.HandleKeys;
       //   then writeln('ext: #', ord(ch))
       //   else writeln('chr: #', ord(ch), ' (" ', s, ' ")');
       case e.kind of
-        keNil : pass;
+        keNil : ok;
         keCmd : e.eCmd();
         keNfy : e.eNfy( self );
         keCrt : e.eCrt( ext, ch );

@@ -70,12 +70,10 @@ procedure TCustomApp.keys(km : ukm.TKeyMap);
 
 procedure TCustomApp.step;
   begin
-    pass
   end;
 
 procedure TCustomApp.draw;
   begin
-    pass
   end;
 
 procedure TCustomApp.done;
