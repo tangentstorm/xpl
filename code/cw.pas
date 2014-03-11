@@ -35,16 +35,12 @@ type
             x, y, fg, bg : byte;
             procedure setc( value : byte );
             function getc : byte;
-	    property c : byte read getc write setc;
+ 	    property c : byte read getc write setc;
 	  end;
-  rect  = record
-            x, y, w, h : integer
-          end;
 
 type unichar = string[ 4 ];
 var
   cur, sav	     : point;
-  scr		     : rect;
   cwcommandmode	     : boolean;  { cwrite command mode? }
   cwcurrenttask	     : command;  { cwrite current command }
   cwnchexpected	     : byte;     { cwrite #chars expected }
@@ -157,7 +153,6 @@ procedure cwcommand( cn : command; s : string );
 		       dec( cur.x );
 		     end;
       cwclrscr	   : begin
-		       //  fillbox( scr.x, scr.y, txmax, tymax, tcolor*256 + 32 );
 		       kvm.clrscr;
 		       cur.x := 0;
 		       cur.y := 0;
@@ -406,8 +401,4 @@ initialization
   cur.y := 0;
   sav.x := 0;
   sav.y := 0;
-  scr.x := 0;
-  scr.y := 0;
-  scr.h := kvm.height;
-  scr.w := kvm.width;
 end.

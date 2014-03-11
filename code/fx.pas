@@ -103,7 +103,7 @@ implementation
     h := b2 - b1;
     for i := 1 to w do
       writeto^[ (a1 + i) * 2 - 1 + (b2 * sw) ] := $08;
-    if a2 < scr.w+1 then
+    if a2 < kvm.width then
       for i := 0 to h do
 	writeto^[ (a2 * 2) + 1 + ( b1 + i ) * sw ] := $08;
   end;
