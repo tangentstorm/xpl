@@ -2,10 +2,10 @@
 unit cw; { colorwrite }
 interface uses xpc, num, ustr, kvm;
 
-  const trg = '|'; // trigger char
+const trg = '|'; // trigger char
 
-  type command =
-   ( cwnotask,
+type command =
+  ( cwnotask,
      cwfg,
      cwbg,
      cwCR,
@@ -23,43 +23,42 @@ interface uses xpc, num, ustr, kvm;
      cwspecialstr,
      cwrenegade );
 
-  const //  why do I need both of these?
-    ccolors : array [0..15] of char = 'krgybmcwKRGYBMCW';
-    ccolstr : string = 'krgybmcwKRGYBMCW';
-    ccolset = [ 'k', 'r', 'g', 'y', 'b', 'm', 'c', 'w',
-		'K', 'R', 'G', 'Y', 'B', 'M', 'C', 'W' ];
+const //  why do I need both of these?
+  ccolors : array [0..15] of char = 'krgybmcwKRGYBMCW';
+  ccolstr : string = 'krgybmcwKRGYBMCW';
+  ccolset = [ 'k', 'r', 'g', 'y', 'b', 'm', 'c', 'w',
+              'K', 'R', 'G', 'Y', 'B', 'M', 'C', 'W' ];
 
 
-  type
-    point = object
-	      x, y, fg, bg : byte;
-              procedure setc( value : byte );
-              function getc : byte;
-	      property c : byte read getc write setc;
-	    end;
-    rect  = record
-	      x, y, w, h : integer
-	    end;
+type
+  point = object
+            x, y, fg, bg : byte;
+            procedure setc( value : byte );
+            function getc : byte;
+	    property c : byte read getc write setc;
+	  end;
+  rect  = record
+            x, y, w, h : integer
+          end;
 
-  type unichar = string[ 4 ];
-  var
-    cur, sav	       : point;
-    scr		       : rect;
-    cwcommandmode      : boolean;  { cwrite command mode? }
-    cwcurrenttask      : command;  { cwrite current command }
-    cwnchexpected      : byte;     { cwrite #chars expected }
-    cwchar,                        { cwrite character }
-    cwdigit1, cwdigit2,            { 2nd digit of n1 }
-    cwdigit3, cwdigit4 : unichar;  { 2nd digit of n2 }
+type unichar = string[ 4 ];
+var
+  cur, sav	     : point;
+  scr		     : rect;
+  cwcommandmode	     : boolean;  { cwrite command mode? }
+  cwcurrenttask	     : command;  { cwrite current command }
+  cwnchexpected	     : byte;     { cwrite #chars expected }
+  cwchar,                        { cwrite character }
+  cwdigit1, cwdigit2,            { 2nd digit of n1 }
+  cwdigit3, cwdigit4 : unichar;  { 2nd digit of n2 }
 
 { ■ string writing commands }
 
-  { primitives	       : these write text in solid colors }
+  { primitives : these write text in solid colors }
   procedure cxy(c : word; x, y : byte; const s : string );
-  procedure colorxy  ( x, y : byte; c : word; const s : string ); deprecated;
-  procedure colorxyc ( x, y : byte; c : word; const s : string );
-  procedure colorxyv ( x, y : byte; c : word; const s : string ); // [v]ertical
-
+  procedure colorxy(x,y:byte;c:word;const s:string); deprecated'uese cxy';
+  procedure colorxyc( x, y : byte; c : word; const s : string );
+  procedure colorxyv( x, y : byte; c : word; const s : string ); // [v]ertical
 
   { colorwrite : color code interpreter }
   procedure cwcommand( cn : command; s : string );
@@ -72,11 +71,12 @@ interface uses xpc, num, ustr, kvm;
   { these do padding operations with color-encoded strings. often
     in console mode, what we really want is width in characters on
     the screen, not the length of the actual string in memory. }
-  //  maybe this should be called width?
-  function cLength( s : string ) : integer;    { length - color codes }
+  function cLength( s : string ) : integer; deprecated'use cwlen';
+  function cwlen( s : string ) : integer;    { length - color codes }
   function cstrip( s : string ) : string;
   function normaltext( s : string; esc : char = trg ) : string;
-  function cpadstr( s : string; len : byte;ch : char ) : string;
+  function cpadstr(s:string;len:byte;ch:char):string; deprecated'use cwpad';
+  function cwpad( s : string; len : byte; ch : char=' ') : string;
 
   { these highlight punctuation and box drawing
     characters using a standard palette }
@@ -85,12 +85,14 @@ interface uses xpc, num, ustr, kvm;
   procedure StWritexy( x, y : byte; s : String );
 
 implementation
+
 var
-    min, max	       : point;
+  min, max : point;
 
 function point.getc : byte;
   begin
-    result := (( bg and $0F ) shl 4 ) + ( fg and $0F ); //  todo : make this << 8 so I can use 256 colors
+    result := (( bg and $0F ) shl 4 ) + ( fg and $0F );
+    //  todo : make this << 8 so I can use 256 colors
   end;
 
 procedure point.setc( value : byte );
@@ -101,12 +103,10 @@ procedure point.setc( value : byte );
 
 procedure wr( ch : unichar );
   begin
-    write(ch);
-    //colorxy( min.x+cur.x, min.y+cur.y, cur.c, s );
-    inc( cur.x );
+    emit(ch); inc( cur.x );
     if cur.x >= (max.x - min.x) then cwrite( ^M );
   end;
-
+
 procedure cxy(c: word; x, y :byte; const s : string); inline;
   var i : integer;
   begin
@@ -122,7 +122,7 @@ procedure colorxy(x, y :byte; c: word; const s : string); inline;
 
 { vertical colorxy }
 procedure Colorxyv( x, y : byte; c : word; const s : string );
-    var i : byte;
+  var i : byte;
   begin
     for i := 1 to length( s ) do begin
       cxy( c, x, y + i - 1, s[ i ]);
@@ -168,10 +168,7 @@ procedure cwcommand( cn : command; s : string );
       cwclreol	   : kvm.clreol;
       cwsavecol	   : sav.c := kvm.textattr;
       cwloadcol	   : kvm.textattr := sav.c;
-      cwchntimes   : begin
-		       cwrite( normaltext( chntimes( s[1], s2n(s[2]+s[3])) ));
-		       //write( ustr.ntimes( copy( s, 1, n-2 ), s2n( copy( s, n-1, 2 ))));
-		     end;
+      cwchntimes   : cwrite( normaltext( chntimes( s[1], s2n(s[2]+s[3])) ));
       cwgotoxy	   : begin
 		       if length( s ) <> 4 then exit;
 		       if ( s[ 1 ] in digits )
@@ -247,9 +244,7 @@ procedure cwcommand( cn : command; s : string );
 	  ^J,
 	  ^M  : runcmd( cwcr );
 	  ^G  : write( '␇' ); // 'bell'
-	  ^L  : begin
-		  write( ntimes( '- ', kvm.width div 2 - 1 ));
-		end;
+	  ^L  : write( ntimes( '- ', kvm.width div 2 - 1 ));
 	  ^H  : runcmd( cwbs );
 	  else wr( uch );
 	end
@@ -277,12 +272,13 @@ procedure cwcommand( cn : command; s : string );
     end
   end;
 
-  procedure cwriteln( s : string );
-  begin cwrite( s ); writeln;
+procedure cwriteln( s : string );
+  begin
+    cwrite( s ); writeln;
   end;
 
-  procedure cwriteln( args : array of const );
-    var i : integer;
+procedure cwriteln( args : array of const );
+  var i : integer;
   begin
     for i := 0 to high( args ) do
       case args[ i ].vtype of
@@ -293,7 +289,7 @@ procedure cwcommand( cn : command; s : string );
     writeln;
   end;
 
-  procedure cwritexy( x, y : byte; s : string );
+procedure cwritexy( x, y : byte; s : string );
   begin
     cur.x := x;
     cur.y := y;
@@ -301,13 +297,13 @@ procedure cwcommand( cn : command; s : string );
     cwrite( s );
   end;
 
-  procedure ccenterxy( x, y : byte; s : string );
+procedure ccenterxy( x, y : byte; s : string );
   begin
-    cwritexy( x + 1 - clength( s ) div 2, y, s );
+    cwritexy( x + 1 - cwlen( s ) div 2, y, s );
   end;
 
-  procedure StWrite( s: string );
-    var counter : byte;
+procedure StWrite( s: string );
+  var counter : byte;
   begin
     for counter := 1 to Length(S) do
     begin
@@ -321,12 +317,12 @@ procedure cwcommand( cn : command; s : string );
     end;
   end;
 
-  procedure StWriteln( s : string );
+procedure StWriteln( s : string );
   begin
     stwrite( s ); writeln;
   end;
 
-  procedure StWritexy( x, y : byte; s : string );
+procedure StWritexy( x, y : byte; s : string );
   begin
     cur.x := x;
     cur.y := y;
@@ -334,41 +330,44 @@ procedure cwcommand( cn : command; s : string );
   end;
 
 { ■ string formatting commands }
+function cLength( s : string ) : integer;
+  begin result:=cwlen(s)
+  end;
 
-  function clength( s : string ) : integer;
-    var i, c : integer;
+function cwlen( s : string ) : integer;
+  var i, r : integer;
+  procedure incby(x,y:integer);
+    begin inc(i,x); inc(r,y);
+    end;
   begin
-    c := 0;
+    r := 0;
     i := 1;
     while i <= length( s ) do
       if ( s[ i ] = trg ) and ( i + 1 <= length( s )) then
 	case s[ i + 1 ] of
-	  '@' : inc( i, 5 );
-	  '#' : inc( i, 4 );
-	  else inc( i, 2 );
+	  '|': incby( 2, 1 );
+	  '@': incby( 5, 0 );
+	  '#': incby( 4, 0 );
+	  else incby( 2, 0 );
 	end
-      else
-      begin
-	inc( c );
-	inc( i );
-      end;
-    clength := c;
+      else incby( 1, 1 );
+    result := r;
   end;
 
-  function cstrip( s : string ) : string;
-    var i : integer;
+function cstrip( s : string ) : string;
+  var i : integer = 1;
   begin
     result := '';
-    i := 1;
     while i <= length( s ) do
       if s[ i ] = trg then
 	case s[ i + 1 ] of
-	  '@' : inc( i, 5 );
-	  '#' : inc( i, 4 );
+	  '|': begin i += 2; result += '|'; end;
+	  '@': inc( i, 5 );
+	  '#': inc( i, 4 );
 	  else inc( i, 2 );
 	end
       else begin
-	result := result + s[ i ];
+	result += s[ i ];
 	inc( i );
       end
   end;
@@ -389,9 +388,14 @@ function normaltext( s : string; esc : char = trg ) : string;
 
 function cpadstr( s : string; len : byte; ch : char ) : string;
   begin
-    if clength( s ) > len then s := ustr.trunc( s, len );
-    while clength( s ) < len do s := s + ch;
-    cpadstr := s;
+    result := cwpad(s,len,ch);
+  end;
+
+function cwpad( s : string; len : byte; ch : char=' ') : string;
+  begin //TODO: consider codes when truncating
+    if cwlen( s ) > len then s := ustr.trunc( s, len );
+    while cwlen( s ) < len do s := s + ch;
+    result := s;
   end;
 
 
