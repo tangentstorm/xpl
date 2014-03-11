@@ -462,7 +462,7 @@ implementation
   procedure List.remove( val : T );
     var c : cursor; found : boolean = false;
   begin
-    if not self.is_empty then pass
+    if not self.is_empty then ok
     else begin
       c := self.make_cursor;
       repeat
