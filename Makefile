@@ -6,16 +6,7 @@ GEN = ./.gen
 # BIN: where to put the final executables
 BIN = ./bin
 
-PKG = ~/f/packages
-FCL = $(PKG)/fcl-base/src
-WEB = $(PKG)/fcl-web/src
-XML = $(PKG)/fcl-xml/src
-WEB = $(PKG)/fcl-web/src
-FPC = fpc -Mobjfpc -FE$(BIN) -Fu$(GEN) -Fi$(GEN) \
-	-Fu$(FCL) -Fi$(FCL) \
-	-Fu$(XML) -Fi$(XML) \
-	-Fu$(WEB) -Fi$(WEB) \
-	-Fu./code -Fi./code -gl
+FPC = fpc -Mobjfpc -FE$(BIN) -Fu$(GEN) -Fi$(GEN) -Fu./code -Fi./code -gl
 PY = python
 TANGLE = ./etc/tangle.el
 
