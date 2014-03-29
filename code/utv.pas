@@ -6,8 +6,8 @@
 {$i xpc.inc}{$mode delphi}
 unit utv;
 interface
-uses xpc, classes, udb, udc, kvm, cli, ug2d,
-     num, sqldb, cw, math, ustr;
+uses xpc, classes, kvm, cli, ug2d,
+     num, cw, math, ustr;
 
 type
   TView = class(TComponent, IPoint2D, ISize2D, IBounds2D)
@@ -44,15 +44,6 @@ type
       constructor Create( aOwner : TComponent ); override;
       procedure Render(term :  ITerm); override;
       procedure Resize(new_w, new_h : cardinal); override;
-    end;
-
-  TDbTreeGrid = class (TView)
-    protected
-      _top : cardinal;
-      _cur : TDbCursor;
-    published
-      procedure Render(term :  ITerm); override;
-      property DataCursor : TDbCursor read _cur write _cur;
     end;
 
   TStepper = class (TComponent)
@@ -138,42 +129,6 @@ procedure TTermView.Render(term : ITerm);
       end;
   end;
 
-{---------------------------------------------------------------}
-{ TDbTreeGrid                                                   }
-{---------------------------------------------------------------}
-procedure TDbTreeGrid.Render(term : ITerm);
-  var
-    sigil : char = ' ';
-    count : cardinal =  0;
-    rs    : TRecordSet;
-begin
-  bg('b'); fg('W');   rs := _cur.RecordSet.open.first;
-  while (count < yMax) and not rs.eof do
-    begin
-      if rs['leaf'] then sigil := ' '
-      else if rs['collapsed'] then sigil := '+'
-      else sigil := '-';
-      { draw visible nodes }
-      if rs['hidden']=1 then ok
-      else begin
-        if _cur.AtMark then bg('b') else bg('k'); gotoxy(0,count);
-        { draw the outline controls }
-	if rs['depth']>0 then write(ntimes(' ', rs['depth']*2));
-	fg('r'); write(sigil +  ' ');
-        { draw the node itself }
-        fg('c'); write(rs['kind'],' ');
-	fg('W'); write(rs['node']);
-        { clear the rest of the line }
-	clreol; inc(count);
-      end;
-      rs.Next;
-    end;
-  bg('k');
-  while count < kvm.yMax do begin
-    gotoxy(0,count); clreol; inc(count)
-  end
-end;
-
 
 procedure TStepper.DoStep;
   begin
@@ -192,6 +147,5 @@ procedure TStepper.Step(times:cardinal=1);
 initialization
   RegisterClass(TView);
   RegisterClass(TTermView);
-  RegisterClass(TDbTreeGrid);
   RegisterClass(TStepper);
 end.
