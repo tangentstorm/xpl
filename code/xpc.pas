@@ -37,6 +37,10 @@ interface uses sysutils;
   var log : logger;
 
   type ENotImplementedError = class(Exception);
+  type tbytes = array of byte;
+  function bytes(data : array of byte):tbytes;
+  function vinc(var i:integer):integer;
+  function incv(var i:integer):integer;
 
 
 implementation
@@ -163,6 +167,23 @@ function fileparam : boolean;
       reset( input );
       result := true;
     end
+  end;
+
+function bytes(data : array of byte):tbytes;
+  var i :integer;
+  begin
+    setlength(result, length(data));
+    for i := 0 to high(data) do result[i]:=data[i];
+  end; { bytes }
+
+function vinc(var i:integer):integer;
+  begin
+    result := i; i := i+1;
+  end;
+
+function incv(var i:integer):integer;
+  begin
+    i := i+1; result := i;
   end;
 
 
