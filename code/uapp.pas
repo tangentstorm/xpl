@@ -5,18 +5,20 @@ interface uses xpc, cx, cli, kvm, ukm, custapp, sysutils, classes;
 type
   ESetupFailure = class (Exception) end;
   TCustomApp = class (TComponent)
-    private _quit : TNotifyEvent;
-  public
-    procedure keys(km : ukm.TKeyMap); virtual;
-    procedure init; virtual;
-    procedure step; virtual;
-    procedure draw; virtual;
-    procedure done; virtual;
-    procedure quit;
-    procedure fail(why:string);
-  published
-    property OnQuit : TNotifyEvent read _quit write _quit;
-  end;
+    protected
+      _OnQuit : TNotifyEvent;
+      keymap  : TKeyMap;
+    public
+      procedure keys(km : ukm.TKeyMap); virtual;
+      procedure init; virtual;
+      procedure step; virtual;
+      procedure draw; virtual;
+      procedure done; virtual;
+      procedure quit;
+      procedure fail(why:string);
+    published
+      property OnQuit : TNotifyEvent read _OnQuit write _OnQuit;
+    end;
   CCustomApp = class of TCustomApp;
 
   procedure run(appClass : CCustomApp);
@@ -26,7 +28,6 @@ implementation
 type
   TAppRunner = class (custapp.TCustomApplication)
     app : TCustomApp;
-    km : TKeyMap;
     procedure AppQuit(Sender:TObject);
   published
     procedure DoRun; override;
@@ -34,7 +35,7 @@ type
 
 procedure TAppRunner.DoRun;
   begin
-    km.HandleKeys;
+    app.keymap.HandleKeys;
     app.step;
   end;
 
@@ -50,7 +51,7 @@ procedure run(appClass : CCustomApp);
     with runner do
       try app := appClass.Create(runner);
           app.init; app.OnQuit := AppQuit;
-          km := TKeyMap.Create(app); app.keys(km);
+          app.keymap := TKeyMap.Create(app); app.keys(app.keymap);
           app.draw; while not terminated do dorun; app.done;
       except
         on e:ESetupFailure do writeln(e.message);
@@ -88,7 +89,7 @@ procedure TCustomApp.fail(why:string);
 
 procedure TCustomApp.quit;
   begin
-    if assigned(_quit) then _quit(self)
+    if assigned(_OnQuit) then _OnQuit(self)
     else customapplication.terminate;
   end;
 
