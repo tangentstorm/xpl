@@ -61,7 +61,7 @@ implementation
 procedure txtline( a, b, x, y : byte; c : word );
   begin
     if a = x then
-      cxy( c, a, b, ustr.chntimes( '│',  y - b + 1 ) )
+      colorxyv( a, b, c, ustr.chntimes( '│',  y - b + 1 ) )
     else if b = y then
       cxy( c, a, b, ustr.chntimes( '─', x - a + 1 ) );
   end;
@@ -119,7 +119,7 @@ procedure metalbar( a1, b1, a2, b2 : byte );
 	cxy( $0708, a2, b1 + i, '█' );
       end;
     cwritexy( a1, b2, '|W|!w█|K' + ustr.ntimes( '▄', w ) + '|K█');
-    greyshadow(a1,b1+1,a2,b2+1);
+    // greyshadow(a1,b1+1,a2,b2+1);
     cw.cur.c := c;
   end;
 
@@ -127,22 +127,22 @@ procedure metalbox( a1, b1, a2, b2 : byte );
   var i, w  : byte;
   begin
     w := a2 - a1 - 1;
-    cwritexy( a1, b1, '|W~w█' + ustr.ntimes( '▀', w ) + '|K█');
-    for i := 1 to b2 - b1 - 1 do
+    cwritexy( a1, b1, '|W|!w█' + ustr.ntimes( '▀', w ) + '|K█');
+    for i := 1 to b2 - b1 do
     begin
-      cxy( $070F, a1, b1 + i ,'█' );
-      cxy( $0708, a2, b1 + i, '█' );
+      cwritexy( a1, b1 + i ,'|!w|W█|K▐' );
+      cwritexy( a2, b1 + i, '|!w|W▌|K█' );
     end;
-    cwritexy( a1, b2, '|W~w█|K' + ustr.ntimes( '▄', w ) + '|K█');
+    cwritexy( a1, b2, '|W|!w█|K' + ustr.ntimes( '▄', w ) + '|K█');
   end;
 
 procedure Button(A1,B1,A2,B2 : byte);
   var Count : Byte;
   Begin
-    Bar(A1,B1,A2,B2,$0200);
-    cxy($07ff, A1, B1,'┌');
+    Bar(A1,B1,A2,B2,$0700);
     For Count := A1 to A2-1 do cxy($07ff, Count,B1,'─');
     For Count := B1 to B2-1 do cxy($07ff, A1,Count,'│');
+    cxy($07ff, A1, B1,'┌');
     cxy($07FF, A1,B2,'└');
   End;
 
