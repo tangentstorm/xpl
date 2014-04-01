@@ -21,7 +21,7 @@ type
 
 const
   DoNothing : TKeyboardEvent = (kind: keNil; eNil : NIL);
-  
+
 type
   TKeyMap = class (TComponent)
     private
@@ -30,15 +30,14 @@ type
       procedure SetKeyCmd( ch : widechar; e : TCommandEvent );
       procedure SetKeyNfy( ch : widechar; e : TNotifyEvent );
       procedure SetKeyCrt( ch : widechar; e : TCrtKeyEvent );
-//      procedure DoNothing;
     published
       constructor Create( aOwner : TComponent ); override;
       property cmd[ ch : widechar ] : TCommandEvent write SetKeyCmd;
       property nfy[ ch : widechar ] : TNotifyEvent  write SetKeyNfy;
       property crt[ ch : widechar ] : TCrtKeyEvent  write SetKeyCrt;
       procedure HandleKeys;
-  end;
-
+      procedure CopyTo( other : TKeyMap );
+    end;
 
 implementation
 
@@ -100,6 +99,15 @@ procedure TKeyMap.HandleKeys;
           then send(true,  _ext[kbd.ReadKey])
           else send(false, _key[ch])
       end
+  end;
+
+procedure TKeyMap.CopyTo( other : TKeyMap );
+  var ch : char;
+  begin
+    for ch in char do begin
+      other._key[ch] := self._key[ ch ];
+      other._ext[ch] := self._ext[ ch ];
+    end;
   end;
 
 begin
