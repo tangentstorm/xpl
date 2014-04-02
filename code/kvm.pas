@@ -21,10 +21,10 @@ var stdout : text;
     function  WhereY: word;
     procedure ClrScr;
     procedure ClrEol;
-    procedure Fg( c : byte );
-    procedure Bg( c : byte );
-    procedure Emit( wc : widechar ); overload;
-    procedure Emit( s : TStr ); overload;
+    procedure Fg( color : byte );
+    procedure Bg( color : byte );
+    procedure EmitChar( wc : widechar );
+    procedure Emit( s : TStr );
     procedure GotoXY( x, y : word );
     procedure InsLine;
     procedure DelLine;
@@ -45,7 +45,7 @@ var stdout : text;
   procedure ClrEol;
   procedure Fg( color : byte );
   procedure Bg( color : byte );
-  procedure Emit( wc : widechar ); {$IFNDEF unitscope}virtual;{$ENDIF}
+  procedure EmitChar( wc : WideChar ); {$IFNDEF unitscope}virtual;{$ENDIF}
   procedure Emit( s : TStr ); {$IFNDEF unitscope}virtual;{$ENDIF}
   procedure GotoXY( x, y : word );
   procedure InsLine;
@@ -82,139 +82,100 @@ var stdout : text;
     x, y : cardinal;
     w, h : cardinal;
   end;
-  type TGridTerm = class  (TInterfacedObject, ITerm) // (TAbstractTerminal)
-    public
-      function  Width : word;
-      function  Height: word;
-      function  XMax  : word;
-      function  YMax  : word;
-      function  WhereX : word;
-      function  WhereY : word;
-      procedure ClrScr;
-      procedure ClrEol;
-      procedure Fg( color : byte );
-      procedure Bg( color : byte );
-      procedure Emit( wc : widechar ); {$IFNDEF unitscope}virtual;{$ENDIF}
-      procedure Emit( s : TStr ); {$IFNDEF unitscope}virtual;{$ENDIF}
-      procedure GotoXY( x, y : word );
-      procedure InsLine;
-      procedure DelLine;
-      procedure SetTextAttr( value : word );
-      function  GetTextAttr : word;
-      property  TextAttr : word read GetTextAttr write SetTextAttr;
-      procedure ShowCursor;
-      procedure HideCursor;
-    private
-      attr : TTextAttr;
-      _curs : TPoint;
-      _grid : TTermGrid;
-    public
-      constructor Create( w, h : word );
-      destructor Destroy; override;
-      function  Cursor : TPoint;
-      function GetCell( x, y : word ) : TTermCell;
-      procedure PutCell( x, y : word; cell : TTermCell );
-      property grid : TTermGrid read _grid;
-      property cells[ x, y : word ] : TTermCell
-        read GetCell write PutCell; default;
-    end;
-  type TAnsiTerm = class (TInterfacedObject, ITerm)
-    public
-      function  Width : word;
-      function  Height: word;
-      function  XMax  : word;
-      function  YMax  : word;
-      function  WhereX : word;
-      function  WhereY : word;
-      procedure ClrScr;
-      procedure ClrEol;
-      procedure Fg( color : byte );
-      procedure Bg( color : byte );
-      procedure Emit( wc : widechar ); {$IFNDEF unitscope}virtual;{$ENDIF}
-      procedure Emit( s : TStr ); {$IFNDEF unitscope}virtual;{$ENDIF}
-      procedure GotoXY( x, y : word );
-      procedure InsLine;
-      procedure DelLine;
-      procedure SetTextAttr( value : word );
-      function  GetTextAttr : word;
-      property  TextAttr : word read GetTextAttr write SetTextAttr;
-      procedure ShowCursor;
-      procedure HideCursor;
-    private
-      attr : word;
-    public
-      constructor Create;
-      procedure ResetColor;
-    end;
-  type TVideoTerm = class (TInterfacedObject, ITerm)
-    public
-      function  Width : word;
-      function  Height: word;
-      function  XMax  : word;
-      function  YMax  : word;
-      function  WhereX : word;
-      function  WhereY : word;
-      procedure ClrScr;
-      procedure ClrEol;
-      procedure Fg( color : byte );
-      procedure Bg( color : byte );
-      procedure Emit( wc : widechar ); {$IFNDEF unitscope}virtual;{$ENDIF}
-      procedure Emit( s : TStr ); {$IFNDEF unitscope}virtual;{$ENDIF}
-      procedure GotoXY( x, y : word );
-      procedure InsLine;
-      procedure DelLine;
-      procedure SetTextAttr( value : word );
-      function  GetTextAttr : word;
-      property  TextAttr : word read GetTextAttr write SetTextAttr;
-      procedure ShowCursor;
-      procedure HideCursor;
-    private
-      attr : word;
-    public
-      constructor Create;
-      procedure ResetColor;
-    end;
-  type TTermProxy = class  (TInterfacedObject, ITerm)
+  type TBaseTerm = class (TInterfacedObject, ITerm)
     protected
-      _term : ITerm;
+      _attr  : TTextAttr;
+      _curs  : TPoint;
+      _w, _h : word;
     public
-      constructor Create( term : ITerm);
-      function  Width : word; virtual;
-      function  Height: word; virtual;
-      function  WhereX : word; virtual;
-      function  WhereY : word; virtual;
+      constructor Create( NewW, NewH : word ); virtual;
+      function Width : word; virtual;
+      function Height : word; virtual;
+      function xMax : word; virtual;
+      function yMax : word; virtual;
+      function WhereX : word; virtual;
+      function WhereY : word; virtual;
+      procedure GotoXY( x, y : word ); virtual;
       procedure ClrScr; virtual;
       procedure ClrEol; virtual;
       procedure Fg( color : byte ); virtual;
       procedure Bg( color : byte ); virtual;
-      procedure Emit( wc : widechar ); virtual;
+      function GetTextAttr : word;
+      procedure SetTextAttr( value : word ); virtual;
+      procedure EmitChar( ch : TChr ); virtual; abstract;
       procedure Emit( s : TStr ); virtual;
-      procedure GotoXY( x, y : word ); virtual;
       procedure InsLine; virtual;
       procedure DelLine; virtual;
-      procedure SetTextAttr( value : word ); virtual;
-      function  GetTextAttr : word; virtual;
       procedure ShowCursor; virtual;
       procedure HideCursor; virtual;
-      property  TextAttr : word read GetTextAttr write SetTextAttr;
-      function  XMax  : word; virtual;
-      function  YMax  : word; virtual;
+    published
+      property w : word read Width;
+      property h : word read Height;
+    end;
+  type TGridTerm = class (TBaseTerm, ITerm)
+    private
+      _grid : TTermGrid;
+    public
+      constructor Create( NewW, NewH : word ); override;
+      destructor Destroy; override;
+      function GetCell( x, y : word ) : TTermCell;
+      procedure PutCell( x, y : word; cell : TTermCell );
+      procedure ClrScr; override;
+      procedure EmitChar( wc : WideChar ); override;
+      property grid : TTermGrid read _grid;
+      property cells[ x, y : word ] : TTermCell
+        read GetCell write PutCell; default;
+    end;
+  type TAnsiTerm = class (TBaseTerm)
+    public
+      constructor Create( NewW, NewH : word; CurX, CurY : byte );
+        reintroduce;
+      procedure ResetColor;
+      procedure Fg( color : byte ); override;
+      procedure Bg( color : byte ); override;
+      procedure ClrScr; override;
+      procedure GotoXY( x, y : word ); override;
+      procedure EmitChar( wc : widechar ); override;
+      procedure Emit( s : TStr ); override;
+      procedure ShowCursor; override;
+      procedure HideCursor; override;
+    end;
+  type TVideoTerm = class (TANSITerm)
+  end;
+  type TTermProxy = class  (TBaseTerm)
+    protected
+      _term : ITerm;
+    public
+      constructor Create( term : ITerm; NewW, NewH : word );
+        reintroduce;
+      function  WhereX : word; override;
+      function  WhereY : word; override;
+      procedure ClrScr; override;
+      procedure ClrEol; override;
+      procedure Fg( color : byte ); override;
+      procedure Bg( color : byte ); override;
+      procedure EmitChar( wc : widechar ); override;
+      procedure Emit( s : TStr ); override;
+      procedure GotoXY( x, y : word ); override;
+      procedure InsLine; override;
+      procedure DelLine; override;
+      procedure SetTextAttr( value : word ); override;
+      procedure ShowCursor; override;
+      procedure HideCursor; override;
+      function  XMax  : word; override;
+      function  YMax  : word; override;
     end;
   type
     TSubTerm = class (TTermProxy)
       protected
-        _x, _y, _w, _h : word;
+        _x, _y : word;
       public
-        constructor Create(term : ITerm; x, y, w, h : word );
-        function  Width : word; override;
-        function  Height: word; override;
+        constructor Create(term : ITerm; x, y, NewW, NewH : word );
         function  WhereX : word; override;
         function  WhereY : word; override;
         procedure ClrScr; override;
         procedure ClrEol; override;
         procedure GotoXY( x, y : word ); override;
-        procedure InsLine; override;
-        procedure DelLine; override;
       end;
 
   procedure fg( ch : char );
@@ -251,12 +212,85 @@ implementation
       _data[ xyToI( x, y ) ].ch := value;
     end;
   
-  
-  constructor TGridTerm.Create( w, h : word );
+  constructor TBaseTerm.Create( NewW, NewH : word );
     begin
-      inherited create;
-      _grid := TTermGrid.Create( w, h );
+      _w := NewW; _h := NewH;
       _curs := TPoint.Create; _curs.x := 0; _curs.y := 0;
+      _attr.fg := $07; _attr.bg := $00; // light gray on black
+    end;
+  function TBaseTerm.Width : word; begin result := _w end;
+  function TBaseTerm.Height: word; begin result := _h end;
+  function TBaseTerm.XMax : word; begin result := width - 1  end;
+  function TBaseTerm.YMax : word; begin result := height - 1 end;
+  
+  function TBaseTerm.WhereX : word; begin result := _curs.x end;
+  function TBaseTerm.WhereY : word; begin result := _curs.y end;
+  
+  procedure TBaseTerm.GotoXY( x, y : word );
+    begin
+      _curs.x := x;
+      _curs.y := y;
+    end;
+  
+  procedure TBaseTerm.ClrScr;
+    var y : word; i : integer;
+    begin
+      for y := 0 to yMax do
+        begin
+          gotoxy(0, y);
+          for i := 1 to self.width do EmitChar(' ');
+        end;
+      gotoxy(0, 0);
+    end;
+  
+  procedure TBaseTerm.ClrEol;
+    var curx, cury, i : word;
+    begin
+      curx := self.WhereX;
+      cury := self.WhereY;
+      for i := curx to xMax do EmitChar(' ');
+      self.gotoxy( curx, cury );
+    end;
+  
+  
+  procedure TBaseTerm.ShowCursor; begin ok end;
+  procedure TBaseTerm.HideCursor; begin ok end;
+  
+  
+  procedure TBaseTerm.InsLine; begin ok end;
+  procedure TBaseTerm.DelLine; begin ok end;
+  
+  
+  function  TBaseTerm.GetTextAttr : word;
+    begin
+      result := word(_attr)
+    end;
+  
+  procedure TBaseTerm.SetTextAttr( value : word );
+    begin
+      _attr := TTextAttr(value)
+    end;
+  
+  procedure TBaseTerm.Fg( color : byte );
+    begin
+      _attr.fg := color
+    end;
+  
+  procedure TBaseTerm.Bg( color : byte );
+    begin
+      _attr.bg := color
+    end;
+  
+  procedure TBaseTerm.Emit( s : TStr );
+    var ch : widechar;
+    begin
+      for ch in s do EmitChar(ch);
+    end;
+  
+  constructor TGridTerm.Create( NewW, NewH : word );
+    begin
+      inherited create( NewW, NewH );
+      _grid := TTermGrid.Create( NewW, NewH );
     end;
   
   destructor TGridTerm.Destroy;
@@ -265,58 +299,20 @@ implementation
       inherited destroy;
     end;
   
-  function  TGridTerm.Width  : word; begin result := grid.w     end;
-  function  TGridTerm.Height : word; begin result := grid.h     end;
-  function  TGridTerm.XMax   : word; begin result := width - 1  end;
-  function  TGridTerm.YMax   : word; begin result := height - 1 end;
-  function  TGridTerm.WhereX : word; begin result := _curs.x    end;
-  function  TGridTerm.WhereY : word; begin result := _curs.y    end;
-  
-  function  TGridTerm.GetTextAttr : word;
-    begin
-      result := word(attr)
-    end;
-  
-  procedure TGridTerm.SetTextAttr( value : word );
-    begin
-      attr := TTextAttr(value)
-    end;
-  
-  procedure TGridTerm.Fg( color : byte );
-    begin
-      attr.fg := color
-    end;
-  
-  procedure TGridTerm.Bg( color : byte );
-    begin
-      attr.bg := color
-    end;
-  
   procedure TGridTerm.ClrScr;
     var cell : TTermCell;
     begin
       cell.ch := ' ';
-      cell.attr := attr;
+      cell.attr := _attr;
       _grid.fill(cell);
       gotoxy(0,0);
     end;
   
-  procedure TGridTerm.ClrEol;
-    begin
-      raise Exception.Create('TODO: TGridTerm.ClrEol');
-    end;
-  
-  procedure TGridTerm.GotoXY( x, y : word );
-    begin
-      _curs.x := x;
-      _curs.y := y;
-    end;
-  
-  procedure TGridTerm.Emit( wc : widechar );
+  procedure TGridTerm.EmitChar( wc : widechar );
     var cell : TTermCell;
     begin
       cell.ch := wc;
-      cell.attr := attr;
+      cell.attr := _attr;
       _grid[_curs.x, _curs.y] := cell;
       inc(_curs.x);
       if _curs.x >= self.width then
@@ -325,37 +321,6 @@ implementation
           inc(_curs.y);
           // todo: scroll
         end;
-    end;
-  
-  procedure TGridTerm.Emit( s : TStr );
-    var ch : widechar;
-    begin
-      for ch in s do Emit(ch);
-    end;
-  
-  procedure TGridTerm.InsLine;
-    begin
-      raise Exception.Create('TODO: TGridTerm.InsLine');
-    end;
-  
-  procedure TGridTerm.DelLine;
-    begin
-      raise Exception.Create('TODO: TGridTerm.DelLine');
-    end;
-  
-  function TGridTerm.Cursor : TPoint;
-    begin
-      result := _curs
-    end;
-  
-  procedure TGridTerm.ShowCursor;
-    begin
-      ok
-    end;
-  
-  procedure TGridTerm.HideCursor;
-    begin
-      ok
     end;
   
   function TGridTerm.GetCell( x, y : word ) : TTermCell;
@@ -368,55 +333,27 @@ implementation
       _grid[x,y] := cell;
     end;
   
-  
-  constructor TAnsiTerm.Create;
+  constructor TAnsiTerm.Create(NewW, NewH : word; CurX, CurY : byte);
     begin
-      attr := $0007
-    end;
-  
-  { TODO: find a way to get this data without the baggage incurred by
-    crt or video modules (breaking keyboard input or clearing the screen  }
-  
-  function  TAnsiTerm.Width  : word; begin result := terminal.w end;
-  function  TAnsiTerm.Height : word; begin result := terminal.h end;
-  function  TAnsiTerm.XMax   : word; begin result := width - 1  end;
-  function  TAnsiTerm.YMax   : word; begin result := height - 1 end;
-  
-  function  TAnsiTerm.WhereX : word;
-    var bx, by : byte;
-    begin
-      terminal.getxy(bx, by);
-      result := bx;
-    end;
-  
-  function  TAnsiTerm.WhereY : word;
-    var bx, by : byte;
-    begin
-      terminal.getxy(bx, by);
-      result := by;
-    end;
-  
-  function  TAnsiTerm.GetTextAttr : word;
-    begin
-      result := attr;
-    end;
-  
-  procedure TAnsiTerm.SetTextAttr( value : word );
-    begin
-      Fg(lo(value));
-      Bg(hi(value));
+      inherited Create( NewW, NewH );
+      // we set xy directly because the cursor is already
+      // somewhere when the program starts.
+      _curs.x := curx;
+      _curs.y := cury;
     end;
   
   procedure TAnsiTerm.Fg( color : byte );
     begin
-      attr := hi(attr) shl 8 + color;
+      inherited fg( color );
+      _attr.fg := color;
       { xterm 256-color extensions }
       write( stdout, #27, '[38;5;', color , 'm' )
     end;
   
   procedure TAnsiTerm.Bg( color : byte );
     begin
-      attr := color shl 8 + lo(attr);
+      inherited bg( color );
+      _attr.bg := color;
       { xterm 256-color extensions }
       write( stdout, #27, '[48;5;', color , 'm' )
     end;
@@ -426,37 +363,19 @@ implementation
       write( stdout, #27, '[H', #27, '[J' )
     end;
   
-  procedure TAnsiTerm.ClrEol;
-    var curx, cury, i : byte;
-    begin
-      terminal.getxy( curx, cury );
-      for i := curx to xMax do write(stdout, ' ');
-      gotoxy( curx, cury );
-    end;
-  
   procedure TAnsiTerm.GotoXY( x, y : word );
     begin
       write(stdout, #27, '[', y + 1, ';', x + 1, 'H' )
     end;
   
-  procedure TAnsiTerm.Emit( wc : widechar );
+  procedure TAnsiTerm.EmitChar( wc : widechar );
     begin
       write(stdout, wc)
     end;
   
   procedure TAnsiTerm.Emit( s : TStr );
-    var ch : TChr;
     begin
       write(stdout, utf8encode(s));
-    end;
-  
-  { TODO }
-  procedure TAnsiTerm.InsLine;
-    begin
-    end;
-  
-  procedure TAnsiTerm.DelLine;
-    begin
     end;
   
   procedure TAnsiTerm.ResetColor;
@@ -475,19 +394,16 @@ implementation
     end;
   
   
-  constructor TTermProxy.Create( term : ITerm );
+  constructor TTermProxy.Create( term : ITerm; NewW, NewH : word );
     begin
-      inherited Create;
+      inherited Create( NewW, NewH );
       _term := term;
     end;
   
-  function  TTermProxy.Width  : word; begin result := _term.Width end;
-  function  TTermProxy.Height : word; begin result := _term.Height end;
   function  TTermProxy.WhereX : word; begin result := _term.WhereX end;
   function  TTermProxy.WhereY : word; begin result := _term.WhereY end;
   function  TTermProxy.xMax   : word; begin result := self.width-1 end;
   function  TTermProxy.yMax   : word; begin result := self.height-1 end;
-  
   
   procedure TTermProxy.ClrScr; begin _term.ClrScr end;
   procedure TTermProxy.ClrEol; begin _term.ClrEol end;
@@ -495,7 +411,7 @@ implementation
   procedure TTermProxy.Fg( color : byte );    begin _term.Fg( color ) end;
   procedure TTermProxy.Bg( color : byte );    begin _term.Bg( color ) end;
   
-  procedure TTermProxy.Emit( wc : widechar ); begin _term.Emit( wc ) end;
+  procedure TTermProxy.EmitChar( wc : widechar ); begin _term.EmitChar( wc ) end;
   procedure TTermProxy.Emit( s : TStr ); begin _term.Emit( s ) end;
   procedure TTermProxy.GotoXY( x, y : word ); begin _term.GotoXY( x, y ) end;
   
@@ -507,61 +423,22 @@ implementation
   
   procedure TTermProxy.SetTextAttr( value : word );
      begin
-       _term.TextAttr := value
+       inherited SetTextAttr( value );
+       _term.TextAttr := value;
      end;
-  function  TTermProxy.GetTextAttr : word;
+  
+  constructor TSubTerm.Create(term : ITerm; x, y, NewW, NewH : word );
     begin
-      result := _term.TextAttr
+      inherited Create(term, NewW, NewH);
+      _x := x; _y := y;
     end;
   
-  
-  constructor TSubTerm.Create(term : ITerm; x, y, w, h : word );
-    begin
-      inherited Create(term);
-      _x := x;
-      _y := y;
-      _w := w;
-      _h := h;
+  function TSubTerm.WhereX : word;
+    begin result := _term.WhereX - _x 
     end;
   
-  function  TSubTerm.Width : word;
-    begin
-      result := _w
-    end;
-  
-  function  TSubTerm.Height: word;
-    begin
-      result := _h
-    end;
-  
-  function  TSubTerm.WhereX : word;
-    begin
-      result := _term.WhereX - _x
-    end;
-  
-  function  TSubTerm.WhereY : word;
-    begin
-      result := _term.WhereY - _y
-    end;
-  
-  procedure TSubTerm.ClrScr;
-    var y : word; i : integer;
-    begin
-      for y := 0 to yMax do
-        begin
-          gotoxy(0, y);
-          for i := 1 to self.width do emit(' ');
-        end;
-      gotoxy(0, 0);
-    end;
-  
-  procedure TSubTerm.ClrEol;
-    var curx, cury, i : word;
-    begin
-      curx := self.WhereX;
-      cury := self.WhereY;
-      for i := curx to xMax do _term.emit(' ');
-      self.gotoxy( curx, cury );
+  function TSubTerm.WhereY : word;
+    begin result := _term.WhereY - _y
     end;
   
   procedure TSubTerm.GotoXY( x, y : word );
@@ -569,107 +446,11 @@ implementation
       _term.GotoXY( x + _x, y + _y );
     end;
   
-  procedure TSubTerm.InsLine;
-    begin
-      raise Exception.Create('TSubTerm.InsLine not yet implemented. :/');
-    end;
-  
-  procedure TSubTerm.DelLine;
-    begin
-      raise Exception.Create('TSubTerm.DelLine not yet implemented. :/');
-    end;
+  // don't proxy these two. just revert to default behavior
+  procedure TSubTerm.ClrScr; begin TBaseTerm(self).ClrScr; end;
+  procedure TSubTerm.ClrEol; begin TBaseTerm(self).ClrEol; end;
   
   
-  constructor TVideoTerm.Create;
-    begin
-      attr := $0007
-    end;
-  
-  { TODO: find a way to get this data without the baggage incurred by
-    crt or video modules (breaking keyboard input or clearing the screen  }
-  
-  function  TVideoTerm.Width  : word; begin result := terminal.w end;
-  function  TVideoTerm.Height : word; begin result := terminal.h end;
-  function  TVideoTerm.XMax   : word; begin result := width - 1  end;
-  function  TVideoTerm.YMax   : word; begin result := height - 1 end;
-  
-  function  TVideoTerm.WhereX : word;
-    var bx, by : byte;
-    begin
-      terminal.getxy(bx, by);
-      result := bx;
-    end;
-  
-  function  TVideoTerm.WhereY : word;
-    var bx, by : byte;
-    begin
-      terminal.getxy(bx, by);
-      result := by;
-    end;
-  
-  function  TVideoTerm.GetTextAttr : word;
-    begin
-      result := attr;
-    end;
-  
-  procedure TVideoTerm.SetTextAttr( value : word );
-    begin
-      Fg(lo(value));
-      Bg(hi(value));
-    end;
-  
-  procedure TVideoTerm.Fg( color : byte );
-    begin
-    end;
-  
-  procedure TVideoTerm.Bg( color : byte );
-    begin
-    end;
-  
-  procedure TVideoTerm.ClrScr;
-    begin
-    end;
-  
-  procedure TVideoTerm.ClrEol;
-    var curx, cury, i : byte;
-    begin
-    end;
-  
-  procedure TVideoTerm.GotoXY( x, y : word );
-    begin
-    end;
-  
-  procedure TVideoTerm.Emit( wc : widechar );
-    begin
-      { TODO: handle escaped characters }
-      write( wc )
-    end;
-  procedure TVideoTerm.Emit( s : TStr );
-    var ch : widechar;
-    begin
-      for ch in s do emit(ch);
-    end;
-  
-  { TODO }
-  procedure TVideoTerm.InsLine;
-    begin
-    end;
-  
-  procedure TVideoTerm.DelLine;
-    begin
-    end;
-  
-  procedure TVideoTerm.ResetColor;
-    begin
-    end;
-  
-  procedure TVideoTerm.ShowCursor; // !! xterm / dec terminals
-    begin
-    end;
-  
-  procedure TVideoTerm.HideCursor; // !! xterm / dec terminals
-    begin
-    end;
   
   
   procedure bg( ch :  char );
@@ -686,6 +467,16 @@ implementation
       if i > 0 then fg( i - 1  );
     end;
   
+  {$IFDEF UNIX}
+  function GetLiveAnsiTerm : TAnsiTerm;
+    var termw, termh : byte; curx, cury : byte;
+    begin
+      terminal.getwh(termw, termh);
+      curx := terminal.startX;
+      cury := terminal.startY;
+      result := TAnsiTerm.Create( termw, termh, curx, cury );
+    end;
+  {$ENDIF}
   function  Width  : word; begin result := work.Width end;
   function  Height : word; begin result := work.Height end;
   function  XMax   : word; begin result := work.xMax end;
@@ -693,15 +484,15 @@ implementation
   function  WhereX : word; begin result := work.WhereX end;
   function  WhereY : word; begin result := work.WhereY end;
   
-  procedure ClrScr; begin work.ClrScr end;
-  procedure ClrEol; begin work.ClrEol end;
-  
   procedure Fg( color : byte );    begin work.Fg( color ) end;
   procedure Bg( color : byte );    begin work.Bg( color ) end;
   
-  procedure Emit( wc : widechar ); begin work.Emit( wc ) end;
+  procedure EmitChar( wc : widechar ); begin work.EmitChar( wc ) end;
   procedure Emit( s : TStr ); begin work.Emit( s ) end;
   procedure GotoXY( x, y : word ); begin work.GotoXY( x, y ) end;
+  
+  procedure ClrScr; begin work.ClrScr end;
+  procedure ClrEol; begin work.ClrEol end;
   
   procedure InsLine; begin work.InsLine end;
   procedure DelLine; begin work.DelLine end;
@@ -715,8 +506,7 @@ implementation
     begin result := work.TextAttr end;
   
   function KvmWrite(var f: textrec): integer;
-    var
-      i : integer ; s: ansistring; ch: char;
+    var s: ansistring;
     begin
       if f.bufpos > 0 then
         begin
@@ -762,8 +552,7 @@ initialization
   AssignKVM(output); Rewrite(output);
   {$IFDEF UNIX}
     work :={$IFDEF VIDEOKVM}TVideoTerm.Create
-           {$ELSE}TAnsiTerm.Create{$ENDIF};
-    work.GotoXY( terminal.startX, terminal.startY );
+           {$ELSE}GetLiveANSITerm{$ENDIF};
   {$ELSE}
     work := TGridTerm.Create(64, 16);
   {$ENDIF}
