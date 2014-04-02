@@ -294,112 +294,112 @@ This is a contrcete implementation of ITerm.
 
 #+name: @kvm:impl
 #+begin_src pascal
-  
+
   constructor TAnsiTerm.Create;
     begin
       attr := $0007
     end;
-  
+
   { TODO: find a way to get this data without the baggage incurred by
     crt or video modules (breaking keyboard input or clearing the screen  }
-  
+
   function  TAnsiTerm.Width  : word; begin result := terminal.w end;
   function  TAnsiTerm.Height : word; begin result := terminal.h end;
   function  TAnsiTerm.MaxX   : word; begin result := xMax end;
   function  TAnsiTerm.MaxY   : word; begin result := yMax end;
   function  TAnsiTerm.XMax   : word; begin result := width - 1  end;
   function  TAnsiTerm.YMax   : word; begin result := height - 1 end;
-  
+
   function  TAnsiTerm.WhereX : word;
     var bx, by : byte;
     begin
       terminal.getxy(bx, by);
       result := bx;
     end;
-  
+
   function  TAnsiTerm.WhereY : word;
     var bx, by : byte;
     begin
       terminal.getxy(bx, by);
       result := by;
     end;
-  
+
   function  TAnsiTerm.GetTextAttr : word;
     begin
       result := attr;
     end;
-  
+
   procedure TAnsiTerm.SetTextAttr( value : word );
     begin
       Fg(lo(value));
       Bg(hi(value));
     end;
-  
+
   procedure TAnsiTerm.Fg( color : byte );
     begin
       attr := hi(attr) shl 8 + color;
       { xterm 256-color extensions }
-      write( #27, '[38;5;', color , 'm' )
+      write( stdout, #27, '[38;5;', color , 'm' )
     end;
-  
+
   procedure TAnsiTerm.Bg( color : byte );
     begin
       attr := color shl 8 + lo(attr);
       { xterm 256-color extensions }
-      write( #27, '[48;5;', color , 'm' )
+      write( stdout, #27, '[48;5;', color , 'm' )
     end;
-  
+
   procedure TAnsiTerm.ClrScr;
     begin
-      write( #27, '[H', #27, '[J' )
+      write( stdout, #27, '[H', #27, '[J' )
     end;
-  
+
   procedure TAnsiTerm.ClrEol;
     var curx, cury, i : byte;
     begin
       terminal.getxy( curx, cury );
-      for i := curx to xMax do write(' ');
+      for i := curx to xMax do write(stdout, ' ');
       gotoxy( curx, cury );
     end;
-  
+
   procedure TAnsiTerm.GotoXY( x, y : word );
     begin
-      write( #27, '[', y + 1, ';', x + 1, 'H' )
+      write(stdout, #27, '[', y + 1, ';', x + 1, 'H' )
     end;
-  
+
   procedure TAnsiTerm.Emit( wc : widechar );
     begin
-      write( utf8encode( wc ))
+      write(stdout, utf8encode( wc ))
     end;
   procedure TAnsiTerm.Emit( s : TStr );
     begin
-      write( utf8encode( s ))
+      write(stdout, utf8encode( s ))
     end;
-  
+
   { TODO }
   procedure TAnsiTerm.InsLine;
     begin
     end;
-  
+
   procedure TAnsiTerm.DelLine;
     begin
     end;
-  
+
   procedure TAnsiTerm.ResetColor;
     begin
-      write( #27, '[0m' )
+      write(stdout, #27, '[0m' )
     end;
-  
+
   procedure TAnsiTerm.ShowCursor; // !! xterm / dec terminals
     begin
-      write(#27, '[?25h');
+      write(stdout, #27, '[?25h');
     end;
-  
+
   procedure TAnsiTerm.HideCursor; // !! xterm / dec terminals
     begin
-      write(#27, '[?25l');
+      write(stdout, #27, '[?25l');
     end;
-  
+
 #+end_src
 
 * =TTermProxy= : generic base class for decorators
@@ -561,7 +561,7 @@ This is a contrcete implementation of ITerm.
 
     procedure TSubTerm.GotoXY( x, y : word );
       begin
-        _term.GotoXY( _x + x, _y + y );
+        _term.GotoXY( x + _x, y + _y );
       end;
 
     procedure TSubTerm.InsLine;
@@ -689,7 +689,6 @@ This is a contrcete implementation of ITerm.
 #+end_src
 
 
-
 * char mnemonics for ansi colors.
 
 #+name: extras
@@ -716,14 +715,89 @@ This is a contrcete implementation of ITerm.
     end;
 
 #+end_src
+
+* text driver to redirect =write= and =writeln=
+#+name: textdriver
+#+begin_src pascal
+
+function KvmWrite(var f: textrec): integer;
+  var
+    i : integer ; s: string;
+  begin
+    if f.bufpos > 0 then
+    begin
+      setlength(s, f.bufpos);
+      move(f.buffer, s[1], f.bufpos);
+      kvm.emit(s);
+    end;
+    f.bufpos := 0;
+    Result := 0;
+  end;
+
+function KvmClose(var txt: TTextRec): integer;
+  begin
+    Result := 0;
+  end;
+
+function KvmOpen(var txt: TTextRec): integer;
+  begin
+    case txt.mode of
+      fmOutput:
+      begin
+        txt.inOutFunc := @KvmWrite;
+        txt.flushFunc := @KvmWrite;
+      end
+      else // todo : error;
+    end;
+    Result := 0;
+  end;
+
+// http://docwiki.embarcadero.com/RADStudio/XE5/en/Standard_Routines_and_Input-Output
+procedure AssignKvm(var txt: Text);
+  begin
+    Assign(txt, '');
+    with TTextRec(txt) do
+    begin
+      mode := fmClosed;
+      openFunc := @KvmOpen;
+      closeFunc := @KvmClose;
+    end;
+  end;
+#+end_src
+
+
 * Unit Life cycle.
+
+There are basically two steps to deal with:
+
 #+name: lifecycle
 #+begin_src pascal
   initialization
-    work :={$ifdef VIDEOKVM}TVideoTerm.Create{$else}TAnsiTerm.Create{$endif};
-    work.GotoXY( terminal.startX, terminal.startY );
+    <<redirect-io>>
+    <<create-term-obj>>
   finalization
     { work is destroyed automatically by reference count }
+#+end_src
+
+First, we want to redirect the =Output= file, so that calls to =Write= and =WriteLn= are sent through =KvmWrite=. Since we may still need to access the standard output (especially in the case of =ANSITerm=), we'll also create a new file descriptor.
+
+#+name: redirect-io
+#+begin_src pascal
+  Assign(stdout,''); Rewrite(stdout);
+  AssignKVM(output); Rewrite(output);
+#+end_src
+
+The second step is simply to create a new =ITerm= instance and assign the =work= variable.
+
+#+name: create-term-obj
+#+begin_src pascal
+  {$IFDEF UNIX}
+    work :={$IFDEF VIDEOKVM}TVideoTerm.Create
+           {$ELSE}TAnsiTerm.Create{$ENDIF};
+    work.GotoXY( terminal.startX, terminal.startY );
+  {$ELSE}
+    work := TGridTerm.Create(64, 16);
+  {$ENDIF}
 #+end_src
 
 * Legacy interface : =CRT.pas=
@@ -972,6 +1046,8 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
     {$endif}
     ;
 
+  var stdout : text;
+
     <<ITerm>>
     {$DEFINE unitscope}
     <<ITerm-Members>>
@@ -993,7 +1069,7 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
 
   implementation
     <<@kvm:impl>>
-
+    <<textdriver>>
   <<lifecycle>>
   end.
 #+end_src
@@ -1063,8 +1139,8 @@ type
 #+begin_src pascal
   procedure ansi_fg( i : byte );
     begin
-      if i < 8 then write( #27, '[0;3', i , 'm' )           // ansi dim
-      else if i < 17 then write( #27, '[01;3', i-8 , 'm' ); // ansi bold
+      if i < 8 then write(stdout, #27, '[0;3', i , 'm' )           // ansi dim
+      else if i < 17 then write(stdout, #27, '[01;3', i-8 , 'm' ); // ansi bold
       // else do nothing
     end; { ansi_fg }
 

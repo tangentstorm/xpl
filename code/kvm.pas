@@ -10,6 +10,8 @@ interface uses xpc, ugrid2d, sysutils,
   {$endif}
   ;
 
+var stdout : text;
+
   type ITerm = interface
     function  Width : word;
     function  Height: word;
@@ -424,41 +426,41 @@ implementation
     begin
       attr := hi(attr) shl 8 + color;
       { xterm 256-color extensions }
-      write( #27, '[38;5;', color , 'm' )
+      write( stdout, #27, '[38;5;', color , 'm' )
     end;
   
   procedure TAnsiTerm.Bg( color : byte );
     begin
       attr := color shl 8 + lo(attr);
       { xterm 256-color extensions }
-      write( #27, '[48;5;', color , 'm' )
+      write( stdout, #27, '[48;5;', color , 'm' )
     end;
   
   procedure TAnsiTerm.ClrScr;
     begin
-      write( #27, '[H', #27, '[J' )
+      write( stdout, #27, '[H', #27, '[J' )
     end;
   
   procedure TAnsiTerm.ClrEol;
     var curx, cury, i : byte;
     begin
       terminal.getxy( curx, cury );
-      for i := curx to xMax do write(' ');
+      for i := curx to xMax do write(stdout, ' ');
       gotoxy( curx, cury );
     end;
   
   procedure TAnsiTerm.GotoXY( x, y : word );
     begin
-      write( #27, '[', y + 1, ';', x + 1, 'H' )
+      write(stdout, #27, '[', y + 1, ';', x + 1, 'H' )
     end;
   
   procedure TAnsiTerm.Emit( wc : widechar );
     begin
-      write( utf8encode( wc ))
+      write(stdout, utf8encode( wc ))
     end;
   procedure TAnsiTerm.Emit( s : TStr );
     begin
-      write( utf8encode( s ))
+      write(stdout, utf8encode( s ))
     end;
   
   { TODO }
@@ -472,17 +474,17 @@ implementation
   
   procedure TAnsiTerm.ResetColor;
     begin
-      write( #27, '[0m' )
+      write(stdout, #27, '[0m' )
     end;
   
   procedure TAnsiTerm.ShowCursor; // !! xterm / dec terminals
     begin
-      write(#27, '[?25h');
+      write(stdout, #27, '[?25h');
     end;
   
   procedure TAnsiTerm.HideCursor; // !! xterm / dec terminals
     begin
-      write(#27, '[?25l');
+      write(stdout, #27, '[?25l');
     end;
   
   
@@ -579,7 +581,7 @@ implementation
   
   procedure TSubTerm.GotoXY( x, y : word );
     begin
-      _term.GotoXY( _x + x, _y + y );
+      _term.GotoXY( x + _x, y + _y );
     end;
   
   procedure TSubTerm.InsLine;
@@ -730,10 +732,60 @@ implementation
     begin work.TextAttr := value end;
   function  GetTextAttr : word;
     begin result := work.TextAttr end;
-
+  
+  function KvmWrite(var f: textrec): integer;
+    var
+      i : integer ; s: string;
+    begin
+      if f.bufpos > 0 then
+      begin
+        setlength(s, f.bufpos);
+        move(f.buffer, s[1], f.bufpos);
+        kvm.emit(s);
+      end;
+      f.bufpos := 0;
+      Result := 0;
+    end;
+  
+  function KvmClose(var txt: TTextRec): integer;
+    begin
+      Result := 0;
+    end;
+  
+  function KvmOpen(var txt: TTextRec): integer;
+    begin
+      case txt.mode of
+        fmOutput:
+        begin
+          txt.inOutFunc := @KvmWrite;
+          txt.flushFunc := @KvmWrite;
+        end
+        else // todo : error;
+      end;
+      Result := 0;
+    end;
+  
+  // http://docwiki.embarcadero.com/RADStudio/XE5/en/Standard_Routines_and_Input-Output
+  procedure AssignKvm(var txt: Text);
+    begin
+      Assign(txt, '');
+      with TTextRec(txt) do
+      begin
+        mode := fmClosed;
+        openFunc := @KvmOpen;
+        closeFunc := @KvmClose;
+      end;
+    end;
 initialization
-  work :={$ifdef VIDEOKVM}TVideoTerm.Create{$else}TAnsiTerm.Create{$endif};
-  work.GotoXY( terminal.startX, terminal.startY );
+  Assign(stdout,''); Rewrite(stdout);
+  AssignKVM(output); Rewrite(output);
+  {$IFDEF UNIX}
+    work :={$IFDEF VIDEOKVM}TVideoTerm.Create
+           {$ELSE}TAnsiTerm.Create{$ENDIF};
+    work.GotoXY( terminal.startX, terminal.startY );
+  {$ELSE}
+    work := TGridTerm.Create(64, 16);
+  {$ENDIF}
 finalization
   { work is destroyed automatically by reference count }
 end.
