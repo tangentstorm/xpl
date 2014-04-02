@@ -4,8 +4,20 @@
 
 * Goals
 This module implements an enhanced terminal device with support for unicode and a 256 color palette.
+* Class Hierarchy
+- building blocks
+  - =TPoint= :: an (x,y) record pair used for tracking the cursor
+  - =TTextAttr= :: a (fg, bg : byte) pair, representing a 256 color palette
+  - =TTermCell= :: a (TTextAttr, WideChar) record pair
+  - =TTermGrid= :: a GGrid2D subclass containing TTermCell records
+- =ITerm= :: the interface shared by all units
+  - =TGridTerm= :: generic in-memory terminal
+  - =TAnsiTerm= :: outputs ansi escape codes, for external terminal emulators
+  - =TTermProxy= :: delegates all requests to another term by default
+    - =TSubTerm= :: represents the sub-window of another term
+  - =TVideoTerm= :: uses free pascal's =video= unit
 
-* =ITerm= : abstract screen interface
+* =ITerm= : the abstract screen interface
 
 A screen tracks a cursor position, bounds, color.
 
@@ -128,7 +140,7 @@ A terminal's display buffer is essentially a grid of such cells. I'm using my [[
 #+end_src
 
 * =TGridTerm=
-This is a contrcete implementation of ITerm.
+This is a concrete implementation of ITerm.
 
 #+name: TGridTerm
 #+begin_src pascal
@@ -678,35 +690,40 @@ This is a contrcete implementation of ITerm.
 
 #+end_src
 
-
 * char mnemonics for ansi colors.
-
-#+name: extras
-#+begin_src pascal
-  procedure fg( c : char );
-  procedure bg( c : char );
-#+end_src
-
 #+name: @kvm:impl
 #+begin_src pascal
 
-  procedure bg( c :  char );
+  procedure bg( ch :  char );
     var i : byte;
     begin
-      i := pos( c, 'krgybmcwKRGYBMCW' );
+      i := pos( ch, 'krgybmcwKRGYBMCW' );
       if i > 0 then bg( i - 1  );
     end;
 
-  procedure fg( c :  char );
+  procedure fg( ch :  char );
     var i : byte;
     begin
-      i := pos( c, 'krgybmcwKRGYBMCW' );
+      i := pos( ch, 'krgybmcwKRGYBMCW' );
       if i > 0 then fg( i - 1  );
     end;
 
 #+end_src
 
-* text driver to redirect =write= and =writeln=
+These allow you to use one-letter characters for the first 16 colors, instead of refering to them by number. They are arranged according to the ANSI standard.
+
+| *k* | 0 | black             |   | *K* |  8 | dark gray     |
+| *r* | 1 | red               |   | *R* |  9 | light red     |
+| *g* | 2 | green             |   | *G* | 10 | light green   |
+| *y* | 3 | dark yellow/brown |   | *Y* | 11 | yellow        |
+| *b* | 4 | blue              |   | *B* | 12 | light blue    |
+| *m* | 5 | magenta           |   | *M* | 13 | light magenta |
+| *c* | 6 | cyan              |   | *C* | 14 | light cyan    |
+| *w* | 7 | light gray        |   | *W* | 15 | white         |
+
+See also the [[https://github.com/tangentstorm/xpl/blob/master/code/cw.pas][cw unit]] (color + write).
+
+* Text driver, for redirecting =write= and =writeln=
 #+name: textdriver
 #+begin_src pascal
 
@@ -755,8 +772,7 @@ This is a contrcete implementation of ITerm.
     end;
 #+end_src
 
-
-* Unit Life cycle.
+* Unit Life cycle
 
 There are basically two steps to deal with:
 
@@ -1050,7 +1066,9 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
     <<TTermProxy>>
     <<TSubTerm>>
 
-    <<extras>>
+    procedure fg( ch : char );
+    procedure bg( ch : char );
+
   var work : ITerm;
 
   implementation
@@ -1061,6 +1079,11 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
 #+end_src
 
 * COMMENT
+** TODO TTermProxy should probably have events!
+:PROPERTIES:
+:TS:       <2014-04-01 11:24PM>
+:ID:       euphhns0vfg0
+:END:
 ** TODO mouse support
 #+name @kvm:inter
 #+begin_src pascal

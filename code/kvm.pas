@@ -217,8 +217,9 @@ var stdout : text;
         procedure DelLine; override;
       end;
 
-  procedure fg( c : char );
-  procedure bg( c : char );
+  procedure fg( ch : char );
+  procedure bg( ch : char );
+
 var work : ITerm;
 
 implementation
@@ -671,17 +672,17 @@ implementation
     end;
   
   
-  procedure bg( c :  char );
+  procedure bg( ch :  char );
     var i : byte;
     begin
-      i := pos( c, 'krgybmcwKRGYBMCW' );
+      i := pos( ch, 'krgybmcwKRGYBMCW' );
       if i > 0 then bg( i - 1  );
     end;
   
-  procedure fg( c :  char );
+  procedure fg( ch :  char );
     var i : byte;
     begin
-      i := pos( c, 'krgybmcwKRGYBMCW' );
+      i := pos( ch, 'krgybmcwKRGYBMCW' );
       if i > 0 then fg( i - 1  );
     end;
   
