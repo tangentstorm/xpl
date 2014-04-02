@@ -15,8 +15,6 @@ var stdout : text;
   type ITerm = interface
     function  Width : word;
     function  Height: word;
-    function  MaxX  : word; deprecated;
-    function  MaxY  : word; deprecated;
     function  XMax  : word;
     function  YMax  : word;
     function  WhereX: word;
@@ -25,8 +23,8 @@ var stdout : text;
     procedure ClrEol;
     procedure Fg( c : byte );
     procedure Bg( c : byte );
-    procedure Emit( wc : widechar );
-    procedure Emit( s : TStr );
+    procedure Emit( wc : widechar ); overload;
+    procedure Emit( s : TStr ); overload;
     procedure GotoXY( x, y : word );
     procedure InsLine;
     procedure DelLine;
@@ -39,8 +37,6 @@ var stdout : text;
   {$DEFINE unitscope}
   function  Width : word;
   function  Height: word;
-  function  MaxX  : word; deprecated;
-  function  MaxY  : word; deprecated;
   function  XMax  : word;
   function  YMax  : word;
   function  WhereX : word;
@@ -90,8 +86,6 @@ var stdout : text;
     public
       function  Width : word;
       function  Height: word;
-      function  MaxX  : word; deprecated;
-      function  MaxY  : word; deprecated;
       function  XMax  : word;
       function  YMax  : word;
       function  WhereX : word;
@@ -128,8 +122,6 @@ var stdout : text;
     public
       function  Width : word;
       function  Height: word;
-      function  MaxX  : word; deprecated;
-      function  MaxY  : word; deprecated;
       function  XMax  : word;
       function  YMax  : word;
       function  WhereX : word;
@@ -158,8 +150,6 @@ var stdout : text;
     public
       function  Width : word;
       function  Height: word;
-      function  MaxX  : word; deprecated;
-      function  MaxY  : word; deprecated;
       function  XMax  : word;
       function  YMax  : word;
       function  WhereX : word;
@@ -207,8 +197,6 @@ var stdout : text;
       procedure ShowCursor; virtual;
       procedure HideCursor; virtual;
       property  TextAttr : word read GetTextAttr write SetTextAttr;
-      function  MaxX  : word; deprecated;
-      function  MaxY  : word; deprecated;
       function  XMax  : word; virtual;
       function  YMax  : word; virtual;
     end;
@@ -278,8 +266,6 @@ implementation
   
   function  TGridTerm.Width  : word; begin result := grid.w     end;
   function  TGridTerm.Height : word; begin result := grid.h     end;
-  function  TGridTerm.MaxX   : word; begin result := xMax       end;
-  function  TGridTerm.MaxY   : word; begin result := yMax       end;
   function  TGridTerm.XMax   : word; begin result := width - 1  end;
   function  TGridTerm.YMax   : word; begin result := height - 1 end;
   function  TGridTerm.WhereX : word; begin result := _curs.x    end;
@@ -392,8 +378,6 @@ implementation
   
   function  TAnsiTerm.Width  : word; begin result := terminal.w end;
   function  TAnsiTerm.Height : word; begin result := terminal.h end;
-  function  TAnsiTerm.MaxX   : word; begin result := xMax end;
-  function  TAnsiTerm.MaxY   : word; begin result := yMax end;
   function  TAnsiTerm.XMax   : word; begin result := width - 1  end;
   function  TAnsiTerm.YMax   : word; begin result := height - 1 end;
   
@@ -456,11 +440,13 @@ implementation
   
   procedure TAnsiTerm.Emit( wc : widechar );
     begin
-      write(stdout, utf8encode( wc ))
+      write(stdout, wc)
     end;
+  
   procedure TAnsiTerm.Emit( s : TStr );
+    var ch : TChr;
     begin
-      write(stdout, utf8encode( s ))
+      write(stdout, utf8encode(s));
     end;
   
   { TODO }
@@ -498,8 +484,6 @@ implementation
   function  TTermProxy.Height : word; begin result := _term.Height end;
   function  TTermProxy.WhereX : word; begin result := _term.WhereX end;
   function  TTermProxy.WhereY : word; begin result := _term.WhereY end;
-  function  TTermProxy.MaxX   : word; begin result := self.xMax end;
-  function  TTermProxy.MaxY   : word; begin result := self.yMax end;
   function  TTermProxy.xMax   : word; begin result := self.width-1 end;
   function  TTermProxy.yMax   : word; begin result := self.height-1 end;
   
@@ -605,8 +589,6 @@ implementation
   
   function  TVideoTerm.Width  : word; begin result := terminal.w end;
   function  TVideoTerm.Height : word; begin result := terminal.h end;
-  function  TVideoTerm.MaxX   : word; begin result := xMax end;
-  function  TVideoTerm.MaxY   : word; begin result := yMax end;
   function  TVideoTerm.XMax   : word; begin result := width - 1  end;
   function  TVideoTerm.YMax   : word; begin result := height - 1 end;
   
@@ -705,8 +687,6 @@ implementation
   
   function  Width  : word; begin result := work.Width end;
   function  Height : word; begin result := work.Height end;
-  function  MaxX   : word; begin result := work.xMax end;
-  function  MaxY   : word; begin result := work.yMax end;
   function  XMax   : word; begin result := work.xMax end;
   function  YMax   : word; begin result := work.yMax end;
   function  WhereX : word; begin result := work.WhereX end;
@@ -735,14 +715,14 @@ implementation
   
   function KvmWrite(var f: textrec): integer;
     var
-      i : integer ; s: string;
+      i : integer ; s: ansistring; ch: char;
     begin
       if f.bufpos > 0 then
-      begin
-        setlength(s, f.bufpos);
-        move(f.buffer, s[1], f.bufpos);
-        kvm.emit(s);
-      end;
+        begin
+          setlength(s, f.bufpos);
+          move(f.buffer, s[1], f.bufpos);
+          kvm.emit(TStr(s)); // convert to widestring
+        end;
       f.bufpos := 0;
       Result := 0;
     end;
