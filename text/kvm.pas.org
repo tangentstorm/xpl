@@ -407,7 +407,7 @@ These control the foreground and background colors of the characters generated w
       _curs.x := curx;
       _curs.y := cury;
     end;
-  
+
   procedure TAnsiTerm.Fg( color : byte );
     begin
       inherited fg( color );
@@ -415,7 +415,7 @@ These control the foreground and background colors of the characters generated w
       { xterm 256-color extensions }
       write( stdout, #27, '[38;5;', color , 'm' )
     end;
-  
+
   procedure TAnsiTerm.Bg( color : byte );
     begin
       inherited bg( color );
@@ -423,42 +423,42 @@ These control the foreground and background colors of the characters generated w
       { xterm 256-color extensions }
       write( stdout, #27, '[48;5;', color , 'm' )
     end;
-  
+
   procedure TAnsiTerm.ClrScr;
     begin
       write( stdout, #27, '[H', #27, '[J' )
     end;
-  
+
   procedure TAnsiTerm.GotoXY( x, y : word );
     begin
       write(stdout, #27, '[', y + 1, ';', x + 1, 'H' )
     end;
-  
+
   procedure TAnsiTerm.EmitChar( wc : widechar );
     begin
-      write(stdout, wc)
+      write(stdout, wc);
     end;
-  
+
   procedure TAnsiTerm.Emit( s : TStr );
     begin
       write(stdout, utf8encode(s));
     end;
-  
+
   procedure TAnsiTerm.ResetColor;
     begin
       write(stdout, #27, '[0m' )
     end;
-  
+
   procedure TAnsiTerm.ShowCursor; // !! xterm / dec terminals
     begin
       write(stdout, #27, '[?25h');
     end;
-  
+
   procedure TAnsiTerm.HideCursor; // !! xterm / dec terminals
     begin
       write(stdout, #27, '[?25l');
     end;
-  
+
 #+end_src
 
 * =TTermProxy= : generic base class for decorators
@@ -559,9 +559,9 @@ We start with a handful of member variables to track the bounds:
       inherited Create(term, NewW, NewH);
       _x := x; _y := y;
     end;
-  
+
   function TSubTerm.WhereX : word;
-    begin result := _term.WhereX - _x 
+    begin result := _term.WhereX - _x
     end;
 
   function TSubTerm.WhereY : word;
@@ -574,8 +574,29 @@ We start with a handful of member variables to track the bounds:
     end;
 
   // don't proxy these two. just revert to default behavior
-  procedure TSubTerm.ClrScr; begin TBaseTerm(self).ClrScr; end;
-  procedure TSubTerm.ClrEol; begin TBaseTerm(self).ClrEol; end;
+  procedure TSubTerm.ClrScr;
+      var y : word; i : integer;
+      begin
+        for y := 0 to yMax do
+          begin
+            gotoxy(0, y);
+            for i := 1 to self.width do EmitChar(' ');
+          end;
+        gotoxy(0, 0);
+      end;
+
+  procedure TSubTerm.ClrEol;
+    var curx, cury, i : word;
+    begin
+      curx := self.WhereX;
+      cury := self.WhereY;
+      for i := curx to xMax do EmitChar(' ');
+      self.gotoxy( curx, cury );
+    end;
+
+  // TODO: think through why the following approaches freeze the system
+  // procedure TSubTerm.ClrScr;begin (self as TBaseTerm).ClrScr; end;
+  // procedure TSubTerm.ClrEol; begin TBaseTerm(self).ClrEol; end;
 
 #+end_src
 

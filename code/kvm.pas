@@ -370,7 +370,7 @@ implementation
   
   procedure TAnsiTerm.EmitChar( wc : widechar );
     begin
-      write(stdout, wc)
+      write(stdout, wc);
     end;
   
   procedure TAnsiTerm.Emit( s : TStr );
@@ -434,7 +434,7 @@ implementation
     end;
   
   function TSubTerm.WhereX : word;
-    begin result := _term.WhereX - _x 
+    begin result := _term.WhereX - _x
     end;
   
   function TSubTerm.WhereY : word;
@@ -447,8 +447,29 @@ implementation
     end;
   
   // don't proxy these two. just revert to default behavior
-  procedure TSubTerm.ClrScr; begin TBaseTerm(self).ClrScr; end;
-  procedure TSubTerm.ClrEol; begin TBaseTerm(self).ClrEol; end;
+  procedure TSubTerm.ClrScr;
+      var y : word; i : integer;
+      begin
+        for y := 0 to yMax do
+          begin
+            gotoxy(0, y);
+            for i := 1 to self.width do EmitChar(' ');
+          end;
+        gotoxy(0, 0);
+      end;
+  
+  procedure TSubTerm.ClrEol;
+    var curx, cury, i : word;
+    begin
+      curx := self.WhereX;
+      cury := self.WhereY;
+      for i := curx to xMax do EmitChar(' ');
+      self.gotoxy( curx, cury );
+    end;
+  
+  // TODO: think through why the following approaches freeze the system
+  // procedure TSubTerm.ClrScr;begin (self as TBaseTerm).ClrScr; end;
+  // procedure TSubTerm.ClrEol; begin TBaseTerm(self).ClrEol; end;
   
   
   
