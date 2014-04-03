@@ -82,6 +82,10 @@ var stdout : text;
     x, y : cardinal;
     w, h : cardinal;
   end;
+  type
+    TOnEmit = procedure( s : TStr ) of object;
+    TOnGotoXY = procedure( x, y : word ) of object;
+    TOnSetTextAttr = procedure( a : TTextAttr ) of object;
   type TBaseTerm = class (TInterfacedObject, ITerm)
     protected
       _attr  : TTextAttr;
@@ -102,15 +106,23 @@ var stdout : text;
       procedure Bg( color : byte ); virtual;
       function GetTextAttr : word;
       procedure SetTextAttr( value : word ); virtual;
-      procedure EmitChar( ch : TChr ); virtual; abstract;
+      procedure EmitChar( ch : TChr ); virtual;
       procedure Emit( s : TStr ); virtual;
       procedure InsLine; virtual;
       procedure DelLine; virtual;
       procedure ShowCursor; virtual;
       procedure HideCursor; virtual;
+    protected
+      _OnEmit : TOnEmit;
+      _OnGotoXY : TOnGotoXY;
+      _OnSetTextAttr : TOnSetTextAttr;
     published
       property w : word read Width;
       property h : word read Height;
+      property OnEmit : TOnEmit read _OnEmit write _OnEmit;
+      property OnGotoXY : TOnGotoXY read _OnGotoXY write _OnGotoXY;
+      property OnSetTextAttr : TOnSetTextAttr
+        read _OnSetTextAttr write _OnSetTextAttr;
     end;
   type TGridTerm = class (TBaseTerm, ITerm)
     private
@@ -130,13 +142,13 @@ var stdout : text;
     public
       constructor Create( NewW, NewH : word; CurX, CurY : byte );
         reintroduce;
+      procedure DoGotoXY( x, y : word );
+      procedure DoEmit( s : TStr );
+      //  the rest of these should be callbacks too:
       procedure ResetColor;
       procedure Fg( color : byte ); override;
       procedure Bg( color : byte ); override;
       procedure ClrScr; override;
-      procedure GotoXY( x, y : word ); override;
-      procedure EmitChar( wc : widechar ); override;
-      procedure Emit( s : TStr ); override;
       procedure ShowCursor; override;
       procedure HideCursor; override;
     end;
@@ -230,6 +242,7 @@ implementation
     begin
       _curs.x := x;
       _curs.y := y;
+      if assigned(_OnGotoXY) then _OnGotoXY( x, y );
     end;
   
   procedure TBaseTerm.ClrScr;
@@ -281,10 +294,16 @@ implementation
       _attr.bg := color
     end;
   
+  
+  procedure TBaseTerm.EmitChar( ch : TChr );
+     begin
+     end;
+  
   procedure TBaseTerm.Emit( s : TStr );
     var ch : widechar;
     begin
       for ch in s do EmitChar(ch);
+      if assigned(_OnEmit) then _OnEmit(s);
     end;
   
   constructor TGridTerm.Create( NewW, NewH : word );
@@ -340,6 +359,8 @@ implementation
       // somewhere when the program starts.
       _curs.x := curx;
       _curs.y := cury;
+      _OnGotoXY := @DoGotoXY;
+      _OnEmit := @DoEmit;
     end;
   
   procedure TAnsiTerm.Fg( color : byte );
@@ -363,17 +384,12 @@ implementation
       write( stdout, #27, '[H', #27, '[J' )
     end;
   
-  procedure TAnsiTerm.GotoXY( x, y : word );
+  procedure TAnsiTerm.DoGotoXY( x, y : word );
     begin
       write(stdout, #27, '[', y + 1, ';', x + 1, 'H' )
     end;
   
-  procedure TAnsiTerm.EmitChar( wc : widechar );
-    begin
-      write(stdout, wc);
-    end;
-  
-  procedure TAnsiTerm.Emit( s : TStr );
+  procedure TAnsiTerm.DoEmit( s : TStr );
     begin
       write(stdout, utf8encode(s));
     end;
@@ -453,7 +469,7 @@ implementation
         for y := 0 to yMax do
           begin
             gotoxy(0, y);
-            for i := 1 to self.width do EmitChar(' ');
+            for i := 1 to self.width do Emit(' ');
           end;
         gotoxy(0, 0);
       end;
@@ -463,7 +479,7 @@ implementation
     begin
       curx := self.WhereX;
       cury := self.WhereY;
-      for i := curx to xMax do EmitChar(' ');
+      for i := curx to xMax do Emit(' ');
       self.gotoxy( curx, cury );
     end;
   
