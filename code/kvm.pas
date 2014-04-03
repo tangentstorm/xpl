@@ -4,7 +4,7 @@
 
 {$mode objfpc}{$i xpc.inc}
 unit kvm;
-interface uses xpc, ugrid2d, sysutils,
+interface uses xpc, ugrid2d, sysutils, strutils,
   {$ifdef VIDEOKVM}video
   {$else}terminal
   {$endif}
@@ -21,6 +21,8 @@ var stdout : text;
     function  WhereY: word;
     procedure ClrScr;
     procedure ClrEol;
+    procedure NewLine;
+    procedure ScrollUp;
     procedure Fg( color : byte );
     procedure Bg( color : byte );
     procedure EmitChar( wc : widechar );
@@ -102,6 +104,8 @@ var stdout : text;
       procedure GotoXY( x, y : word ); virtual;
       procedure ClrScr; virtual;
       procedure ClrEol; virtual;
+      procedure NewLine; virtual;
+      procedure ScrollUp; virtual;
       procedure Fg( color : byte ); virtual;
       procedure Bg( color : byte ); virtual;
       function GetTextAttr : word;
@@ -154,40 +158,16 @@ var stdout : text;
     end;
   type TVideoTerm = class (TANSITerm)
   end;
-  type TTermProxy = class  (TBaseTerm)
-    protected
-      _term : ITerm;
-    public
-      constructor Create( term : ITerm; NewW, NewH : word );
-        reintroduce;
-      function  WhereX : word; override;
-      function  WhereY : word; override;
-      procedure ClrScr; override;
-      procedure ClrEol; override;
-      procedure Fg( color : byte ); override;
-      procedure Bg( color : byte ); override;
-      procedure EmitChar( wc : widechar ); override;
-      procedure Emit( s : TStr ); override;
-      procedure GotoXY( x, y : word ); override;
-      procedure InsLine; override;
-      procedure DelLine; override;
-      procedure SetTextAttr( value : word ); override;
-      procedure ShowCursor; override;
-      procedure HideCursor; override;
-      function  XMax  : word; override;
-      function  YMax  : word; override;
-    end;
   type
-    TSubTerm = class (TTermProxy)
+    TSubTerm = class (TBaseTerm)
       protected
+        _term : ITerm;
         _x, _y : word;
       public
-        constructor Create(term : ITerm; x, y, NewW, NewH : word );
-        function  WhereX : word; override;
-        function  WhereY : word; override;
-        procedure ClrScr; override;
-        procedure ClrEol; override;
-        procedure GotoXY( x, y : word ); override;
+        constructor Create(term : ITerm; x, y, NewW, NewH : word ); reintroduce;
+        procedure DoGotoXY( x, y : word );
+        procedure DoEmit( s : TStr );
+        procedure DoSetTextAttr( value : word );
       end;
 
   procedure fg( ch : char );
@@ -265,6 +245,18 @@ implementation
       self.gotoxy( curx, cury );
     end;
   
+  procedure TBaseTerm.NewLine;
+    begin
+      if whereY = yMax then begin scrollUp; gotoXY( 0, yMax ) end
+      else gotoXY( 0, whereY+1 );
+    end;
+  
+  procedure TBaseTerm.ScrollUp;
+    var x, y : cardinal;
+    begin
+      x := _curs.x; y := _curs.y; gotoXY(0,0); delLine; gotoXY(x, y);
+    end;
+  
   
   procedure TBaseTerm.ShowCursor; begin ok end;
   procedure TBaseTerm.HideCursor; begin ok end;
@@ -300,10 +292,21 @@ implementation
      end;
   
   procedure TBaseTerm.Emit( s : TStr );
-    var ch : widechar;
+    var ch : widechar; dist : cardinal;
     begin
-      for ch in s do EmitChar(ch);
-      if assigned(_OnEmit) then _OnEmit(s);
+      dist := width - whereX; // distance to end of line
+      if length(s) <= dist then
+        begin
+          _curs.x += length(s);
+          for ch in s do EmitChar(ch);
+          if assigned(_OnEmit) then _OnEmit(s);
+        end
+      else
+        begin
+          emit(midstr(s, 1, dist));
+          self.newline;
+          emit(midstr(s, dist, length(s)-dist-1));
+        end
     end;
   
   constructor TGridTerm.Create( NewW, NewH : word );
@@ -410,84 +413,29 @@ implementation
     end;
   
   
-  constructor TTermProxy.Create( term : ITerm; NewW, NewH : word );
-    begin
-      inherited Create( NewW, NewH );
-      _term := term;
-    end;
-  
-  function  TTermProxy.WhereX : word; begin result := _term.WhereX end;
-  function  TTermProxy.WhereY : word; begin result := _term.WhereY end;
-  function  TTermProxy.xMax   : word; begin result := self.width-1 end;
-  function  TTermProxy.yMax   : word; begin result := self.height-1 end;
-  
-  procedure TTermProxy.ClrScr; begin _term.ClrScr end;
-  procedure TTermProxy.ClrEol; begin _term.ClrEol end;
-  
-  procedure TTermProxy.Fg( color : byte );    begin _term.Fg( color ) end;
-  procedure TTermProxy.Bg( color : byte );    begin _term.Bg( color ) end;
-  
-  procedure TTermProxy.EmitChar( wc : widechar ); begin _term.EmitChar( wc ) end;
-  procedure TTermProxy.Emit( s : TStr ); begin _term.Emit( s ) end;
-  procedure TTermProxy.GotoXY( x, y : word ); begin _term.GotoXY( x, y ) end;
-  
-  procedure TTermProxy.InsLine; begin _term.InsLine end;
-  procedure TTermProxy.DelLine; begin _term.DelLine end;
-  
-  procedure TTermProxy.ShowCursor; begin _term.ShowCursor end;
-  procedure TTermProxy.HideCursor; begin _term.HideCursor end;
-  
-  procedure TTermProxy.SetTextAttr( value : word );
-     begin
-       inherited SetTextAttr( value );
-       _term.TextAttr := value;
-     end;
-  
   constructor TSubTerm.Create(term : ITerm; x, y, NewW, NewH : word );
     begin
-      inherited Create(term, NewW, NewH);
+      inherited Create(NewW, NewH);
+      _term := term;
       _x := x; _y := y;
+      _OnEmit := @DoEmit;
+      _OnGotoXy := @DoGotoXY;
     end;
   
-  function TSubTerm.WhereX : word;
-    begin result := _term.WhereX - _x
-    end;
-  
-  function TSubTerm.WhereY : word;
-    begin result := _term.WhereY - _y
-    end;
-  
-  procedure TSubTerm.GotoXY( x, y : word );
+  procedure TSubTerm.DoGotoXY( x, y : word );
     begin
       _term.GotoXY( x + _x, y + _y );
     end;
   
-  // don't proxy these two. just revert to default behavior
-  procedure TSubTerm.ClrScr;
-      var y : word; i : integer;
-      begin
-        for y := 0 to yMax do
-          begin
-            gotoxy(0, y);
-            for i := 1 to self.width do Emit(' ');
-          end;
-        gotoxy(0, 0);
-      end;
-  
-  procedure TSubTerm.ClrEol;
-    var curx, cury, i : word;
+  procedure TSubTerm.DoEmit( s : TStr );
     begin
-      curx := self.WhereX;
-      cury := self.WhereY;
-      for i := curx to xMax do Emit(' ');
-      self.gotoxy( curx, cury );
+      _term.Emit( s );
     end;
   
-  // TODO: think through why the following approaches freeze the system
-  // procedure TSubTerm.ClrScr;begin (self as TBaseTerm).ClrScr; end;
-  // procedure TSubTerm.ClrEol; begin TBaseTerm(self).ClrEol; end;
-  
-  
+  procedure TSubTerm.DoSetTextAttr( value : word );
+     begin
+       _term.TextAttr := value;
+     end;
   
   
   procedure bg( ch :  char );
