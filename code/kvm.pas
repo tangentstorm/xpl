@@ -87,6 +87,7 @@ var stdout : text;
     TOnEmit = procedure( s : TStr ) of object;
     TOnGotoXY = procedure( x, y : word ) of object;
     TOnSetTextAttr = procedure( a : TTextAttr ) of object;
+    TOnSetColor = procedure( color : byte ) of object;
   type TBaseTerm = class (TInterfacedObject, ITerm)
     protected
       _attr  : TTextAttr;
@@ -120,6 +121,8 @@ var stdout : text;
       _OnEmit : TOnEmit;
       _OnGotoXY : TOnGotoXY;
       _OnSetTextAttr : TOnSetTextAttr;
+      _OnSetFg : TOnSetColor;
+      _OnSetBg : TOnSetColor;
     published
       property w : word read Width;
       property h : word read Height;
@@ -127,6 +130,8 @@ var stdout : text;
       property OnGotoXY : TOnGotoXY read _OnGotoXY write _OnGotoXY;
       property OnSetTextAttr : TOnSetTextAttr
         read _OnSetTextAttr write _OnSetTextAttr;
+      property OnSetFg : TOnSetColor read _OnSetFg write _OnSetFg;
+      property OnSetBg : TOnSetColor read _OnSetBg write _OnSetBg;
     end;
   type TGridTerm = class (TBaseTerm, ITerm)
     private
@@ -168,6 +173,8 @@ var stdout : text;
         procedure DoGotoXY( x, y : word );
         procedure DoEmit( s : TStr );
         procedure DoSetTextAttr( value : word );
+        procedure DoSetFg( color : byte );
+        procedure DoSetBg( color : byte );
       end;
 
   procedure fg( ch : char );
@@ -283,12 +290,14 @@ implementation
   
   procedure TBaseTerm.Fg( color : byte );
     begin
-      _attr.fg := color
+      _attr.fg := color;
+      if assigned( _OnSetFg ) then _OnSetFg( color );
     end;
   
   procedure TBaseTerm.Bg( color : byte );
     begin
-      _attr.bg := color
+      _attr.bg := color;
+      if assigned( _OnSetBg ) then _OnSetBg( color );
     end;
   
   
@@ -431,7 +440,7 @@ implementation
       write(stdout, #27, '[?25l');
     end;
   
-  
+    
   constructor TSubTerm.Create(term : ITerm; x, y, NewW, NewH : word );
     begin
       inherited Create(NewW, NewH);
@@ -439,22 +448,29 @@ implementation
       _x := x; _y := y;
       _OnEmit := @DoEmit;
       _OnGotoXy := @DoGotoXY;
+      _OnSetFg := @DoSetFg;
+      _OnSetBg := @DoSetBg;
     end;
-  
+    
   procedure TSubTerm.DoGotoXY( x, y : word );
-    begin
-      _term.GotoXY( x + _x, y + _y );
+    begin _term.GotoXY( x + _x, y + _y );
     end;
-  
+    
   procedure TSubTerm.DoEmit( s : TStr );
-    begin
-      _term.Emit( s );
+    begin _term.Emit( s );
     end;
-  
+    
   procedure TSubTerm.DoSetTextAttr( value : word );
-     begin
-       _term.TextAttr := value;
-     end;
+    begin _term.TextAttr := value;
+    end;
+    
+  procedure TSubTerm.DoSetFg( color : byte );
+    begin _term.Fg(color)
+    end;
+    
+  procedure TSubTerm.DoSetBg( color : byte );
+    begin _term.Bg(color)
+    end;
   
   
   procedure bg( ch :  char );
