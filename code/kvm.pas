@@ -160,7 +160,8 @@ var stdout : text;
       procedure ClrScr; override;
       procedure ShowCursor; override;
       procedure HideCursor; override;
-  end;
+      procedure ScrollUp; override;
+    end;
   type TVideoTerm = class (TANSITerm)
   end;
   type
@@ -258,9 +259,13 @@ implementation
     end;
   
   procedure TBaseTerm.NewLine;
+    var oldY : word;
     begin
-      if whereY = yMax then begin scrollUp; gotoXY( 0, yMax ) end
-      else self.gotoXY( 0, whereY+1 );
+      oldY := wherey;
+      if oldY = yMax then begin scrollUp; gotoXY( 0, yMax ) end
+      else self.gotoXY( 0, oldY+1 );
+      chk.equal( _curs.x, 0 );
+      chk.equal( _curs.y, min( oldY+1, yMax ));
     end;
   
   procedure TBaseTerm.ScrollUp;
@@ -306,24 +311,18 @@ implementation
      end;
   
   procedure TBaseTerm.Emit( s : TStr );
-    var ch : widechar; dist : cardinal;
+    var
+      ch : widechar = #0; i : word=0;
     begin
-      if length(s) > 0 then begin
-        dist := _w - _curs.x; // distance to end of line
-        if length(s) <= dist then
-          begin
-            // ensure  xpos' = xpos + dist
-            for ch in s do begin EmitChar(ch); _curs.x += 1; end;
-            if assigned(_OnEmit) then _OnEmit(s);
-          end
-        else
-          begin
-            emit(midstr(s, 1, dist));
-            chk.equal( _w, _curs.x );
-            self.newline;
-            chk.equal( 0, _curs.x );
-            emit(midstr(s, dist, length(s)-dist));
-          end
+      for ch in s do begin
+        if ch = ^I then Emit('        ')
+        else if ch = ^J then NewLine
+        else if ord(ch) < 32 then ok
+        else begin
+          if _curs.x = _w then NewLine;
+          EmitChar(ch); _curs.x += 1;
+          if assigned(_OnEmit) then _OnEmit(ch);
+        end
       end
     end;
   
@@ -412,7 +411,8 @@ implementation
   
   procedure TAnsiTerm.ClrScr;
     begin
-      write( stdout, #27, '[H', #27, '[J' )
+      write( stdout, #27, '[H', #27, '[J' );
+      _curs.x := 0; _curs.y := 0;
     end;
   
   procedure TAnsiTerm.DoGotoXY( x, y : word );
@@ -423,6 +423,19 @@ implementation
   procedure TAnsiTerm.DoEmit( s : TStr );
     begin
       write(stdout, utf8encode(s));
+    end;
+  
+  procedure TAnsiTerm.ScrollUp;
+    var x, y : word;
+    begin
+      y := _curs.y;
+      if y = ymax then writeln(stdout)
+      else begin
+        x := _curs.x;
+        gotoxy(0,ymax);
+        write(stdout, lineEnding);
+        gotoxy(x,y);
+      end;
     end;
   
   procedure TAnsiTerm.ResetColor;
@@ -440,7 +453,7 @@ implementation
       write(stdout, #27, '[?25l');
     end;
   
-    
+  
   constructor TSubTerm.Create(term : ITerm; x, y, NewW, NewH : word );
     begin
       inherited Create(NewW, NewH);
@@ -449,25 +462,25 @@ implementation
       _OnEmit := @DoEmit;
       _OnGotoXy := @DoGotoXY;
       _OnSetFg := @DoSetFg;
-      _OnSetBg := @DoSetBg;
+      _OnSetBg := @DoSetFg;
     end;
-    
+  
   procedure TSubTerm.DoGotoXY( x, y : word );
     begin _term.GotoXY( x + _x, y + _y );
     end;
-    
+  
   procedure TSubTerm.DoEmit( s : TStr );
     begin _term.Emit( s );
     end;
-    
+  
   procedure TSubTerm.DoSetTextAttr( value : word );
     begin _term.TextAttr := value;
     end;
-    
+  
   procedure TSubTerm.DoSetFg( color : byte );
     begin _term.Fg(color)
     end;
-    
+  
   procedure TSubTerm.DoSetBg( color : byte );
     begin _term.Bg(color)
     end;

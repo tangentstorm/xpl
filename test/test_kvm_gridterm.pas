@@ -123,6 +123,18 @@ procedure test_linewrap;
     chk.equal('1', term[2,1].ch);
     chk.equal('2', term[5,2].ch);
     chk.equal('3', term[7,3].ch);
+    chk.equal(8, term.wherex);
+    chk.equal(3, term.wherey);
+  end;
+
+procedure test_linewrap_bottom;
+  begin
+    test_linewrap;
+    chk.equal(8, term.wherex);
+    chk.equal(3, term.wherey);
+    term.emit('x');
+    chk.equal(1, term.wherex);
+    chk.equal(3, term.wherey);
   end;
 
 procedure test_delline;
