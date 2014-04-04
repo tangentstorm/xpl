@@ -318,29 +318,31 @@ These control the foreground and background colors of the characters generated w
 
 #+name: @kvm:impl
 #+begin_src pascal
-
+  
   function  TBaseTerm.GetTextAttr : word;
     begin
       result := word(_attr)
     end;
-
+  
   procedure TBaseTerm.SetTextAttr( value : word );
+    var newAttr : TTextAttr;
     begin
-      _attr := TTextAttr(value)
+      newAttr := TTextAttr(value);
+      if newAttr.fg <> _attr.fg then Fg(newAttr.fg);
+      if newAttr.bg <> _attr.bg then Bg(newAttr.bg);
     end;
-
+  
   procedure TBaseTerm.Fg( color : byte );
     begin
       _attr.fg := color;
       if assigned( _OnSetFg ) then _OnSetFg( color );
     end;
-
+  
   procedure TBaseTerm.Bg( color : byte );
     begin
       _attr.bg := color;
       if assigned( _OnSetBg ) then _OnSetBg( color );
     end;
-
 #+end_src
 
 *** text emitter
@@ -393,20 +395,20 @@ These control the foreground and background colors of the characters generated w
 
 #+name: @kvm:impl
 #+begin_src pascal
-
+  
   constructor TGridTerm.Create( NewW, NewH : word );
     begin
       inherited create( NewW, NewH );
       _grid := TTermGrid.Create( NewW, NewH );
       clrscr;
     end;
-
+  
   destructor TGridTerm.Destroy;
     begin;
       _grid.Free;
       inherited destroy;
     end;
-
+  
   procedure TGridTerm.ClrScr;
     var cell : TTermCell;
     begin
@@ -416,40 +418,41 @@ These control the foreground and background colors of the characters generated w
       _grid.fill(cell);
       gotoxy(0,0);
     end;
-
+  
   procedure TGridTerm.EmitChar( wc : widechar );
     var cell : TTermCell;
     begin
       cell.attr := _attr; cell.ch := wc;
       _grid[_curs.x, _curs.y] := cell;
     end;
-
+  
   function TGridTerm.GetCell( const x, y : word ) : TTermCell;
     begin
       result := _grid[x,y]
     end;
-
+  
   procedure TGridTerm.PutCell( const x, y : word; const cell : TTermCell );
     begin
       _grid[x,y] := cell;
     end;
-
+  
   procedure TGridTerm.DelLine;
-    var curx, cury, x, y : integer;
+    var curx, cury, x, y : integer; a : TTextAttr; c : TTermCell;
     begin
-      curx := wherex; cury := wherey;
+      curx := wherex; cury := wherey; a := _attr;
       for y := cury to ymax-1 do
         begin
           gotoxy(0, y);
           for x := 0 to xmax do
             begin
-              emit(_grid[x, y+1].ch);
+              c := _grid[x, y+1];
+              SetTextAttr(word(c.attr)); emit(c.ch);
             end;
           end;
       gotoxy(0, ymax); clreol;
       gotoxy(curx, cury);
     end;
-
+  
 #+end_src
 
 * =TAnsiTerm=

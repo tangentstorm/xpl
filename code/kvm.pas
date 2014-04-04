@@ -289,8 +289,11 @@ implementation
     end;
   
   procedure TBaseTerm.SetTextAttr( value : word );
+    var newAttr : TTextAttr;
     begin
-      _attr := TTextAttr(value)
+      newAttr := TTextAttr(value);
+      if newAttr.fg <> _attr.fg then Fg(newAttr.fg);
+      if newAttr.bg <> _attr.bg then Bg(newAttr.bg);
     end;
   
   procedure TBaseTerm.Fg( color : byte );
@@ -304,7 +307,6 @@ implementation
       _attr.bg := color;
       if assigned( _OnSetBg ) then _OnSetBg( color );
     end;
-  
   
   procedure TBaseTerm.EmitChar( ch : TChr );
      begin
@@ -367,15 +369,16 @@ implementation
     end;
   
   procedure TGridTerm.DelLine;
-    var curx, cury, x, y : integer;
+    var curx, cury, x, y : integer; a : TTextAttr; c : TTermCell;
     begin
-      curx := wherex; cury := wherey;
+      curx := wherex; cury := wherey; a := _attr;
       for y := cury to ymax-1 do
         begin
           gotoxy(0, y);
           for x := 0 to xmax do
             begin
-              emit(_grid[x, y+1].ch);
+              c := _grid[x, y+1];
+              SetTextAttr(word(c.attr)); emit(c.ch);
             end;
           end;
       gotoxy(0, ymax); clreol;
