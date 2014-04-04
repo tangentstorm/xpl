@@ -177,8 +177,8 @@ type
       procedure ClrEol; virtual;
       procedure NewLine; virtual;
       procedure ScrollUp; virtual;
-      procedure Fg( color : byte ); virtual;
-      procedure Bg( color : byte ); virtual;
+      procedure Fg( color : byte );
+      procedure Bg( color : byte );
       function GetTextAttr : word;
       procedure SetTextAttr( value : word ); virtual;
       procedure EmitChar( ch : TChr ); virtual;
@@ -318,26 +318,26 @@ These control the foreground and background colors of the characters generated w
 
 #+name: @kvm:impl
 #+begin_src pascal
-  
+
   function  TBaseTerm.GetTextAttr : word;
     begin
-      result := word(_attr)
+      result := _attr.bg shl 16 + _attr.fg
     end;
-  
+
   procedure TBaseTerm.SetTextAttr( value : word );
     var newAttr : TTextAttr;
     begin
-      newAttr := TTextAttr(value);
+      newAttr := WordToAttr(value);
       if newAttr.fg <> _attr.fg then Fg(newAttr.fg);
       if newAttr.bg <> _attr.bg then Bg(newAttr.bg);
     end;
-  
+
   procedure TBaseTerm.Fg( color : byte );
     begin
       _attr.fg := color;
       if assigned( _OnSetFg ) then _OnSetFg( color );
     end;
-  
+
   procedure TBaseTerm.Bg( color : byte );
     begin
       _attr.bg := color;
@@ -395,20 +395,20 @@ These control the foreground and background colors of the characters generated w
 
 #+name: @kvm:impl
 #+begin_src pascal
-  
+
   constructor TGridTerm.Create( NewW, NewH : word );
     begin
       inherited create( NewW, NewH );
       _grid := TTermGrid.Create( NewW, NewH );
       clrscr;
     end;
-  
+
   destructor TGridTerm.Destroy;
     begin;
       _grid.Free;
       inherited destroy;
     end;
-  
+
   procedure TGridTerm.ClrScr;
     var cell : TTermCell;
     begin
@@ -418,24 +418,24 @@ These control the foreground and background colors of the characters generated w
       _grid.fill(cell);
       gotoxy(0,0);
     end;
-  
+
   procedure TGridTerm.EmitChar( wc : widechar );
     var cell : TTermCell;
     begin
       cell.attr := _attr; cell.ch := wc;
       _grid[_curs.x, _curs.y] := cell;
     end;
-  
+
   function TGridTerm.GetCell( const x, y : word ) : TTermCell;
     begin
       result := _grid[x,y]
     end;
-  
+
   procedure TGridTerm.PutCell( const x, y : word; const cell : TTermCell );
     begin
       _grid[x,y] := cell;
     end;
-  
+
   procedure TGridTerm.DelLine;
     var curx, cury, x, y : integer; a : TTextAttr; c : TTermCell;
     begin
@@ -446,13 +446,13 @@ These control the foreground and background colors of the characters generated w
           for x := 0 to xmax do
             begin
               c := _grid[x, y+1];
-              SetTextAttr(word(c.attr)); emit(c.ch);
+              SetTextAttr(AttrToWord(c.attr)); emit(c.ch);
             end;
           end;
       gotoxy(0, ymax); clreol;
       gotoxy(curx, cury);
     end;
-  
+
 #+end_src
 
 * =TAnsiTerm=
@@ -466,8 +466,8 @@ These control the foreground and background colors of the characters generated w
       procedure DoEmit( s : TStr );
       //  the rest of these should be callbacks too:
       procedure ResetColor;
-      procedure Fg( color : byte ); override;
-      procedure Bg( color : byte ); override;
+      procedure DoSetFg( color : byte );
+      procedure DoSetBg( color : byte );
       procedure ClrScr; override;
       procedure ShowCursor; override;
       procedure HideCursor; override;
@@ -486,20 +486,19 @@ These control the foreground and background colors of the characters generated w
       _curs.y := cury;
       _OnGotoXY := @DoGotoXY;
       _OnEmit := @DoEmit;
+      _OnSetFg := @DoSetFg;
+      _OnSetBg := @DoSetBg;
+      resetcolor;
     end;
 
-  procedure TAnsiTerm.Fg( color : byte );
+  procedure TAnsiTerm.DoSetFg( color : byte );
     begin
-      inherited fg( color );
-      _attr.fg := color;
       { xterm 256-color extensions }
       write( stdout, #27, '[38;5;', color , 'm' )
     end;
 
-  procedure TAnsiTerm.Bg( color : byte );
+  procedure TAnsiTerm.DoSetBg( color : byte );
     begin
-      inherited bg( color );
-      _attr.bg := color;
       { xterm 256-color extensions }
       write( stdout, #27, '[48;5;', color , 'm' )
     end;
@@ -535,6 +534,7 @@ These control the foreground and background colors of the characters generated w
 
   procedure TAnsiTerm.ResetColor;
     begin
+      _attr.bg := 0; _attr.fg := 7;
       write(stdout, #27, '[0m' )
     end;
 
@@ -563,9 +563,10 @@ These control the foreground and background colors of the characters generated w
         constructor Create(term : ITerm; x, y, NewW, NewH : word ); reintroduce;
         procedure DoGotoXY( x, y : word );
         procedure DoEmit( s : TStr );
-        procedure DoSetTextAttr( value : word );
         procedure DoSetFg( color : byte );
         procedure DoSetBg( color : byte );
+        procedure HideCursor; override;
+        procedure ShowCursor; override;
       end;
 #+end_src
 
@@ -595,16 +596,19 @@ We start with a handful of member variables to track the bounds:
     begin _term.Emit( s );
     end;
 
-  procedure TSubTerm.DoSetTextAttr( value : word );
-    begin _term.TextAttr := value;
-    end;
-
   procedure TSubTerm.DoSetFg( color : byte );
     begin _term.Fg(color)
     end;
 
   procedure TSubTerm.DoSetBg( color : byte );
     begin _term.Bg(color)
+    end;
+
+  procedure TSubTerm.HideCursor;
+    begin _term.HideCursor;
+    end;
+  procedure TSubTerm.ShowCursor;
+    begin _term.ShowCursor;
     end;
 
 #+end_src
@@ -895,7 +899,7 @@ In general, you're only going to work with one screen at a time, so it's conveni
 ** interface
 These follow the ITerm interface exactly.
 
-#+name: ITerm-Members
+#+name: convenience
 #+begin_src  pascal
   function  Width : word;
   function  Height: word;
@@ -917,6 +921,8 @@ These follow the ITerm interface exactly.
   property  TextAttr : word read GetTextAttr write SetTextAttr;
   procedure ShowCursor;
   procedure HideCursor;
+  function WordToAttr(w : word): TTextAttr;
+  function AttrToWord(a : TTextAttr) : word;
 #+end_src
 
 ** implementation
@@ -951,6 +957,18 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
     begin work.TextAttr := value end;
   function  GetTextAttr : word;
     begin result := work.TextAttr end;
+
+  function WordToAttr(w : word): TTextAttr; inline;
+    begin
+      result.bg := hi(w);
+      result.fg := lo(w);
+    end;
+
+  function AttrToWord(a : TTextAttr) : word; inline;
+    begin
+      result := (word(a.bg) shl 8)  + word(a.fg);
+    end;
+
 #+end_src
 
 ** Screens
@@ -988,16 +1006,16 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
   var stdout : text;
 
     <<ITerm>>
-    {$DEFINE unitscope}
-    <<ITerm-Members>>
-    {$UNDEF unitscope}
-
     <<TTextAttr>>
+
+    <<convenience>>
+
     <<TTermCell>>
     <<TTermGrid>>
     <<TPoint>>
     <<TRect>>
     <<event-types>>
+
     <<TBaseTerm>>
     <<TGridTerm>>
     <<TAnsiTerm>>

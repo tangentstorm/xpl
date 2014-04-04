@@ -36,7 +36,11 @@ var stdout : text;
     procedure HideCursor;
     procedure Resize( NewW, NewH : word );
   end;
-  {$DEFINE unitscope}
+  type TTextAttr = record
+      bg : byte;
+      fg : byte;
+    end;
+
   function  Width : word;
   function  Height: word;
   function  XMax  : word;
@@ -57,12 +61,9 @@ var stdout : text;
   property  TextAttr : word read GetTextAttr write SetTextAttr;
   procedure ShowCursor;
   procedure HideCursor;
-  {$UNDEF unitscope}
+  function WordToAttr(w : word): TTextAttr;
+  function AttrToWord(a : TTextAttr) : word;
 
-  type TTextAttr = record
-      bg : byte;
-      fg : byte;
-    end;
   type TTermCell = record
       ch   : widechar;
       attr : TTextAttr;
@@ -89,6 +90,7 @@ var stdout : text;
     TOnGotoXY = procedure( x, y : word ) of object;
     TOnSetTextAttr = procedure( a : TTextAttr ) of object;
     TOnSetColor = procedure( color : byte ) of object;
+
   type TBaseTerm = class (TInterfacedObject, ITerm)
     protected
       _attr  : TTextAttr;
@@ -107,8 +109,8 @@ var stdout : text;
       procedure ClrEol; virtual;
       procedure NewLine; virtual;
       procedure ScrollUp; virtual;
-      procedure Fg( color : byte ); virtual;
-      procedure Bg( color : byte ); virtual;
+      procedure Fg( color : byte );
+      procedure Bg( color : byte );
       function GetTextAttr : word;
       procedure SetTextAttr( value : word ); virtual;
       procedure EmitChar( ch : TChr ); virtual;
@@ -156,8 +158,8 @@ var stdout : text;
       procedure DoEmit( s : TStr );
       //  the rest of these should be callbacks too:
       procedure ResetColor;
-      procedure Fg( color : byte ); override;
-      procedure Bg( color : byte ); override;
+      procedure DoSetFg( color : byte );
+      procedure DoSetBg( color : byte );
       procedure ClrScr; override;
       procedure ShowCursor; override;
       procedure HideCursor; override;
@@ -174,9 +176,10 @@ var stdout : text;
         constructor Create(term : ITerm; x, y, NewW, NewH : word ); reintroduce;
         procedure DoGotoXY( x, y : word );
         procedure DoEmit( s : TStr );
-        procedure DoSetTextAttr( value : word );
         procedure DoSetFg( color : byte );
         procedure DoSetBg( color : byte );
+        procedure HideCursor; override;
+        procedure ShowCursor; override;
       end;
 
   procedure fg( ch : char );
@@ -286,13 +289,13 @@ implementation
   
   function  TBaseTerm.GetTextAttr : word;
     begin
-      result := word(_attr)
+      result := _attr.bg shl 16 + _attr.fg
     end;
   
   procedure TBaseTerm.SetTextAttr( value : word );
     var newAttr : TTextAttr;
     begin
-      newAttr := TTextAttr(value);
+      newAttr := WordToAttr(value);
       if newAttr.fg <> _attr.fg then Fg(newAttr.fg);
       if newAttr.bg <> _attr.bg then Bg(newAttr.bg);
     end;
@@ -379,7 +382,7 @@ implementation
           for x := 0 to xmax do
             begin
               c := _grid[x, y+1];
-              SetTextAttr(word(c.attr)); emit(c.ch);
+              SetTextAttr(AttrToWord(c.attr)); emit(c.ch);
             end;
           end;
       gotoxy(0, ymax); clreol;
@@ -395,20 +398,19 @@ implementation
       _curs.y := cury;
       _OnGotoXY := @DoGotoXY;
       _OnEmit := @DoEmit;
+      _OnSetFg := @DoSetFg;
+      _OnSetBg := @DoSetBg;
+      resetcolor;
     end;
   
-  procedure TAnsiTerm.Fg( color : byte );
+  procedure TAnsiTerm.DoSetFg( color : byte );
     begin
-      inherited fg( color );
-      _attr.fg := color;
       { xterm 256-color extensions }
       write( stdout, #27, '[38;5;', color , 'm' )
     end;
   
-  procedure TAnsiTerm.Bg( color : byte );
+  procedure TAnsiTerm.DoSetBg( color : byte );
     begin
-      inherited bg( color );
-      _attr.bg := color;
       { xterm 256-color extensions }
       write( stdout, #27, '[48;5;', color , 'm' )
     end;
@@ -444,6 +446,7 @@ implementation
   
   procedure TAnsiTerm.ResetColor;
     begin
+      _attr.bg := 0; _attr.fg := 7;
       write(stdout, #27, '[0m' )
     end;
   
@@ -477,16 +480,19 @@ implementation
     begin _term.Emit( s );
     end;
   
-  procedure TSubTerm.DoSetTextAttr( value : word );
-    begin _term.TextAttr := value;
-    end;
-  
   procedure TSubTerm.DoSetFg( color : byte );
     begin _term.Fg(color)
     end;
   
   procedure TSubTerm.DoSetBg( color : byte );
     begin _term.Bg(color)
+    end;
+  
+  procedure TSubTerm.HideCursor;
+    begin _term.HideCursor;
+    end;
+  procedure TSubTerm.ShowCursor;
+    begin _term.ShowCursor;
     end;
   
   
@@ -540,6 +546,18 @@ implementation
     begin work.TextAttr := value end;
   function  GetTextAttr : word;
     begin result := work.TextAttr end;
+  
+  function WordToAttr(w : word): TTextAttr; inline;
+    begin
+      result.bg := hi(w);
+      result.fg := lo(w);
+    end;
+  
+  function AttrToWord(a : TTextAttr) : word; inline;
+    begin
+      result := (word(a.bg) shl 8)  + word(a.fg);
+    end;
+  
   
   function KvmWrite(var f: textrec): integer;
     var s: ansistring;
