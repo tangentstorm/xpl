@@ -31,7 +31,7 @@ const //  why do I need both of these?
 
 
 type
-  point = object
+  cwstate = object
             x, y, fg, bg : word;
             procedure setc( value : word );
             function getc : word;
@@ -39,7 +39,7 @@ type
 	  end;
 
 var
-  cur, sav	     : point;
+  sav	             : cwstate;
   cwcommandmode	     : boolean;  { cwrite command mode? }
   cwcurrenttask	     : command;  { cwrite current command }
   cwnchexpected	     : byte;     { cwrite #chars expected }
@@ -83,44 +83,20 @@ var
 
 implementation
 
-function point.getc : word;
+function cwstate.getc : word;
   begin
     result := (( bg and $00FF ) shl 8 ) + ( fg and $FF );
   end;
 
-procedure point.setc( value : word );
+procedure cwstate.setc( value : word );
   begin
     self.fg := lo( value );
     self.bg := hi( value );
-  end; { point.setc }
-
-procedure cwgoxy( x, y : byte ); inline;
-  begin
-    cur.x := x; cur.y := y; kvm.gotoxy( x, y )
   end;
-
-procedure cwnl;
-  begin
-    kvm.emit( lineending );
-    cwgoxy(0, cur.y + 1);
-  end;
-
-procedure cwe( ch : TChr ); inline; // cw-emit
-  begin
-    if (ch = ^M) or (cur.x > kvm.xMax) then cwnl;
-    if ch <> ^M then begin emit(ch); inc( cur.x ); end;
-  end;
-
-procedure cws( s : TStr ); // cw-string
-  var i : integer;
-  begin
-    for i := 1 to length(s) do cwe( s[i] );
-  end; { cwr }
-
 
 procedure cxy(c: word; x, y :byte; const s : TStr); inline;
   begin
-    cwgoxy( x, y ); kvm.textattr := c; cws( s );
+    gotoxy( x, y ); kvm.textattr := c; kvm.emit( s );
   end; { cxy }
 
 procedure colorxy(x, y :byte; c: word; const s : TStr); inline;
@@ -147,67 +123,47 @@ procedure cwcommand( cn : command; s : TStr );
   const digits = ['0','1','2','3','4','5','6','7','8','9'];
   begin
     case cn of
-      cwfg : if s[ 1 ] in ccolset then
-		 cur.fg := pos( s[ 1 ], ccolors ) - 1;
-      cwbg : if s[ 1 ] in ccolset then
-		 cur.bg := pos( s[ 1 ], ccolors ) - 1;
-      cwCR	   : begin
-		       cur.x := 0;
-		       cur.y := cur.y + 1;
-		       { TODO: scroll up }
-		       if cur.y > kvm.yMax then
-		       begin
-			 // scrollup1( txmin, txmax, tymin, tymax, writeto );
-			 cur.y := kvm.yMax;
-			 kvm.clreol;
-		       end;
-		       cwgoxy( cur.x, cur.y );
-		     end;
-      cwBS	   : if cur.x <> 1 then
-		     begin
-		       cxy( cur.c, cur.x - 1, cur.y, ' ' );
-		       dec( cur.x );
-		     end;
-      cwclrscr	   : begin
-		       kvm.clrscr;
-		       cur.x := 0;
-		       cur.y := 0;
-		     end;
-      cwclreol	   : kvm.clreol;
-      cwsavecol	   : sav.c := kvm.textattr;
-      cwloadcol	   : kvm.textattr := sav.c;
-      cwchntimes   : cwrite( cwesc( chntimes( s[1], s2n(s[2]+s[3])) ));
-      cwgotoxy	   : begin
+      cwfg : if s[ 1 ] in ccolset then kvm.Fg(s[ 1 ]);
+      cwbg : if s[ 1 ] in ccolset then kvm.Bg(s[ 1 ]);
+      cwCR : kvm.newline;
+      cwBS : if wherex > 0 then
+               begin
+		 gotoxy( wherex-1, wherey ); emit(' ');
+		 gotoxy( wherex-1, wherey );
+	       end;
+      cwclrscr    : kvm.clrscr;
+      cwclreol	  : kvm.clreol;
+      cwsavecol	  : sav.c := kvm.textattr;
+      cwloadcol	  : kvm.textattr := sav.c;
+      cwchntimes  : cwrite( cwesc( chntimes( s[1], s2n(s[2]+s[3])) ));
+      cwgotoxy	  : begin
 		       if length( s ) <> 4 then exit;
 		       if ( s[ 1 ] in digits )
 			 and ( s[ 2 ] in digits )
 			 and ( s[ 3 ] in digits )
 			 and ( s[ 4 ] in digits )
                        then
-			 cwgoxy(s2n( s[ 1 ] + s[ 2 ]),
-				s2n( s[ 3 ] + s[ 4 ]));
+			 kvm.gotoxy(s2n( s[ 1 ] + s[ 2 ]),
+				    s2n( s[ 3 ] + s[ 4 ]));
 		     end;
-      cwsavexy	   : sav := cur;
-      cwloadxy	   : cur := sav;
+      cwsavexy	   : begin sav.x := wherex; sav.y := wherey end;
+      cwloadxy	   : gotoxy(sav.x, sav.y);
       cwspecialstr :
 	{ //  if i want to do things like this i should make it a 'macro' callback
 	  case upcase(s[1]) of
 	  'P' : cwrite( thisdir );
 	  'D' : cwrite( stardate );
 	  end; } ;
-	cwrenegade : cur.fg := s2n( s );
+	cwrenegade : kvm.fg( s2n( s ));
     end; { of case cn }
-    kvm.fg(cur.fg);
-    kvm.bg(cur.bg);
   end; { of cwcommand }
 
-  procedure cwrite( s : TStr );
+procedure cwrite( s : TStr );
+  var
+    i  : integer;
+    ch : TChr;
 
-    var i : integer;
-      ch    : char;
-      //uch   : TChr;
-
-    procedure next_char;
+  procedure next_char;
     begin
       ch := s[ i + 1 ]; inc(i);
       { ch := s[ i + 1 ]; }
@@ -224,8 +180,8 @@ procedure cwcommand( cn : command; s : TStr );
       { inc( i, bytes ); }
     end;
 
-    procedure runcmd( cmd : command; nchars : integer = 0 );
-      var j : integer; arg : TStr;
+  procedure runcmd( cmd : command; nchars : integer = 0 );
+    var j : integer; arg : TStr;
     begin
       arg := '';
       for j := 1 to nchars do begin
@@ -249,14 +205,14 @@ procedure cwcommand( cn : command; s : TStr );
 	  trg : cwcommandmode := true;
 	  ^J,
 	  ^M  : runcmd( cwcr );
-	  ^G  : cws('␇' ); // 'bell'
-	  ^L  : cws( ntimes( '- ', kvm.width div 2 - 1 ));
+	  ^G  : kvm.emit('␇' ); // 'bell'
+	  ^L  : kvm.emit( ntimes( '- ', kvm.width div 2 - 1 ));
 	  ^H  : runcmd( cwbs );
-	  else cwe( ch );
+	  else kvm.emit( ch );
 	end
       else
 	case ch of
-	  '|' : cwe( '|' );
+	  '|' : kvm.emit( '|' );
 	  '_' : runcmd( cwcr );
 	  '!' : runcmd( cwbg, 1 );
 	  '@' : runcmd( cwgotoxy, 4 );
@@ -272,15 +228,16 @@ procedure cwcommand( cn : command; s : TStr );
 		      dec( i ); // rewind, so ch becomes part of the arg
 		      runcmd( cwrenegade, 2 ) // + next char = 2 total
 		    end;
-	  else if ch in ccolset then begin dec( i ); runcmd( cwfg, 1 ) end
-	  else cwe( ch ); // ignore invalid triggers
+	  else if ch in ccolset then begin dec( i );
+	    runcmd( cwfg, 1 ) end
+	  else kvm.emit( ch ); // ignore invalid triggers
 	end
     end
   end;
 
 procedure cwriteln( s : TStr );
   begin
-    cwrite( s ); cwnl;
+    cwrite( s ); kvm.newline;
   end;
 
 procedure cwriteln( args : array of const );
@@ -292,12 +249,12 @@ procedure cwriteln( args : array of const );
 	vtstring  : cwrite( Utf8Decode( args[ i ].vstring^ ));
 	vtansistring : cwrite( Utf8Decode( ansistring( args[ i ].vansistring )));
       end;
-    cwnl;
+    kvm.newline;
   end;
 
 procedure cwritexy( x, y : byte; s : TStr );
   begin
-    cwgoxy( x, y ); cwrite( s );
+    kvm.gotoxy( x, y ); cwrite( s );
   end;
 
 procedure ccenterxy( x, y : byte; s : TStr );
@@ -327,13 +284,12 @@ procedure StWriteln( s : TStr );
 
 procedure StWritexy( x, y : byte; s : TStr );
   begin
-    cur.x := x;
-    cur.y := y;
+    gotoxy( x, y );
     stwrite( s );
   end;
 
 { ■ string formatting commands }
-function cLength( s : TStr ) : integer;
+function cLength( s : TStr ) : integer; // depricated. use cwlen
   begin result:=cwlen(s)
   end;
 
@@ -343,7 +299,7 @@ function cwlen( s : TStr ) : integer;
     begin inc(i,x); inc(r,y);
     end;
   begin
-    r := 0;
+    r := 0; // result accumulator
     i := 1;
     while i <= length( s ) do
       if ( s[ i ] = trg ) and ( i + 1 <= length( s )) then
@@ -376,9 +332,8 @@ function cstrip( s : TStr ) : TStr;
   end;
 
 
-function normaltext( s : TStr; esc : TChr=trg ) : TStr;
+function normaltext( s : TStr; esc : TChr=trg ) : TStr; deprecated 'use cwesc';
   begin
-    if esc <> trg then begin writeln( 'esc must be ', trg ); halt end;
     result := cwesc( s );
   end;
 
@@ -392,7 +347,6 @@ function cwesc( s : TStr ) : TStr;
 	result := result + s[ i ];
       end;
   end;
-
 
 function cpadstr( s : TStr; len : byte; ch : TChr ) : TStr;
   begin
@@ -411,10 +365,7 @@ initialization
   cwcommandmode := false;
   cwcurrenttask := cwnotask;
   cwnchexpected := 0;
-  cur.c := $0007;
-  sav.c := $000E;
-  cur.x := 0;
-  cur.y := 0;
+  sav.c := $0007;
   sav.x := 0;
   sav.y := 0;
 end.

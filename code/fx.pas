@@ -109,7 +109,7 @@ procedure greyshadow( a1, b1, a2, b2 : byte );
 procedure metalbar( a1, b1, a2, b2 : byte );
   var i, w, c  : byte; z : TStr;
   begin
-    c := cw.cur.c;
+    c := kvm.work.textattr;
     w := a2 - a1 - 1;
     z := chntimes( ' ', w );
     cwritexy( a1, b1, '|W|!w█' + ustr.ntimes( '▀', w ) + '|K█');
@@ -120,7 +120,7 @@ procedure metalbar( a1, b1, a2, b2 : byte );
       end;
     cwritexy( a1, b2, '|W|!w█|K' + ustr.ntimes( '▄', w ) + '|K█');
     // greyshadow(a1,b1+1,a2,b2+1);
-    cw.cur.c := c;
+    kvm.work.textattr :=c ;
   end;
 
 procedure metalbox( a1, b1, a2, b2 : byte );
