@@ -1,12 +1,13 @@
 {$mode delphiunicode}{$i xpc.inc}
 unit ui;
-interface uses classes, xpc, cw, ll, kvm, mou, kbd, ustr, fx, num, cli, sysutils;
+interface uses classes, xpc, cw, ll, kvm, mou, kbd, ustr,
+  fx, num, cli, sysutils, utv;
 
 { note : this module considers (0,0) to be the top left corner! }
 
 type
   { a clickable rectangle onscreen }
-  ZObj  = class ( TComponent )
+  ZObj  = class ( TView )
     public
       x, y, x2, y2 : Byte; { TODO : mX, mY, etc }
       is_dirty : boolean;
