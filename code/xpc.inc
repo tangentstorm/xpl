@@ -18,7 +18,9 @@
   {$overflowchecks on}
   {$rangechecks on}
   {$typedaddress on}
+  {$IFNDEF FREEBSD}
   {$checkpointer on}            // checks pointers for nil (when -gh used)
+  {$ENDIF}
 
   // things to disallow because they're bad practice
   {$writeableconst off} // ancient. use initialized vars instead
