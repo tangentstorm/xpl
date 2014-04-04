@@ -45,6 +45,7 @@ var stdout : text;
   function  WhereY : word;
   procedure ClrScr;
   procedure ClrEol;
+  procedure Newline;
   procedure Fg( color : byte );
   procedure Bg( color : byte );
   procedure Emit( s : TStr );
@@ -465,7 +466,7 @@ implementation
       _OnEmit := @DoEmit;
       _OnGotoXy := @DoGotoXY;
       _OnSetFg := @DoSetFg;
-      _OnSetBg := @DoSetFg;
+      _OnSetBg := @DoSetBg;
     end;
   
   procedure TSubTerm.DoGotoXY( x, y : word );
@@ -528,7 +529,7 @@ implementation
   
   procedure ClrScr; begin work.ClrScr end;
   procedure ClrEol; begin work.ClrEol end;
-  
+  procedure NewLine; begin work.NewLine end;
   procedure InsLine; begin work.InsLine end;
   procedure DelLine; begin work.DelLine end;
   
