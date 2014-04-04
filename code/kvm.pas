@@ -35,6 +35,7 @@ var stdout : text;
     property  TextAttr : word read GetTextAttr write SetTextAttr;
     procedure ShowCursor;
     procedure HideCursor;
+    procedure Resize( NewW, NewH : word );
   end;
   {$DEFINE unitscope}
   function  Width : word;
@@ -116,6 +117,7 @@ var stdout : text;
       procedure DelLine; virtual;
       procedure ShowCursor; virtual;
       procedure HideCursor; virtual;
+      procedure Resize( NewW, NewH : word );
     protected
       _OnEmit : TOnEmit;
       _OnGotoXY : TOnGotoXY;
@@ -138,7 +140,6 @@ var stdout : text;
       procedure PutCell( x, y : word; cell : TTermCell );
       procedure ClrScr; override;
       procedure EmitChar( wc : WideChar ); override;
-      property grid : TTermGrid read _grid;
       property cells[ x, y : word ] : TTermCell
         read GetCell write PutCell; default;
     end;
@@ -214,6 +215,10 @@ implementation
   function TBaseTerm.Height: word; begin result := _h end;
   function TBaseTerm.XMax : word; begin result := width - 1  end;
   function TBaseTerm.YMax : word; begin result := height - 1 end;
+  procedure TBaseTerm.Resize( NewW, NewH : word );
+    begin
+      _w := NewW; _h := NewH;
+    end;
   
   function TBaseTerm.WhereX : word; begin result := _curs.x end;
   function TBaseTerm.WhereY : word; begin result := _curs.y end;

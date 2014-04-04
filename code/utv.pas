@@ -110,7 +110,7 @@ constructor TTermView.Create( aOwner : TComponent );
 procedure TTermView.Resize(new_w, new_h : cardinal);
   begin
     inherited Resize(new_w, new_h);
-    _gridterm.grid.Resize(new_w, new_h);
+    _gridterm.Resize(new_w, new_h);
   end;
 
 procedure TTermView.Render(term : ITerm);
@@ -123,7 +123,7 @@ procedure TTermView.Render(term : ITerm);
 	term.gotoxy(_x, _y+y);
         for x := 0 to endx do
           begin
-            cell := _gridterm.grid[x,y];
+            cell := _gridterm[x,y];
 	    term.emit(cell.ch);
           end;
       end;
