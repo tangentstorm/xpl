@@ -4,7 +4,7 @@
 
 {$mode objfpc}{$i xpc.inc}
 unit kvm;
-interface uses xpc, ugrid2d, sysutils, strutils,
+interface uses xpc, ugrid2d, sysutils, strutils, chk,
   {$ifdef VIDEOKVM}video
   {$else}terminal
   {$endif}
@@ -25,7 +25,6 @@ var stdout : text;
     procedure ScrollUp;
     procedure Fg( color : byte );
     procedure Bg( color : byte );
-    procedure EmitChar( wc : widechar );
     procedure Emit( s : TStr );
     procedure GotoXY( x, y : word );
     procedure InsLine;
@@ -48,8 +47,7 @@ var stdout : text;
   procedure ClrEol;
   procedure Fg( color : byte );
   procedure Bg( color : byte );
-  procedure EmitChar( wc : WideChar ); {$IFNDEF unitscope}virtual;{$ENDIF}
-  procedure Emit( s : TStr ); {$IFNDEF unitscope}virtual;{$ENDIF}
+  procedure Emit( s : TStr );
   procedure GotoXY( x, y : word );
   procedure InsLine;
   procedure DelLine;
@@ -112,7 +110,7 @@ var stdout : text;
       function GetTextAttr : word;
       procedure SetTextAttr( value : word ); virtual;
       procedure EmitChar( ch : TChr ); virtual;
-      procedure Emit( s : TStr ); virtual;
+      procedure Emit( s : TStr );
       procedure InsLine; virtual;
       procedure DelLine; virtual;
       procedure ShowCursor; virtual;
@@ -136,12 +134,13 @@ var stdout : text;
     public
       constructor Create( NewW, NewH : word ); override;
       destructor Destroy; override;
-      function GetCell( x, y : word ) : TTermCell;
-      procedure PutCell( x, y : word; cell : TTermCell );
+      function GetCell( const x, y : word ) : TTermCell;
+      procedure PutCell( const x, y : word; const cell : TTermCell );
       procedure ClrScr; override;
-      procedure EmitChar( wc : WideChar ); override;
+      procedure EmitChar( wc : widechar ); override;
       property cells[ x, y : word ] : TTermCell
         read GetCell write PutCell; default;
+      procedure DelLine; override;
     end;
   type TAnsiTerm = class (TBaseTerm)
     public
@@ -156,11 +155,11 @@ var stdout : text;
       procedure ClrScr; override;
       procedure ShowCursor; override;
       procedure HideCursor; override;
-    end;
+  end;
   type TVideoTerm = class (TANSITerm)
   end;
   type
-    TSubTerm = class (TBaseTerm)
+    TSubTerm = class (TGridTerm)
       protected
         _term : ITerm;
         _x, _y : word;
@@ -236,24 +235,25 @@ implementation
       for y := 0 to yMax do
         begin
           gotoxy(0, y);
-          for i := 1 to self.width do EmitChar(' ');
+          for i := 1 to self.width do Emit(' ');
         end;
       gotoxy(0, 0);
     end;
   
   procedure TBaseTerm.ClrEol;
-    var curx, cury, i : word;
+    var oldX, i : word;
     begin
-      curx := self.WhereX;
-      cury := self.WhereY;
-      for i := curx to xMax do EmitChar(' ');
-      self.gotoxy( curx, cury );
+      oldX := _curs.x;
+      if oldX < xMax then for i := oldX to xMax do Emit(' ')
+      else ok;
+    { ensure curs'.x = curs.x ; curs'.y = curs.y }
+      self.gotoXY( oldX, _curs.y );
     end;
   
   procedure TBaseTerm.NewLine;
     begin
       if whereY = yMax then begin scrollUp; gotoXY( 0, yMax ) end
-      else gotoXY( 0, whereY+1 );
+      else self.gotoXY( 0, whereY+1 );
     end;
   
   procedure TBaseTerm.ScrollUp;
@@ -299,25 +299,30 @@ implementation
   procedure TBaseTerm.Emit( s : TStr );
     var ch : widechar; dist : cardinal;
     begin
-      dist := width - whereX; // distance to end of line
-      if length(s) <= dist then
-        begin
-          _curs.x += length(s);
-          for ch in s do EmitChar(ch);
-          if assigned(_OnEmit) then _OnEmit(s);
-        end
-      else
-        begin
-          emit(midstr(s, 1, dist));
-          self.newline;
-          emit(midstr(s, dist, length(s)-dist-1));
-        end
+      if length(s) > 0 then begin
+        dist := _w - _curs.x; // distance to end of line
+        if length(s) <= dist then
+          begin
+            // ensure  xpos' = xpos + dist
+            for ch in s do begin EmitChar(ch); _curs.x += 1; end;
+            if assigned(_OnEmit) then _OnEmit(s);
+          end
+        else
+          begin
+            emit(midstr(s, 1, dist));
+            chk.equal( _w, _curs.x );
+            self.newline;
+            chk.equal( 0, _curs.x );
+            emit(midstr(s, dist, length(s)-dist));
+          end
+      end
     end;
   
   constructor TGridTerm.Create( NewW, NewH : word );
     begin
       inherited create( NewW, NewH );
       _grid := TTermGrid.Create( NewW, NewH );
+      clrscr;
     end;
   
   destructor TGridTerm.Destroy;
@@ -329,6 +334,7 @@ implementation
   procedure TGridTerm.ClrScr;
     var cell : TTermCell;
     begin
+      inherited clrscr;
       cell.ch := ' ';
       cell.attr := _attr;
       _grid.fill(cell);
@@ -338,26 +344,34 @@ implementation
   procedure TGridTerm.EmitChar( wc : widechar );
     var cell : TTermCell;
     begin
-      cell.ch := wc;
-      cell.attr := _attr;
+      cell.attr := _attr; cell.ch := wc;
       _grid[_curs.x, _curs.y] := cell;
-      inc(_curs.x);
-      if _curs.x >= self.width then
-        begin
-          _curs.x := 0;
-          inc(_curs.y);
-          // todo: scroll
-        end;
     end;
   
-  function TGridTerm.GetCell( x, y : word ) : TTermCell;
+  function TGridTerm.GetCell( const x, y : word ) : TTermCell;
     begin
       result := _grid[x,y]
     end;
   
-  procedure TGridTerm.PutCell( x, y : word; cell : TTermCell );
+  procedure TGridTerm.PutCell( const x, y : word; const cell : TTermCell );
     begin
       _grid[x,y] := cell;
+    end;
+  
+  procedure TGridTerm.DelLine;
+    var curx, cury, x, y : integer;
+    begin
+      curx := wherex; cury := wherey;
+      for y := cury to ymax-1 do
+        begin
+          gotoxy(0, y);
+          for x := 0 to xmax do
+            begin
+              emit(_grid[x, y+1].ch);
+            end;
+          end;
+      gotoxy(0, ymax); clreol;
+      gotoxy(curx, cury);
     end;
   
   constructor TAnsiTerm.Create(NewW, NewH : word; CurX, CurY : byte);
@@ -477,7 +491,6 @@ implementation
   procedure Fg( color : byte );    begin work.Fg( color ) end;
   procedure Bg( color : byte );    begin work.Bg( color ) end;
   
-  procedure EmitChar( wc : widechar ); begin work.EmitChar( wc ) end;
   procedure Emit( s : TStr ); begin work.Emit( s ) end;
   procedure GotoXY( x, y : word ); begin work.GotoXY( x, y ) end;
   
