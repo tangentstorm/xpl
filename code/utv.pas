@@ -104,7 +104,7 @@ procedure TView.Resize(new_w, new_h : cardinal);
 constructor TTermView.Create( aOwner : TComponent );
   begin
     inherited Create( aOwner );
-    _gridterm := TGridTerm.Create(0, 0);
+    _gridterm := TGridTerm.Create(1, 1);
   end;
 
 procedure TTermView.Resize(new_w, new_h : cardinal);
