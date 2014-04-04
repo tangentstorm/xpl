@@ -1,5 +1,5 @@
 {$mode delphi}
-{$i test_gridterm.def }
+{$i test_kvm_gridterm.def }
 implementation uses kvm;
 
 var
