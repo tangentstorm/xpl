@@ -7,7 +7,7 @@ var grid : GGrid2d<byte>;
 procedure setup;
   begin
     if assigned(grid) then grid.free;
-    grid := GGrid2D<byte>.Create(16,16);
+    grid := GGrid2D<byte>.Create(20,16);
   end;
 
 procedure test_accessors;
@@ -18,6 +18,12 @@ procedure test_accessors;
 	grid[i,i] := (i shl 4) + i; // 1,1 = $11 etc..
 	chk.equal(grid[i,i],  (i shl 4) + i);
       end;
+  end;
+
+procedure test_fill;
+  begin
+    grid.fill(99);
+    chk.equal(99, grid[0,0]);
   end;
 
 finalization
