@@ -703,13 +703,14 @@ See also the [[https://github.com/tangentstorm/xpl/blob/master/code/cw.pas][cw u
 
 * Unit Life cycle
 
-There are basically two steps to deal with:
+There are basically three steps to deal with:
 
 #+name: lifecycle
 #+begin_src pascal
   initialization
     <<redirect-io>>
     <<create-term-obj>>
+    <<create-term-stack>>
   finalization
     { work is destroyed automatically by reference count }
 #+end_src
@@ -748,6 +749,14 @@ The second step is simply to create a new =ITerm= instance and assign the =work=
     work := TGridTerm.Create(64, 16);
   {$ENDIF}
 #+end_src
+
+The third step is just to initialize an empty stack:
+
+#+name: create-term-stack
+#+begin_src pascal
+  termstack := TTermStack.Create(32);
+#+end_src
+
 
 * Legacy interface : =CRT.pas=
 
@@ -862,6 +871,7 @@ CRT was the original console library for turbo pascal. It uses 1-based cordinate
 #+name: @crt:impl
 #+begin_src pascal
 
+
   procedure window(x1,y1,x2,y2:byte);
     begin
       // TODO: i don't think this is right behavior
@@ -892,15 +902,27 @@ CRT was the original console library for turbo pascal. It uses 1-based cordinate
 
 #+end_src
 
-* APPENDIX Convenience Routines
+* APPENDIX Top-level convenience routines
 
 In general, you're only going to work with one screen at a time, so it's convenient to have a set of routines that deal with whatever the current screen happens to be at the moment.
 
-** interface
-These follow the ITerm interface exactly.
 
-#+name: convenience
+** interface
+#+name: toplevel
 #+begin_src  pascal
+
+  { context stack (handy for subterms) }
+  procedure PushTerm( term : ITerm );
+  procedure SubTerm( x, y, w, h : word );
+  procedure PopTerm;
+
+  { conversion helpers }
+  function WordToAttr(w : word): TTextAttr;
+  function AttrToWord(a : TTextAttr) : word;
+
+  { convenience routines for global instance }
+  var work : ITerm;
+
   function  Width : word;
   function  Height: word;
   function  XMax  : word;
@@ -921,42 +943,40 @@ These follow the ITerm interface exactly.
   property  TextAttr : word read GetTextAttr write SetTextAttr;
   procedure ShowCursor;
   procedure HideCursor;
-  function WordToAttr(w : word): TTextAttr;
-  function AttrToWord(a : TTextAttr) : word;
 #+end_src
 
 ** implementation
 
-Since they just delegate to an =ITerm=, the implementation is trivial.
+** context stack
 
 #+name: @kvm:impl
 #+begin_src pascal
-  function  Width  : word; begin result := work.Width end;
-  function  Height : word; begin result := work.Height end;
-  function  XMax   : word; begin result := work.xMax end;
-  function  YMax   : word; begin result := work.yMax end;
-  function  WhereX : word; begin result := work.WhereX end;
-  function  WhereY : word; begin result := work.WhereY end;
 
-  procedure Fg( color : byte );    begin work.Fg( color ) end;
-  procedure Bg( color : byte );    begin work.Bg( color ) end;
+  type TTermStack = specialize GStack<ITerm>;
+  var termstack : TTermStack;
 
-  procedure Emit( s : TStr ); begin work.Emit( s ) end;
-  procedure GotoXY( x, y : word ); begin work.GotoXY( x, y ) end;
+  procedure PushTerm( term : ITerm );
+    begin
+      termstack.push( work );
+      work := term;
+    end;
 
-  procedure ClrScr; begin work.ClrScr end;
-  procedure ClrEol; begin work.ClrEol end;
-  procedure NewLine; begin work.NewLine end;
-  procedure InsLine; begin work.InsLine end;
-  procedure DelLine; begin work.DelLine end;
+  procedure PopTerm;
+    begin
+      work := termstack.Pop;
+    end;
 
-  procedure ShowCursor; begin work.ShowCursor end;
-  procedure HideCursor; begin work.HideCursor end;
+  procedure SubTerm( x, y, w, h : word );
+    begin
+      termstack.push( TSubTerm.Create( work, x, y , w , h ));
+    end;
 
-  procedure SetTextAttr( value : word );
-    begin work.TextAttr := value end;
-  function  GetTextAttr : word;
-    begin result := work.TextAttr end;
+#+end_src
+
+** conversions
+
+#+name: @kvm:impl
+#+begin_src pascal
 
   function WordToAttr(w : word): TTextAttr; inline;
     begin
@@ -971,33 +991,56 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
 
 #+end_src
 
-** Screens
+** convenience routines
+
+The others just delegate to the =work= term.
+
+#+name: @kvm:impl
 #+begin_src pascal
-  { these two are a bit trickier }
-  function TScreen.GetTextAttr : word;
-    begin
-      result := ( work._fg shl 8 ) + work._bg;
+
+  function  Width  : word; begin result := work.Width end;
+  function  Height : word; begin result := work.Height end;
+  function  XMax   : word; begin result := work.xMax end;
+  function  YMax   : word; begin result := work.yMax end;
+  function  WhereX : word; begin result := work.WhereX end;
+  function  WhereY : word; begin result := work.WhereY end;
+
+  procedure Fg( color : byte );    begin work.Fg( color ) end;
+  procedure Bg( color : byte );    begin work.Bg( color ) end;
+  procedure Emit( s : TStr );      begin work.Emit( s ) end;
+  procedure GotoXY( x, y : word ); begin work.GotoXY( x, y ) end;
+
+  procedure ClrScr;  begin work.ClrScr end;
+  procedure ClrEol;  begin work.ClrEol end;
+  procedure NewLine; begin work.NewLine end;
+  procedure InsLine; begin work.InsLine end;
+  procedure DelLine; begin work.DelLine end;
+
+  procedure ShowCursor; begin work.ShowCursor end;
+  procedure HideCursor; begin work.HideCursor end;
+
+  procedure SetTextAttr( value : word );
+    begin work.TextAttr := value
     end;
 
-  procedure TScreen.SetTextAttr( value : word );
-    begin
-      work._fg := value and $0f;
-      work._bg := (value and $f00) shr 8;
-      fg( work._fg );
-      bg( work._bg );
+  function  GetTextAttr : word;
+    begin result := work.TextAttr
     end;
+
 #+end_src
+
+
 
 * OUTPUT =kvm.pas=
 #+begin_src pascal :tangle "../code/kvm.pas" :noweb tangle
 
 
-  { --- warning!! generated file. edit ../text/kvm.pas.org instead!! --- }
+  {!! WARNING!! GENERATED FILE. edit ../text/kvm.pas.org instead!! !!}
 
 
   {$mode objfpc}{$i xpc.inc}
   unit kvm;
-  interface uses xpc, ugrid2d, sysutils, strutils, chk,
+  interface uses xpc, ugrid2d, sysutils, strutils, chk, stacks,
     {$ifdef VIDEOKVM}video
     {$else}terminal
     {$endif}
@@ -1005,27 +1048,27 @@ Since they just delegate to an =ITerm=, the implementation is trivial.
 
   var stdout : text;
 
-    <<ITerm>>
-    <<TTextAttr>>
+  <<ITerm>>
+  <<TTextAttr>>
 
-    <<convenience>>
+  <<toplevel>>
 
-    <<TTermCell>>
-    <<TTermGrid>>
-    <<TPoint>>
-    <<TRect>>
-    <<event-types>>
+  <<TTermCell>>
+  <<TTermGrid>>
+  <<TPoint>>
+  <<TRect>>
+  <<event-types>>
 
-    <<TBaseTerm>>
-    <<TGridTerm>>
-    <<TAnsiTerm>>
-    <<TVideoTerm>>
-    <<TSubTerm>>
+  <<TBaseTerm>>
+  <<TGridTerm>>
+  <<TAnsiTerm>>
+  <<TVideoTerm>>
+  <<TSubTerm>>
 
-    procedure fg( ch : char );
-    procedure bg( ch : char );
+  procedure fg( ch : char );
+  procedure bg( ch : char );
 
-  var work : ITerm;
+  <<extras>>
 
   implementation
     <<@kvm:impl>>

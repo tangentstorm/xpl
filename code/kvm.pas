@@ -1,10 +1,10 @@
 
-{ --- warning!! generated file. edit ../text/kvm.pas.org instead!! --- }
+{!! WARNING!! GENERATED FILE. edit ../text/kvm.pas.org instead!! !!}
 
 
 {$mode objfpc}{$i xpc.inc}
 unit kvm;
-interface uses xpc, ugrid2d, sysutils, strutils, chk,
+interface uses xpc, ugrid2d, sysutils, strutils, chk, stacks,
   {$ifdef VIDEOKVM}video
   {$else}terminal
   {$endif}
@@ -12,44 +12,17 @@ interface uses xpc, ugrid2d, sysutils, strutils, chk,
 
 var stdout : text;
 
-  type ITerm = interface
-    function  Width : word;
-    function  Height: word;
-    function  XMax  : word;
-    function  YMax  : word;
-    function  WhereX: word;
-    function  WhereY: word;
-    procedure ClrScr;
-    procedure ClrEol;
-    procedure NewLine;
-    procedure ScrollUp;
-    procedure Fg( color : byte );
-    procedure Bg( color : byte );
-    procedure Emit( s : TStr );
-    procedure GotoXY( x, y : word );
-    procedure InsLine;
-    procedure DelLine;
-    procedure SetTextAttr( value : word );
-    function  GetTextAttr : word;
-    property  TextAttr : word read GetTextAttr write SetTextAttr;
-    procedure ShowCursor;
-    procedure HideCursor;
-    procedure Resize( NewW, NewH : word );
-  end;
-  type TTextAttr = record
-      bg : byte;
-      fg : byte;
-    end;
-
+type ITerm = interface
   function  Width : word;
   function  Height: word;
   function  XMax  : word;
   function  YMax  : word;
-  function  WhereX : word;
-  function  WhereY : word;
+  function  WhereX: word;
+  function  WhereY: word;
   procedure ClrScr;
   procedure ClrEol;
-  procedure Newline;
+  procedure NewLine;
+  procedure ScrollUp;
   procedure Fg( color : byte );
   procedure Bg( color : byte );
   procedure Emit( s : TStr );
@@ -61,131 +34,169 @@ var stdout : text;
   property  TextAttr : word read GetTextAttr write SetTextAttr;
   procedure ShowCursor;
   procedure HideCursor;
-  function WordToAttr(w : word): TTextAttr;
-  function AttrToWord(a : TTextAttr) : word;
-
-  type TTermCell = record
-      ch   : widechar;
-      attr : TTextAttr;
-    end;
-  type TTermGrid = class (specialize GGrid2d<TTermCell>)
-    private
-      function GetAttr( const x, y : word ) : TTextAttr;
-      function GetChar( const x, y : word ) : WideChar;
-      procedure SetAttr( const x, y : word; const value : TTextAttr );
-      procedure SetChar( const x, y : word; const value : WideChar );
-    public
-      property attrs[ x, y : word ] : TTextAttr read GetAttr write SetAttr;
-      property chars[ x, y : word ] : WideChar read GetChar write SetChar;
-    end;
-  type TPoint = class
-    x, y : cardinal;
+  procedure Resize( NewW, NewH : word );
+end;
+type TTextAttr = record
+    bg : byte;
+    fg : byte;
   end;
-  type TRect = class
-    x, y : cardinal;
-    w, h : cardinal;
-  end;
-  type
-    TOnEmit = procedure( s : TStr ) of object;
-    TOnGotoXY = procedure( x, y : word ) of object;
-    TOnSetTextAttr = procedure( a : TTextAttr ) of object;
-    TOnSetColor = procedure( color : byte ) of object;
 
-  type TBaseTerm = class (TInterfacedObject, ITerm)
+
+{ context stack (handy for subterms) }
+procedure PushTerm( term : ITerm );
+procedure SubTerm( x, y, w, h : word );
+procedure PopTerm;
+
+{ conversion helpers }
+function WordToAttr(w : word): TTextAttr;
+function AttrToWord(a : TTextAttr) : word;
+
+{ convenience routines for global instance }
+var work : ITerm;
+
+function  Width : word;
+function  Height: word;
+function  XMax  : word;
+function  YMax  : word;
+function  WhereX : word;
+function  WhereY : word;
+procedure ClrScr;
+procedure ClrEol;
+procedure Newline;
+procedure Fg( color : byte );
+procedure Bg( color : byte );
+procedure Emit( s : TStr );
+procedure GotoXY( x, y : word );
+procedure InsLine;
+procedure DelLine;
+procedure SetTextAttr( value : word );
+function  GetTextAttr : word;
+property  TextAttr : word read GetTextAttr write SetTextAttr;
+procedure ShowCursor;
+procedure HideCursor;
+
+type TTermCell = record
+    ch   : widechar;
+    attr : TTextAttr;
+  end;
+type TTermGrid = class (specialize GGrid2d<TTermCell>)
+  private
+    function GetAttr( const x, y : word ) : TTextAttr;
+    function GetChar( const x, y : word ) : WideChar;
+    procedure SetAttr( const x, y : word; const value : TTextAttr );
+    procedure SetChar( const x, y : word; const value : WideChar );
+  public
+    property attrs[ x, y : word ] : TTextAttr read GetAttr write SetAttr;
+    property chars[ x, y : word ] : WideChar read GetChar write SetChar;
+  end;
+type TPoint = class
+  x, y : cardinal;
+end;
+type TRect = class
+  x, y : cardinal;
+  w, h : cardinal;
+end;
+type
+  TOnEmit = procedure( s : TStr ) of object;
+  TOnGotoXY = procedure( x, y : word ) of object;
+  TOnSetTextAttr = procedure( a : TTextAttr ) of object;
+  TOnSetColor = procedure( color : byte ) of object;
+
+type TBaseTerm = class (TInterfacedObject, ITerm)
+  protected
+    _attr  : TTextAttr;
+    _curs  : TPoint;
+    _w, _h : word;
+  public
+    constructor Create( NewW, NewH : word ); virtual;
+    function Width : word; virtual;
+    function Height : word; virtual;
+    function xMax : word; virtual;
+    function yMax : word; virtual;
+    function WhereX : word; virtual;
+    function WhereY : word; virtual;
+    procedure GotoXY( x, y : word ); virtual;
+    procedure ClrScr; virtual;
+    procedure ClrEol; virtual;
+    procedure NewLine; virtual;
+    procedure ScrollUp; virtual;
+    procedure Fg( color : byte );
+    procedure Bg( color : byte );
+    function GetTextAttr : word;
+    procedure SetTextAttr( value : word ); virtual;
+    procedure EmitChar( ch : TChr ); virtual;
+    procedure Emit( s : TStr );
+    procedure InsLine; virtual;
+    procedure DelLine; virtual;
+    procedure ShowCursor; virtual;
+    procedure HideCursor; virtual;
+    procedure Resize( NewW, NewH : word );
+  protected
+    _OnEmit : TOnEmit;
+    _OnGotoXY : TOnGotoXY;
+    _OnSetTextAttr : TOnSetTextAttr;
+    _OnSetFg : TOnSetColor;
+    _OnSetBg : TOnSetColor;
+  published
+    property w : word read Width;
+    property h : word read Height;
+    property OnEmit : TOnEmit read _OnEmit write _OnEmit;
+    property OnGotoXY : TOnGotoXY read _OnGotoXY write _OnGotoXY;
+    property OnSetTextAttr : TOnSetTextAttr
+      read _OnSetTextAttr write _OnSetTextAttr;
+    property OnSetFg : TOnSetColor read _OnSetFg write _OnSetFg;
+    property OnSetBg : TOnSetColor read _OnSetBg write _OnSetBg;
+  end;
+type TGridTerm = class (TBaseTerm, ITerm)
+  private
+    _grid : TTermGrid;
+  public
+    constructor Create( NewW, NewH : word ); override;
+    destructor Destroy; override;
+    function GetCell( const x, y : word ) : TTermCell;
+    procedure PutCell( const x, y : word; const cell : TTermCell );
+    procedure ClrScr; override;
+    procedure EmitChar( wc : widechar ); override;
+    property cells[ x, y : word ] : TTermCell
+      read GetCell write PutCell; default;
+    procedure DelLine; override;
+  end;
+type TAnsiTerm = class (TBaseTerm)
+  public
+    constructor Create( NewW, NewH : word; CurX, CurY : byte );
+      reintroduce;
+    procedure DoGotoXY( x, y : word );
+    procedure DoEmit( s : TStr );
+    //  the rest of these should be callbacks too:
+    procedure ResetColor;
+    procedure DoSetFg( color : byte );
+    procedure DoSetBg( color : byte );
+    procedure ClrScr; override;
+    procedure ShowCursor; override;
+    procedure HideCursor; override;
+    procedure ScrollUp; override;
+  end;
+type TVideoTerm = class (TANSITerm)
+end;
+type
+  TSubTerm = class (TGridTerm)
     protected
-      _attr  : TTextAttr;
-      _curs  : TPoint;
-      _w, _h : word;
+      _term : ITerm;
+      _x, _y : word;
     public
-      constructor Create( NewW, NewH : word ); virtual;
-      function Width : word; virtual;
-      function Height : word; virtual;
-      function xMax : word; virtual;
-      function yMax : word; virtual;
-      function WhereX : word; virtual;
-      function WhereY : word; virtual;
-      procedure GotoXY( x, y : word ); virtual;
-      procedure ClrScr; virtual;
-      procedure ClrEol; virtual;
-      procedure NewLine; virtual;
-      procedure ScrollUp; virtual;
-      procedure Fg( color : byte );
-      procedure Bg( color : byte );
-      function GetTextAttr : word;
-      procedure SetTextAttr( value : word ); virtual;
-      procedure EmitChar( ch : TChr ); virtual;
-      procedure Emit( s : TStr );
-      procedure InsLine; virtual;
-      procedure DelLine; virtual;
-      procedure ShowCursor; virtual;
-      procedure HideCursor; virtual;
-      procedure Resize( NewW, NewH : word );
-    protected
-      _OnEmit : TOnEmit;
-      _OnGotoXY : TOnGotoXY;
-      _OnSetTextAttr : TOnSetTextAttr;
-      _OnSetFg : TOnSetColor;
-      _OnSetBg : TOnSetColor;
-    published
-      property w : word read Width;
-      property h : word read Height;
-      property OnEmit : TOnEmit read _OnEmit write _OnEmit;
-      property OnGotoXY : TOnGotoXY read _OnGotoXY write _OnGotoXY;
-      property OnSetTextAttr : TOnSetTextAttr
-        read _OnSetTextAttr write _OnSetTextAttr;
-      property OnSetFg : TOnSetColor read _OnSetFg write _OnSetFg;
-      property OnSetBg : TOnSetColor read _OnSetBg write _OnSetBg;
-    end;
-  type TGridTerm = class (TBaseTerm, ITerm)
-    private
-      _grid : TTermGrid;
-    public
-      constructor Create( NewW, NewH : word ); override;
-      destructor Destroy; override;
-      function GetCell( const x, y : word ) : TTermCell;
-      procedure PutCell( const x, y : word; const cell : TTermCell );
-      procedure ClrScr; override;
-      procedure EmitChar( wc : widechar ); override;
-      property cells[ x, y : word ] : TTermCell
-        read GetCell write PutCell; default;
-      procedure DelLine; override;
-    end;
-  type TAnsiTerm = class (TBaseTerm)
-    public
-      constructor Create( NewW, NewH : word; CurX, CurY : byte );
-        reintroduce;
+      constructor Create(term : ITerm; x, y, NewW, NewH : word ); reintroduce;
       procedure DoGotoXY( x, y : word );
       procedure DoEmit( s : TStr );
-      //  the rest of these should be callbacks too:
-      procedure ResetColor;
       procedure DoSetFg( color : byte );
       procedure DoSetBg( color : byte );
-      procedure ClrScr; override;
-      procedure ShowCursor; override;
       procedure HideCursor; override;
-      procedure ScrollUp; override;
+      procedure ShowCursor; override;
     end;
-  type TVideoTerm = class (TANSITerm)
-  end;
-  type
-    TSubTerm = class (TGridTerm)
-      protected
-        _term : ITerm;
-        _x, _y : word;
-      public
-        constructor Create(term : ITerm; x, y, NewW, NewH : word ); reintroduce;
-        procedure DoGotoXY( x, y : word );
-        procedure DoEmit( s : TStr );
-        procedure DoSetFg( color : byte );
-        procedure DoSetBg( color : byte );
-        procedure HideCursor; override;
-        procedure ShowCursor; override;
-      end;
 
-  procedure fg( ch : char );
-  procedure bg( ch : char );
+procedure fg( ch : char );
+procedure bg( ch : char );
 
-var work : ITerm;
+
 
 implementation
   
@@ -520,32 +531,26 @@ implementation
       result := TAnsiTerm.Create( termw, termh, curx, cury );
     end;
   {$ENDIF}
-  function  Width  : word; begin result := work.Width end;
-  function  Height : word; begin result := work.Height end;
-  function  XMax   : word; begin result := work.xMax end;
-  function  YMax   : word; begin result := work.yMax end;
-  function  WhereX : word; begin result := work.WhereX end;
-  function  WhereY : word; begin result := work.WhereY end;
   
-  procedure Fg( color : byte );    begin work.Fg( color ) end;
-  procedure Bg( color : byte );    begin work.Bg( color ) end;
+  type TTermStack = specialize GStack<ITerm>;
+  var termstack : TTermStack;
   
-  procedure Emit( s : TStr ); begin work.Emit( s ) end;
-  procedure GotoXY( x, y : word ); begin work.GotoXY( x, y ) end;
+  procedure PushTerm( term : ITerm );
+    begin
+      termstack.push( work );
+      work := term;
+    end;
   
-  procedure ClrScr; begin work.ClrScr end;
-  procedure ClrEol; begin work.ClrEol end;
-  procedure NewLine; begin work.NewLine end;
-  procedure InsLine; begin work.InsLine end;
-  procedure DelLine; begin work.DelLine end;
+  procedure PopTerm;
+    begin
+      work := termstack.Pop;
+    end;
   
-  procedure ShowCursor; begin work.ShowCursor end;
-  procedure HideCursor; begin work.HideCursor end;
+  procedure SubTerm( x, y, w, h : word );
+    begin
+      termstack.push( TSubTerm.Create( work, x, y , w , h ));
+    end;
   
-  procedure SetTextAttr( value : word );
-    begin work.TextAttr := value end;
-  function  GetTextAttr : word;
-    begin result := work.TextAttr end;
   
   function WordToAttr(w : word): TTextAttr; inline;
     begin
@@ -556,6 +561,36 @@ implementation
   function AttrToWord(a : TTextAttr) : word; inline;
     begin
       result := (word(a.bg) shl 8)  + word(a.fg);
+    end;
+  
+  
+  function  Width  : word; begin result := work.Width end;
+  function  Height : word; begin result := work.Height end;
+  function  XMax   : word; begin result := work.xMax end;
+  function  YMax   : word; begin result := work.yMax end;
+  function  WhereX : word; begin result := work.WhereX end;
+  function  WhereY : word; begin result := work.WhereY end;
+  
+  procedure Fg( color : byte );    begin work.Fg( color ) end;
+  procedure Bg( color : byte );    begin work.Bg( color ) end;
+  procedure Emit( s : TStr );      begin work.Emit( s ) end;
+  procedure GotoXY( x, y : word ); begin work.GotoXY( x, y ) end;
+  
+  procedure ClrScr;  begin work.ClrScr end;
+  procedure ClrEol;  begin work.ClrEol end;
+  procedure NewLine; begin work.NewLine end;
+  procedure InsLine; begin work.InsLine end;
+  procedure DelLine; begin work.DelLine end;
+  
+  procedure ShowCursor; begin work.ShowCursor end;
+  procedure HideCursor; begin work.HideCursor end;
+  
+  procedure SetTextAttr( value : word );
+    begin work.TextAttr := value
+    end;
+  
+  function  GetTextAttr : word;
+    begin result := work.TextAttr
     end;
   
   
@@ -610,6 +645,7 @@ initialization
   {$ELSE}
     work := TGridTerm.Create(64, 16);
   {$ENDIF}
+  termstack := TTermStack.Create(32);
 finalization
   { work is destroyed automatically by reference count }
 end.
