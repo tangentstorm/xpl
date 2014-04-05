@@ -2,29 +2,29 @@
   inspired by linenoise by antirez. }
 {$i xpc.inc}{$mode objfpc}{$h+}
 unit lined;
-interface uses classes, sysutils, kvm, kbd, cw;
+interface uses xpc, classes, sysutils, kvm, kbd, cw;
 
   type
     StringList	   = class ( TStringList )
-      procedure load( path : string );
-      procedure save( path : string );
+      procedure load( path : TStr );
+      procedure save( path : TStr );
     end;
     HistoryList	   = StringList;
     Completions	   = StringList;
-    completion_cbk = procedure( const buf: string; var comps : Completions );
+    completion_cbk = procedure( const buf: TStr; var comps : Completions );
 
     LineEditor	   = class
       history      : StringList;
       on_complete  : completion_cbk;
       constructor create;
-      function flush: string;
-      function input( const pmt : string; var res : string ) : boolean;
+      function flush: TStr;
+      function input( const pmt : TStr; var res : TStr ) : boolean;
       procedure refresh;
       procedure backspace;
       procedure delete_char;
       procedure transpose;
       procedure kill_prev_word;
-      procedure complete_line( var buf : string );
+      procedure complete_line( var buf : TStr );
       procedure browse_history( new_index : integer );
       procedure reset;
       procedure step;
@@ -33,24 +33,24 @@ interface uses classes, sysutils, kvm, kbd, cw;
       hist_index : integer;
       plen, len, cur : integer;
       keep : boolean;
-      pmt, buf : string;
+      pmt, buf : TStr;
       procedure escapes;
-      procedure set_prompt( const s :  string );
+      procedure set_prompt( const s :  TStr );
     public
-      property prompt : string read pmt write set_prompt;
+      property prompt : TStr read pmt write set_prompt;
       property done : boolean read _done;
     end;
 
   const
     MAX_LINE_SIZE = 1024;
-    unsupported	: array[ 1..3 ] of string
+    unsupported	: array[ 1..3 ] of TStr
 		  = ( '', 'dumb', 'cons25' );
     force_plain	  = false;
 
   var
     ed	: LineEditor;
 
-  function prompt( const msg : string; var buf : string ) : boolean;
+  function prompt( const msg : TStr; var buf : TStr ) : boolean;
 
 
 implementation
@@ -62,10 +62,10 @@ implementation
     self.reset;
   end;
 
-  procedure LineEditor.set_prompt( const s : string );
+  procedure LineEditor.set_prompt( const s : TStr );
   begin
     self.pmt := s;
-    self.plen := cw.clength(s);
+    self.plen := cwlen(s);
   end;
 
   procedure LineEditor.refresh;
@@ -125,7 +125,7 @@ implementation
     len := length( buf );
   end;
 
-  procedure LineEditor.complete_line( var buf : string );
+  procedure LineEditor.complete_line( var buf : TStr );
   begin
     //  todo
   end;
@@ -208,7 +208,7 @@ implementation
     browse_history( history.count );
   end;
 
-  function LineEditor.input( const pmt : string; var res : string ) : boolean;
+  function LineEditor.input( const pmt : TStr; var res : TStr ) : boolean;
   begin
     self.pmt := pmt;
     reset;
@@ -222,7 +222,7 @@ implementation
   end; { LineEditor.prompt }
 
 
-  function LineEditor.flush : string;
+  function LineEditor.flush : TStr;
   begin
     result := self.buf;
     if result <> '' then history.add( result );
@@ -233,7 +233,7 @@ implementation
 
 
 function term_supported : boolean;
-  var un, term : string;
+  var un, term : TStr;
 begin
   result := true;
   term := getEnvironmentVariable( 'TERM' );
@@ -241,7 +241,7 @@ begin
 end;
 
 
-function prompt( const msg : string; var buf : string ) : boolean;
+function prompt( const msg : TStr; var buf : TStr ) : boolean;
 begin
   if term_supported and not force_plain then //  and is_tty( stdin )
   begin
@@ -257,12 +257,12 @@ end;
 
 { -- TStringList wrappers  -- }
 
-procedure StringList.load( path : string ); inline;
+procedure StringList.load( path : TStr ); inline;
 begin
   if fileExists( path ) then self.LoadFromFile( path );
 end;
 
-procedure StringList.save( path : string ); inline;
+procedure StringList.save( path : TStr ); inline;
 begin
   self.SaveToFile( path );
 end;
