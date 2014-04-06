@@ -6,12 +6,12 @@
 ** TODO what is a b+ tree?
 ** TODO what problem does a b+ tree overcome?
 * Object Model and Public Interface
-** unit =bp=;
+** unit =ubp=;
 #+name: interface
 #+begin_src pascal
   { B+ Trees for pascal }
-  {$mode delphi} {$i xpc.inc} {$H+}
-  unit bp;
+  {$mode delphiunicode} {$i xpc.inc} {$H+}
+  unit ubp;
   interface uses xpc, sysutils;
 
     const empty = maxint;
@@ -48,7 +48,7 @@
     constructor CreateLeaf( size : integer );
     constructor CreateInner( size : integer );
     <<IBPlusMethods>>
-    function tostring: string; override;
+    function toString: TStr; reintroduce;
    private
     isleaf      : boolean;
     _parent   : TNode;
@@ -79,7 +79,7 @@
     constructor Create( branchfactor : integer = 64 );
     <<IBPlusMethods>>
     function GetEnumerator: TIter;
-    function tostring: string; override;
+    function ToString: TStr; reintroduce;
    private
     root : TNode;
   end;
@@ -345,14 +345,14 @@
 *** DONE debugging with .tostring
 #+name: imp
 #+begin_src pascal
-  function TTree.tostring: string;
+  function TTree.tostring: TStr;
   begin
     result := self.root.tostring;
   end;
 
-  var gIndent : string = '';
-  function TNode.ToString : string;
-    var s : string; i : integer;
+  var gIndent : TStr = '';
+  function TNode.ToString : TStr;
+    var s : TStr; i : integer;
   begin
 
     s := '';
@@ -480,23 +480,26 @@ The leaf nodes of a B+Tree are linked together to form a chain, making it easy t
   end;
 #+end_src
 
-** OUTPUT: =bp.pas=
-#+begin_src pascal :tangle "~/b/lib/xpl/code/bp.pas" :padline yes :noweb tangle
-  { NOTE : this file is generated from ~/b/web/bp.pas.org , so...
-    --->> DON'T EDIT THIS FILE! <<--- }
+** OUTPUT: =ubp.pas=
+#+begin_src pascal :tangle "~/x/code/ubp.pas" :padline yes :noweb tangle
+
+  //  NOTE :this file is generated from ../org/bplus.org , so...
+  //  --->> DON'T EDIT THIS FILE! <<---
+
   <<interface>>
   implementation
     <<imp>>
   end.
 #+end_src
 
-* Usage: An Indexed Triple Store
+* Example Usage: An Indexed Triple Store
 ** declarations
 #+name: test
-#+begin_src pascal :tangle "~/b/go/bpdemo.pas" :padline yes :noweb tangle
+#+begin_src pascal :tangle "~/x/demo/bpdemo.pas" :padline yes :noweb tangle
+  // generated from ../org/bplus.org
   {$i xpc.inc}
   program bpdemo;
-  uses bp, strutils, sysutils;
+  uses ubp, strutils, sysutils;
 
     const kMax = 255; // 65535;  { change if you want to test speed }
     type
@@ -504,7 +507,7 @@ The leaf nodes of a B+Tree are linked together to form a chain, making it easy t
         sub, rel, obj : integer;
         constructor Create( SubId, RelId, ObjId : integer );
         procedure Print;
-        function tostring: string; override;
+        function tostring: TStr; override;
         // function reversed : IEnumerator;
       end;
 
@@ -517,7 +520,7 @@ The leaf nodes of a B+Tree are linked together to form a chain, making it easy t
 
 
     var building : boolean = true;
-    function TTriple.ToString : string;
+    function TTriple.ToString : TStr;
     begin
       result := '('  + PadLeft(IntToStr( sub ), 4) +
                 ', ' + PadLeft(IntToStr( rel ), 4) +

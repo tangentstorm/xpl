@@ -1,9 +1,10 @@
 
-{ NOTE : this file is generated from ~/b/web/bp.pas.org , so...
-  --->> DON'T EDIT THIS FILE! <<--- }
+//  NOTE :this file is generated from ../org/bplus.org , so...
+//  --->> DON'T EDIT THIS FILE! <<---
+
 { B+ Trees for pascal }
-{$mode delphi} {$i xpc.inc} {$H+}
-unit bp;
+{$mode delphiunicode} {$i xpc.inc} {$H+}
+unit ubp;
 interface uses xpc, sysutils;
 
   const empty = maxint;
@@ -27,7 +28,7 @@ interface uses xpc, sysutils;
       //procedure del( key : TKey );
       //function get( key : TKey ): TVal;
       //function has( key : Tkey ): boolean;
-      function tostring: string; override;
+      function toString: TStr; reintroduce;
      private
       isleaf      : boolean;
       _parent   : TNode;
@@ -68,7 +69,7 @@ interface uses xpc, sysutils;
       //function get( key : TKey ): TVal;
       //function has( key : Tkey ): boolean;
       function GetEnumerator: TIter;
-      function tostring: string; override;
+      function ToString: TStr; reintroduce;
      private
       root : TNode;
     end;
@@ -240,14 +241,14 @@ implementation
       then result := self
       else result := _parent.findroot
   end;
-  function TTree.tostring: string;
+  function TTree.tostring: TStr;
   begin
     result := self.root.tostring;
   end;
   
-  var gIndent : string = '';
-  function TNode.ToString : string;
-    var s : string; i : integer;
+  var gIndent : TStr = '';
+  function TNode.ToString : TStr;
+    var s : TStr; i : integer;
   begin
   
     s := '';
