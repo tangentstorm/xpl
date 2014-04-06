@@ -8,7 +8,9 @@ type
     protected
       _OnQuit : TNotifyEvent;
       keymap  : TKeyMap;
-    public
+    public { TView interface }
+      constructor Create( aOwner : TComponent ); override;
+    public { interface for users }
       procedure keys(km : ukm.TKeyMap); virtual;
       procedure init; virtual;
       procedure step; virtual;
@@ -36,7 +38,8 @@ type
 procedure TAppRunner.DoRun;
   begin
     app.keymap.HandleKeys;
-    app.step;
+    app.step; // step before update, so step can smudge subviews
+    app.update;
   end;
 
 procedure TAppRunner.AppQuit(Sender:TObject);
@@ -58,15 +61,20 @@ procedure run(appClass : CCustomApp);
       end;
     runner.free;
   end;
+
+constructor TCustomApp.Create( aOwner : TComponent );
+  begin
+    inherited Create( aOwner );
+    resize( kvm.width, kvm.height );
+  end;
 
+
 procedure TCustomApp.init;
   begin
-    kvm.clrscr;
   end;
 
 procedure TCustomApp.keys(km : ukm.TKeyMap);
-  begin
-    km.cmd[ ^C ] := self.quit;
+  begin km.cmd[ ^C ] := self.quit;
   end;
 
 procedure TCustomApp.step;
@@ -78,13 +86,11 @@ procedure TCustomApp.draw;
   end;
 
 procedure TCustomApp.done;
-  begin
-    fg('w'); bg('k'); clrscr; showcursor;
+  begin fg('w'); bg('k'); clrscr; showcursor;
   end;
 
 procedure TCustomApp.fail(why:string);
-  begin
-    raise ESetupFailure.Create(why);
+  begin raise ESetupFailure.Create(why);
   end;
 
 procedure TCustomApp.quit;
@@ -92,6 +98,6 @@ procedure TCustomApp.quit;
     if assigned(_OnQuit) then _OnQuit(self)
     else customapplication.terminate;
   end;
-
+
 begin
 end.
