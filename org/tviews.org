@@ -1,0 +1,50 @@
+#+title: Implementing custom TView classes
+
+* The class hierarchy
+:PROPERTIES:
+:TS:       <2014-04-06 09:05AM>
+:ID:       vnmbati01gg0
+:END:
+The units are as follows:
+
+  =utv= : basic term view classes
+  =udv= : database views
+  =ui=  : older turbo pascal widgets being converted for modern use
+
+- TComponent
+  - utv.TView :: a drawble rectangle in space.
+    - udv.TDBTreeGrid
+    - utv.TTermView :: maintains a persistent video ram buffer
+      - udv.TDBMenu
+    - ZObj
+      - ZText
+        - ZChoice
+      - ZMenu
+        - ZBounceMenu
+        - ZMenuBar
+      - ZInput :: single line text input
+      - ZCounter
+        - ZHexCounter
+        - ZColor
+      - ZToggle
+        - ZYesNo
+      - ZConfirmBox
+        - ZInputBox
+      - ZVScroller
+
+* Using TView instances
+:PROPERTIES:
+:TS:       <2014-04-06 09:30AM>
+:ID:       82f2iyj01gg0
+:END:
+They're meant to work pretty much like components in Lazarus: you create them as members of your =uapp.TCustomApp= object, and then just register your callbacks.
+
+For the time being, you have to explicitly call =ReDraw()= on each one.
+
+For =TTermView=, the system takes care of setting up the subwindows correctly, so you just override =Render()=.
+
+* Implementing custom TView classes
+:PROPERTIES:
+:TS:       <2014-04-06 09:03AM>
+:ID:       3v45soi01gg0
+:END:
