@@ -1,9 +1,9 @@
 
-{ --- warning!! generated file. edit ../text/kvm.pas.org instead!! --- }
-
+// CRT was the original console library for turbo pascal.
+// It uses 1-based cordinates, and is limited to 16 colors.
 
 {$mode objfpc}
-unit crt;
+unit ucrt;
 interface uses kvm;
 
 { helpers }
