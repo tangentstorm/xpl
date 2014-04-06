@@ -5,7 +5,7 @@
   license : MIT / ngaro
 
 }
-{$mode delphi}
+{$mode delphiunicode}
 {$i xpc.inc}
 unit stacks;
 interface uses xpc, sysutils;
@@ -18,7 +18,7 @@ interface uses xpc, sysutils;
     _count   : cardinal;  // stack pointer
     cells : array of A;
     overflow, underflow : thunk;
-    show : function( x : A ) : string;
+    show : function( x : A ) : TStr;
     constructor Create( len:word );
     procedure push( t : A );
     function pop: A;
@@ -37,7 +37,7 @@ interface uses xpc, sysutils;
     procedure drop;
     procedure default_overflow;
     procedure default_underflow;
-    function dumps:string;
+    function dumps:TStr;
     procedure dump;
     function limit : cardinal;
     property peek : A read tos;
@@ -152,7 +152,7 @@ function GStack<A>.pick( const i : integer ) : A;
     if i >= 0 then j := count - i
     else j := -i;
     if (j > 0) and (j <= count) then result := cells[j]
-    else raise Exception.Create('Invalid Index: ' + IntToStr(i));
+    else raise Exception.Create(u2a('Invalid Index: ') + IntToStr(i));
   end;
 
 
@@ -166,7 +166,7 @@ function GStack<A>.pick( const i : integer ) : A;
     raise EStackUnderflow.Create('error: GStack<a> underflow' );
   end;
 
-function GStack<a>.dumps : string;
+function GStack<a>.dumps : TStr;
   var i : word;
   begin
     result := '';
