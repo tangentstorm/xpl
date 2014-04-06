@@ -59,9 +59,10 @@ begin
 end;
 
 procedure ZObj.Keys( km : ukm.TKeyMap );
-  var ch : char;
+    var ch : widechar;
   begin
     for ch := #0 to #225 do km.crt[ ch ] := OnKey;
+    for ch := #$EE00  to #$EEFF do km.crt[ ch ] := OnKey;
   end;
 
 {  temp. scaffolding to delegate new-style keyboard events
