@@ -5,7 +5,6 @@ begin
   y := 0;
   x2 := 1;
   y2 := 1;
-  is_dirty := false;
 end;
 
 constructor ZObj.create( a, b, a2, b2 : Byte );
@@ -19,7 +18,7 @@ end;
 
 procedure zObj.show;
 begin
-  showNormal; self.is_dirty := false;
+  showNormal; self.dirty := false;
 end;
 
 procedure zObj.showNormal;
@@ -32,7 +31,7 @@ end;
 
 procedure zObj.smudge;
 begin
-  self.is_dirty := true;
+  self.dirty := true;
 end;
 
 function zObj.mouseover : Boolean;

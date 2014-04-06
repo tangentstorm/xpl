@@ -10,7 +10,6 @@ type
   ZObj  = class ( TView )
     public
       x, y, x2, y2 : Byte; { TODO : mX, mY, etc }
-      is_dirty : boolean;
     published
       constructor Create( aOwner : TComponent ); override; overload;
       constructor create( a, b, a2, b2 : Byte ); overload;
@@ -25,6 +24,9 @@ type
       procedure OnKey( ext : boolean; ch : char );
       procedure handle( ch : Char ); virtual;
       procedure handlestripped( ch : Char ); virtual;
+    public { legacy interface }
+      property is_dirty : boolean
+	read _dirty write _dirty; deprecated 'use .dirty';
     end;
 
   zText = class ( zObj )

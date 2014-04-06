@@ -126,7 +126,7 @@ begin
   cw.cxy( tcol, self.x, self.y, v );
   gotoxy( self.x + cpos - d1st, self.y );
 
-  is_dirty := false;
+  dirty := false;
 end;
 
 
@@ -135,7 +135,7 @@ begin
   if (maxlen = 0) or ( newpos <= maxlen ) then
     cpos := min( newpos, length( work ))
   else cpos := maxlen;
-  smudge
+  smudge;
 end;
 
 
@@ -163,10 +163,9 @@ end;
 
 
 procedure zinput.setovr( p : Boolean );
-begin
-  tovr := p;
-  smudge;
-end;
+  begin
+    tovr := p; smudge;
+  end;
 
 
 procedure zinput.insert( ch : char );
