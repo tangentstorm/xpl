@@ -9,7 +9,7 @@ type
   { a clickable rectangle onscreen }
   ZObj  = class ( TView )
     public
-      x, y, x2, y2 : Byte; { TODO : mX, mY, etc }
+      x2, y2 : Byte; { TODO : mX, mY, etc }
     published
       constructor Create( aOwner : TComponent ); override; overload;
       constructor create( a, b, a2, b2 : Byte ); overload;
@@ -129,7 +129,6 @@ type
       tcol,                 { text color  }
       acol,                 { arrow color (scroller) }
       maxlen,               { max text length }
-      dlen,                 { length of display }
       d1st,                 { first display char position }
       cpos :   cardinal;    { cursor position }
       back,                 { backup copy }

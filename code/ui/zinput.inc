@@ -6,8 +6,9 @@ const bullets = [' ', '/', '\', '-'];
 
 constructor zinput.Create(aOwner : TComponent);
   begin
+    inherited create(aOwner);
     maxlen := 64;
-    dlen   := 64;
+    _w     := 64;
     tcol   := $07;
     acol   := $70;
     escexits := false;
@@ -20,7 +21,7 @@ constructor zinput.create(
 begin
   inherited create( a, b, a, b );
   maxlen   := tl;
-  dlen     := dl;
+  _w       := dl;
   tcol     := tc;
   acol     := ac;
   escexits := esc;
@@ -114,17 +115,17 @@ var v : String;
 begin
   { TODO: if tovr then //doscursorbig else} kvm.ShowCursor;
 
-  if length( work ) > dlen
-    then cw.cxy( acol, self.x + dlen, self.y, '»' )
-    else cw.cxy( acol, self.x + dlen, self.y, ' ' );
+  if length( work ) >= _w
+    then cw.cxy( acol, xMax, 0, '»' )
+    else cw.cxy( acol, xMax, 0, ' ' );
   if cpos > maxlen then kvm.HideCursor;
 
-  while cpos > d1st + dlen do inc( d1st );
+  while cpos > d1st + _w-1 do inc( d1st );
   while cpos < d1st do dec( d1st );
 
-  v := rpad( copy( work, d1st, dlen ), dlen, ' ' );
-  cw.cxy( tcol, self.x, self.y, v );
-  gotoxy( self.x + cpos - d1st, self.y );
+  v := rpad( copy( work, d1st, _w ), _w, ' ' );
+  cw.cxy( tcol, 0, 0, v );
+  gotoxy( cpos - d1st, 0 );
 
   dirty := false;
 end;
