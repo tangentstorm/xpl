@@ -1,5 +1,5 @@
 unit tm; { time }
-interface uses dos, stri, num;
+interface uses dos, ustr, num;
 
   const
     days : array[ 0 .. 6 ] of string[ 3 ] =
@@ -25,7 +25,7 @@ implementation
 
   function stardate : string;  { Sat 1218.93 21:40 }
     var
-      w,mo,d,y,h,mi,n : word;
+      w,mo,d,y : word;
   begin
     getdate( y, mo, d, w );
     stardate := days[ w-1 ] + ' ' +
