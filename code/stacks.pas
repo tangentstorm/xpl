@@ -10,6 +10,10 @@
 unit stacks;
 interface uses xpc, sysutils;
 
+  type
+    EStackOverflow = class (Exception) end;
+    EStackUnderflow = class (Exception) end;
+
   type GStack<A> = class
     _count   : cardinal;  // stack pointer
     cells : array of A;
@@ -18,6 +22,8 @@ interface uses xpc, sysutils;
     constructor Create( len:word );
     procedure push( t : A );
     function pop: A;
+    function popGet( default : A ) : A;
+    function shift: A;
     procedure pop1( var t : A );
     procedure push2( n, t : A );
     procedure pop2( var t, n : A );
@@ -61,6 +67,20 @@ function GStack<a>.pop : A;
     result := tos;
     drop;
   end; { GStack<a>.pop }
+
+function GStack<a>.popGet( default : A ): A;
+  begin
+    if count = 0 then result := default
+    else begin result := tos; drop; end;
+  end; { GStack<a>.popGet }
+
+function GStack<a>.shift : A;
+  var i : integer;
+  begin
+    result := cells[ 1 ];
+    for i := 1 to count-1 do cells[i] := cells[i+1];
+    _count -= 1;
+  end; { GStack<a>.popGet }
 
 procedure GStack<a>.pop1( var t : A );
   begin
@@ -138,14 +158,12 @@ function GStack<A>.pick( const i : integer ) : A;
 
   procedure GStack<a>.default_overflow;
   begin
-    writeln( 'error: GStack<a> overflow' );
-    halt
+    raise EStackOverflow.Create('error: GStack<a> overflow' );
   end;
 
   procedure GStack<a>.default_underflow;
   begin
-    writeln( 'error: GStack<a> underflow' );
-    halt
+    raise EStackUnderflow.Create('error: GStack<a> underflow' );
   end;
 
 function GStack<a>.dumps : string;
