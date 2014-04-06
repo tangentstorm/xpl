@@ -222,8 +222,8 @@ type
 #+begin_src pascal
   function TBaseTerm.Width : word; begin result := _w end;
   function TBaseTerm.Height: word; begin result := _h end;
-  function TBaseTerm.XMax : word; begin result := width - 1  end;
-  function TBaseTerm.YMax : word; begin result := height - 1 end;
+  function TBaseTerm.XMax : word; begin result := max(0, _w-1) end;
+  function TBaseTerm.YMax : word; begin result := max(0, _h-1) end;
   procedure TBaseTerm.Resize( NewW, NewH : word );
     begin
       _w := NewW; _h := NewH;
@@ -422,8 +422,11 @@ These control the foreground and background colors of the characters generated w
   procedure TGridTerm.EmitChar( wc : widechar );
     var cell : TTermCell;
     begin
-      cell.attr := _attr; cell.ch := wc;
-      _grid[_curs.x, _curs.y] := cell;
+      if (_curs.x < _w) and (_curs.y < _h) then
+      begin
+        cell.attr := _attr; cell.ch := wc;
+        _grid[_curs.x, _curs.y] := cell;
+      end
     end;
   
   function TGridTerm.GetCell( const x, y : word ) : TTermCell;
