@@ -329,7 +329,7 @@ implementation
   
   procedure TBaseTerm.Emit( s : TStr );
     var
-      ch : widechar = #0; i : word=0;
+      ch : widechar = #0;
     begin
       for ch in s do begin
         if ch = ^I then Emit('        ')
@@ -398,6 +398,7 @@ implementation
           end;
       gotoxy(0, ymax); clreol;
       gotoxy(curx, cury);
+      settextattr(attrtoword(a));
     end;
   
   constructor TAnsiTerm.Create(NewW, NewH : word; CurX, CurY : byte);
