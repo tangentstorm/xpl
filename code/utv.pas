@@ -82,13 +82,10 @@ procedure TView.Nudge(dx, dy : integer);
   end;
 
 procedure TView.Redraw;
-  var term : kvm.ITerm;
   begin
-    term := kvm.work;
-    kvm.work := kvm.TSubTerm.Create(term, _x, _y, _w, _h);
-    bg(_bg); fg(_fg);
-    try self.Render(term);
-    finally kvm.work := term end
+    kvm.SubTerm(_x, _y, _w, _h); bg(_bg); fg(_fg);
+    try self.Render(kvm.work);
+    finally kvm.PopTerm end
   end;
 
 procedure TView.Render(term : ITerm);
