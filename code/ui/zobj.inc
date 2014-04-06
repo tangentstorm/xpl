@@ -29,11 +29,6 @@ procedure zObj.showInvert;
 begin
 end;
 
-procedure zObj.smudge;
-begin
-  self.dirty := true;
-end;
-
 function zObj.mouseover : Boolean;
 begin
   gettextmpos;

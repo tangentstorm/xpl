@@ -13,7 +13,6 @@ type
     published
       constructor Create( aOwner : TComponent ); override; overload;
       constructor create( a, b, a2, b2 : Byte ); overload;
-      procedure smudge; // mark for redraw
       procedure show; virtual;
       procedure showNormal; virtual;
       procedure showInvert; virtual;

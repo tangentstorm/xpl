@@ -5,7 +5,7 @@
 //
 {$i xpc.inc}{$mode delphi}
 unit utv;
-interface uses xpc, classes, kvm, cli, ug2d, num, cw, math, ustr;
+interface uses xpc, classes, kvm, arrays, cli, ug2d, num, cw, math, ustr;
 
 type
   TView = class(TComponent, IPoint2D, ISize2D, IBounds2D)
@@ -14,26 +14,25 @@ type
       _w, _h : cardinal;
       _bg, _fg : byte;
       _dirty : boolean;
-      function GetX : integer;
-      function GetY : integer;
-      function GetW : cardinal;
-      function GetH : cardinal;
-      procedure SetX(value : integer);
-      procedure SetY(value : integer);
-      procedure SetW(value : cardinal);
-      procedure SetH(value : cardinal);
+      _views : GArray<TView>; // subviews
+      function GetX : integer;  procedure SetX(value : integer);
+      function GetY : integer;  procedure SetY(value : integer);
+      function GetW : cardinal; procedure SetW(value : cardinal);
+      function GetH : cardinal; procedure SetH(value : cardinal);
+    public
+      constructor Create( aOwner : TComponent ); override;
+      destructor Destroy; override;
+      procedure Update;
+      procedure Smudge;
+      property dirty : boolean read _dirty write _dirty;
     published
-      procedure Nudge(dx, dy : integer);
-      procedure Update; virtual;
-      procedure Redraw;
-      procedure Render(term :  ITerm); virtual;
-      procedure Resize(new_w, new_h : cardinal); virtual;
       property x : integer read _x write SetX;
       property y : integer read _y write SetY;
       property w : cardinal read _w write SetW;
       property h : cardinal read _h write SetH;
-      property dirty : boolean read _dirty write _dirty;
-      constructor Create( aOwner : TComponent ); override;
+      procedure Nudge(dx, dy : integer);
+      procedure Render(term :  ITerm); virtual;
+      procedure Resize(new_w, new_h : cardinal); virtual;
     end;
 
   // A class with its own video ram buffer:
@@ -65,6 +64,13 @@ constructor TView.Create( aOwner : TComponent );
     inherited Create( aOwner );
     _x := 0; _y := 0; _w := 30; _h := 10;
     _bg := $FC; _fg := $0; _dirty := true;
+    _views := GArray<TView>.Create();
+  end;
+
+destructor TView.Destroy;
+  begin
+    _views.Free; // members are TViews, so owners will free
+    inherited Destroy;
   end;
 
 procedure TView.SetX(value : integer); begin _x := value; end;
@@ -83,25 +89,25 @@ procedure TView.Nudge(dx, dy : integer);
   end;
 
 procedure TView.Update;
+  var child : TView;
   begin
-    if dirty then redraw;
+    kvm.SubTerm(_x, _y, _w, _h);
+    try bg(_bg); fg(_fg);
+      if _dirty then Render(kvm.work);
+      for child in _views do child.Update;
+    finally kvm.PopTerm end;
   end;
 
-procedure TView.Redraw;
-  begin
-    kvm.SubTerm(_x, _y, _w, _h); bg(_bg); fg(_fg);
-    try self.Render(kvm.work);
-    finally kvm.PopTerm end
+procedure TView.Smudge;
+  begin _dirty := true;
   end;
-
+  
 procedure TView.Render(term : ITerm);
-  begin
-    ClrScr
+  begin term.ClrScr
   end;
 
 procedure TView.Resize(new_w, new_h : cardinal);
-  begin
-    _w := new_w; _h := new_h
+  begin _w := new_w; _h := new_h; Smudge;
   end;
 
 constructor TTermView.Create( aOwner : TComponent );
@@ -132,7 +138,6 @@ procedure TTermView.Render(term : ITerm);
       end;
   end;
 
-
 procedure TStepper.DoStep;
   begin
   end;
@@ -146,7 +151,7 @@ procedure TStepper.Step(times:cardinal=1);
         if Assigned(fStep) then fStep(self);
       end;
   end;
-
+
 initialization
   RegisterClass(TView);
   RegisterClass(TTermView);
