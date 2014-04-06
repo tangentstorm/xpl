@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 """
 this program generates test stubs in ../test for units in ../code
 """
