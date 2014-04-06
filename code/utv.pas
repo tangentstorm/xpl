@@ -5,9 +5,7 @@
 //
 {$i xpc.inc}{$mode delphi}
 unit utv;
-interface
-uses xpc, classes, kvm, cli, ug2d,
-     num, cw, math, ustr;
+interface uses xpc, classes, kvm, cli, ug2d, num, cw, math, ustr;
 
 type
   TView = class(TComponent, IPoint2D, ISize2D, IBounds2D)
@@ -15,6 +13,7 @@ type
       _x, _y : integer;
       _w, _h : cardinal;
       _bg, _fg : byte;
+      _dirty : boolean;
       function GetX : integer;
       function GetY : integer;
       function GetW : cardinal;
@@ -25,6 +24,7 @@ type
       procedure SetH(value : cardinal);
     published
       procedure Nudge(dx, dy : integer);
+      procedure Update; virtual;
       procedure Redraw;
       procedure Render(term :  ITerm); virtual;
       procedure Resize(new_w, new_h : cardinal); virtual;
@@ -32,6 +32,7 @@ type
       property y : integer read _y write SetY;
       property w : cardinal read _w write SetW;
       property h : cardinal read _h write SetH;
+      property dirty : boolean read _dirty write _dirty;
       constructor Create( aOwner : TComponent ); override;
     end;
 
@@ -63,7 +64,7 @@ constructor TView.Create( aOwner : TComponent );
   begin
     inherited Create( aOwner );
     _x := 0; _y := 0; _w := 30; _h := 10;
-    _bg := $FC; _fg := $0;
+    _bg := $FC; _fg := $0; _dirty := true;
   end;
 
 procedure TView.SetX(value : integer); begin _x := value; end;
@@ -81,6 +82,11 @@ procedure TView.Nudge(dx, dy : integer);
     _x += dx; _y += dy;
   end;
 
+procedure TView.Update;
+  begin
+    if dirty then redraw;
+  end;
+
 procedure TView.Redraw;
   begin
     kvm.SubTerm(_x, _y, _w, _h); bg(_bg); fg(_fg);
