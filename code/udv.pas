@@ -13,7 +13,7 @@ type
       _top : cardinal;
       _cur : TDbCursor;
     published
-      procedure Render(term :  ITerm); override;
+      procedure Render; override;
       property DataCursor : TDbCursor read _cur write _cur;
     end;
 
@@ -30,7 +30,7 @@ implementation
 {---------------------------------------------------------------}
 { TDbTreeGrid                                                   }
 {---------------------------------------------------------------}
-procedure TDbTreeGrid.Render(term : ITerm);
+procedure TDbTreeGrid.Render;
   var
     sigil : char = ' ';
     count : cardinal =  0;
