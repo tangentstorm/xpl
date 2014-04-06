@@ -44,7 +44,7 @@ type TTextAttr = record
 
 { context stack (handy for subterms) }
 procedure PushTerm( term : ITerm );
-procedure SubTerm( x, y, w, h : word );
+function SubTerm( x, y, w, h : word ) : ITerm;
 procedure PopTerm;
 
 { conversion helpers }
@@ -534,22 +534,23 @@ implementation
   {$ENDIF}
   
   type TTermStack = specialize GStack<ITerm>;
-  var termstack : TTermStack;
+  var termStack : TTermStack;
   
   procedure PushTerm( term : ITerm );
     begin
-      termstack.push( work );
+      termStack.push( work );
       work := term;
     end;
   
   procedure PopTerm;
     begin
-      work := termstack.Pop;
+      work := termStack.Pop;
     end;
   
-  procedure SubTerm( x, y, w, h : word );
+  function SubTerm( x, y, w, h : word ) : ITerm;
     begin
-      termstack.push( TSubTerm.Create( work, x, y , w , h ));
+      result := TSubTerm.Create( work, x, y , w , h );
+      pushTerm( result );
     end;
   
   
