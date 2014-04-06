@@ -113,7 +113,8 @@ end;
 procedure GGrid2d<T>.Fill( value : T );
   var i : word;
 begin
-  for i := 0 to _count- 1 do self.at[ i ] := value
+  if _count > 0 then
+    for i := 0 to _count - 1 do self.at[ i ] := value
 end;
 
 {TODO: GGrid2d.Resize should probably only deal with count/ramsize }
