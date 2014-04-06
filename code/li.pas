@@ -298,7 +298,9 @@ implementation
       ascii.EOT: begin result := null; done := true; end;
       else result := read_symbol
     end; { case }
+    {$IFDEF DEBUG}
     if debug_mode then writeln( 'read_value -> ', result.kind );
+    {$ENDIF}
   end; { read_value }
 
 
