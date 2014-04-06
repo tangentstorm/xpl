@@ -1,7 +1,7 @@
 {$mode delphiunicode}{$i xpc.inc}
 unit ui;
 interface uses classes, xpc, cw, ll, kvm, mou, kbd, ustr,
-  fx, num, cli, sysutils, utv;
+  fx, num, cli, sysutils, utv, ukm;
 
 { note : this module considers (0,0) to be the top left corner! }
 
@@ -11,7 +11,8 @@ type
     public
       x, y, x2, y2 : Byte; { TODO : mX, mY, etc }
       is_dirty : boolean;
-      constructor create( aOwner : TComponent ); override; overload;
+    published
+      constructor Create( aOwner : TComponent ); override; overload;
       constructor create( a, b, a2, b2 : Byte ); overload;
       procedure smudge; // mark for redraw
       procedure show; virtual;
@@ -20,11 +21,16 @@ type
       function mouseover : Boolean; virtual;
       function pressed : Boolean; virtual;
       function click : Boolean; virtual;
+      procedure Keys( km : ukm.TKeyMap ); virtual;
+      procedure OnKey( ext : boolean; ch : char );
+      procedure handle( ch : Char ); virtual;
+      procedure handlestripped( ch : Char ); virtual;
     end;
 
   zText = class ( zObj )
-    public
+    protected
       st1, st2 : TStr;
+    published
       constructor Create( a, b : Byte; s, s2 : TStr );
       procedure ShowNormal; override;
       procedure showInvert; override;
@@ -34,9 +40,9 @@ type
     protected
       sub : zObj;            { sumbmenus }
       on  : Boolean;         { active? } { TODO : rename to enabled }
-    public
       sc  : Char;            { shortcut character }
       v   : Byte;            { return value }
+    published
       constructor createXY( a, b : Byte; s, s2 : TStr; ison : Boolean;
                         shortcut : char;
                         value : word;
@@ -55,6 +61,7 @@ type
       { updated constantly in reformatting loop }
       topmenu, endloop, escexits, altexits, subactive,
       usetempscreen : boolean;
+    published
       constructor create( esc, alt, usetemp : Boolean; head : zChoice );
       procedure insert( z : zchoice ); virtual;
       procedure add( z : zchoice ); virtual;
@@ -64,8 +71,8 @@ type
       procedure setto( z : zchoice );
       procedure setOnFirst;
       procedure setToFirst;
-      procedure handle( ch : Char ); virtual;
-      procedure handlestripped( ch : Char ); virtual;
+      procedure handle( ch : Char ); override;
+      procedure handlestripped( ch : Char ); override;
       procedure Reset; virtual;
       procedure domousestuff; virtual;
       procedure dowhilelooping; virtual;
@@ -93,8 +100,9 @@ type
     public
       constructor create( x_, y_, w : Byte; p : String;
                           e, a : Boolean; head : zchoice );
-      procedure show; override;
+    published
       procedure format( choice : zChoice ); override;
+      procedure show; override;
       function normalstr( s : String ) : String; override;
       function invertstr( s : String ) : String; override;
       function top : String; virtual;
@@ -106,6 +114,7 @@ type
     public
       constructor create( x_, y_ : Byte; p : String;
                           e, a : Boolean; head : zChoice );
+    published
       procedure handle( ch : Char ); override; { � menu - #32 }
       procedure handlestripped( ch : Char ); override;
       { uses alt keys, plus the up+right are reversed for submenus }
@@ -126,17 +135,16 @@ type
       escexits, tovr,       { type over toggle }
       frst,                 { first key to be pressed }
       isdone : Boolean;     { end-loop flag }
-    public
+    published
       constructor create( aOwner : TComponent ); override; overload;
       constructor create( a, b, tl, dl, tc, ac : integer; esc : Boolean;
 		       start : String ); overload;
       constructor default( a, b, tl, dl : integer; start : String='' );
       procedure reset;
-      procedure show; override;
-      procedure handle( ch : Char ); virtual;
-      procedure handlestripped( ch : Char ); virtual;
       function get : String;
-    published
+      procedure show; override;
+      procedure handle( ch : Char ); override;
+      procedure handlestripped( ch : Char ); override;
       property value : string read work write work;
     public
       procedure fw_token;
@@ -167,35 +175,39 @@ type
     end;
 
   zPassword = class ( zInput )
-    public
+    protected
       pwchar : Char;
+    published
       constructor create( a, b, tl, dl, tc, ac : integer; pwc : Char; start : String );
       constructor default( a, b, tl, dl : integer; start : String );
       procedure Show; override;
     end;
 
   zCounter = class ( zObj )
-    public
+    protected
       acol, tcol : Byte;
       value, start, min, max : Word;
       endloop :    Boolean;
+    published
       constructor create( a, b, tc, ac : Byte; minVal, maxVal, strt : Word );
       procedure show; override;
-      procedure handle( ch : Char );
+      procedure handle( ch : Char ); override;
       procedure domousestuff;
       function get : Word;
       function showstring : String; virtual;
     end;
 
   zHexCounter = class ( zCounter )
-    public
-      constructor create( a, b, tc, ac : Byte; minVal, maxVal, strt : Word );
+    published
+      constructor create( a, b, tc, ac : Byte;
+			  minVal, maxVal, strt : Word );
       function ShowString : String; override;
     end;
 
   zColor = class ( zCounter )
-    public
+    protected
       truecol : Byte;
+    published
       constructor Create( a, b, tc, ac, strt : Byte );
       function ShowString : String; override;
     end;
@@ -207,8 +219,9 @@ type
       start, value, endloop : Boolean;
       truestr, falsestr : String;
       constructor Create( a, b, tc : Byte; ts, fs : String; startval : Boolean );
+    published
       procedure Show; override;
-      procedure Handle( ch : Char );
+      procedure Handle( ch : Char ); override;
       function Toggle : Boolean;
       function Get : boolean;
     end;
@@ -240,12 +253,13 @@ type
       bch, hch : Char;
       bat, hat : Byte;
       min, max, value : Byte;
+    published
       constructor create( a, b, _min, _max, strt : Byte;
                         bc, hc : Char; ba, ha : Byte );
       constructor default( a, b, _min, _max, strt : Byte );
       procedure domousestuff;
       procedure show; override;
-      procedure handle( ch : Char );
+      procedure handle( ch : Char ); override;
     end;
 
 { module level functions }

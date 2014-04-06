@@ -1,5 +1,4 @@
-
-constructor zObj.create(aOwner : TComponent);
+constructor zObj.Create(aOwner : TComponent);
 begin
   inherited create(aOwner);
   x := 0;
@@ -22,7 +21,6 @@ procedure zObj.show;
 begin
   showNormal; self.is_dirty := false;
 end;
-
 
 procedure zObj.showNormal;
 begin
@@ -59,3 +57,25 @@ begin
     result := mouseover; { releasing outside box cancels }
   end
 end;
+
+procedure ZObj.Keys( km : ukm.TKeyMap );
+  var ch : char;
+  begin
+    for ch := #0 to #225 do km.crt[ ch ] := OnKey;
+  end;
+
+{  temp. scaffolding to delegate new-style keyboard events
+     to the old-style handlers. }
+procedure ZObj.OnKey( ext : boolean; ch : char );
+  begin
+    if ext then handlestripped(ch)
+    else handle(ch);
+  end;
+
+procedure ZObj.handle( ch : Char );
+  begin
+  end;
+
+procedure ZObj.handlestripped( ch : Char );
+  begin
+  end;
