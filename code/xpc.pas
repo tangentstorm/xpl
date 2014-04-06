@@ -11,6 +11,9 @@ interface uses sysutils;
     TStr = UnicodeString;
     TChr = WideChar;
 
+  function u2a(const u : TStr) : ansistring;
+  function a2u(const a : ansistring) : TStr;
+
   procedure pass; deprecated 'use "ok" instead of "pass"';
   procedure ok;
 
@@ -98,7 +101,20 @@ implementation
   end; { toint }
 
 
-  procedure logger.debug( args :  array of const );
+
+function u2a(const u : TStr) : ansistring; inline;
+  begin
+    result := utf8encode(u);
+  end;
+
+function a2u(const a : ansistring) : TStr; inline;
+  begin
+    result := utf8decode(a);
+  end;
+
+
+
+procedure logger.debug( args :  array of const );
     var i : integer;
   begin
     write( '(DEBUG: ' );
