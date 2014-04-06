@@ -11,7 +11,7 @@ GEN = sys.argv[ 1 ] if len( sys.argv ) == 2 else '.'
 topuse = open( GEN + '/run-tests.use', 'w' )
 toprun = open( GEN + '/run-tests.run', 'w' )
 for path in map( str.strip, os.popen( 'ls test_*.pas' )):
-    unit_name, _ = path.split( '.' )
+    unit_name = '.'.join(path.split( '.' )[:-1])
     print >> topuse, ',', unit_name ,
     subdef = open( GEN + '/' + unit_name + '.def', 'w' )
     subdef.write( 'unit {0};\ninterface uses chk;\n'.format( unit_name ))
