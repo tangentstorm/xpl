@@ -13,7 +13,7 @@ pascal and all of this will just go away.
 """
 import os, sys
 
-orgdir = os.environ.get('ORG', 'text')
+orgdir = os.environ.get('ORG', 'org')
 tangle = os.environ.get('TANGLE', 'etc/tangle.el')
 always_regen = '-f' in sys.argv
 
