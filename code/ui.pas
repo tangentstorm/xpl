@@ -13,7 +13,8 @@ type
     published
       constructor Create( aOwner : TComponent ); override; overload;
       constructor create( a, b, a2, b2 : Byte ); overload;
-      procedure show; virtual;
+      procedure show; virtual; deprecated 'use .Render';
+      procedure Render; override;
       procedure showNormal; virtual;
       procedure showInvert; virtual;
       function mouseover : Boolean; virtual;
@@ -66,7 +67,7 @@ type
       constructor create( esc, alt, usetemp : Boolean; head : zChoice );
       procedure insert( z : zchoice ); virtual;
       procedure add( z : zchoice ); virtual;
-      procedure show; override;
+      procedure Render; override;
       { TODO: what's the seton/setto difference? clarify or eliminate! }
       procedure seton( z : zchoice );
       procedure setto( z : zchoice );
@@ -103,7 +104,7 @@ type
                           e, a : Boolean; head : zchoice );
     published
       procedure format( choice : zChoice ); override;
-      procedure show; override;
+      procedure Render; override;
       function normalstr( s : String ) : String; override;
       function invertstr( s : String ) : String; override;
       function top : String; virtual;
@@ -143,7 +144,7 @@ type
       constructor default( a, b, tl, dl : integer; start : String='' );
       procedure reset;
       function get : String;
-      procedure show; override;
+      procedure Render; override;
       procedure handle( ch : Char ); override;
       procedure handlestripped( ch : Char ); override;
       property value : string read work write work;
@@ -181,7 +182,7 @@ type
     published
       constructor create( a, b, tl, dl, tc, ac : integer; pwc : Char; start : String );
       constructor default( a, b, tl, dl : integer; start : String );
-      procedure Show; override;
+      procedure Render; override;
     end;
 
   zCounter = class ( zObj )
@@ -191,7 +192,7 @@ type
       endloop :    Boolean;
     published
       constructor create( a, b, tc, ac : Byte; minVal, maxVal, strt : Word );
-      procedure show; override;
+      procedure Render; override;
       procedure handle( ch : Char ); override;
       procedure domousestuff;
       function get : Word;
@@ -221,7 +222,7 @@ type
       truestr, falsestr : String;
       constructor Create( a, b, tc : Byte; ts, fs : String; startval : Boolean );
     published
-      procedure Show; override;
+      procedure Render; override;
       procedure Handle( ch : Char ); override;
       function Toggle : Boolean;
       function Get : boolean;
@@ -259,7 +260,7 @@ type
                         bc, hc : Char; ba, ha : Byte );
       constructor default( a, b, _min, _max, strt : Byte );
       procedure domousestuff;
-      procedure show; override;
+      procedure Render; override;
       procedure handle( ch : Char ); override;
     end;
 

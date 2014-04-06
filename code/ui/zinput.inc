@@ -109,7 +109,7 @@ procedure zinput.cancel;
     finish;
   end;
 
-procedure zinput.show;
+procedure zinput.Render;
 var v : String;
 begin
   { TODO: if tovr then //doscursorbig else} kvm.ShowCursor;
@@ -278,7 +278,7 @@ end;
 function zinput.get : String;
 begin
   Reset;
-  repeat show; handle( readkey ) until isDone;
+  repeat render; handle( readkey ) until isDone;
   result := work;
 end;
 

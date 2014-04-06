@@ -13,11 +13,11 @@ begin
 end;
 
 
-procedure zPassword.show;
+procedure zPassword.Render;
 var temp : String;
 begin
   temp := value;
   FillChar( work, length( self.work ), self.pwchar );
-  inherited show;
+  inherited Render;
   work := temp;
 end;

@@ -39,7 +39,7 @@ begin
   mchoices.append( z );
 end;
 
-procedure zMenu.show;
+procedure zMenu.Render;
 var
   oldIsMV : Boolean;
   choice  : ui.zChoice;
@@ -49,7 +49,7 @@ begin
   while cur.next( choice ) do begin
     choice.draw( mCurrent.index = cur.index );
   end;
-  if submenu <> nil then submenu.show;
+  if submenu <> nil then submenu.Render;
   begin
     oldIsMV := mvisible;
     if oldIsMV then mou.hide;
@@ -68,9 +68,7 @@ begin
 end;
 
 procedure zMenu.setto( z : zChoice );
-begin
-  seton( z );
-  show;
+begin seton( z ); smudge;
 end;
 
 procedure zMenu.setonfirst;
@@ -83,9 +81,7 @@ begin
 end;
 
 procedure zMenu.settofirst;
-begin
-  setonfirst;
-  show;
+begin setonfirst; smudge;
 end;
 
 procedure zMenu.handle( ch : Char );
@@ -141,7 +137,7 @@ begin
 	    if mCurrent.at_top then mCurrent.to_end
 	    else mCurrent.move_prev;
 	  until thisChoice.enabled or ( mCurrent.index = old );
-          show;
+          smudge;
         end;
 
       kbd.LEFT :
@@ -161,7 +157,7 @@ begin
 	    if mCurrent.at_end then mCurrent.to_top
 	    else mCurrent.move_next;
 	  until thisChoice.enabled or ( mcurrent.index = old );
-          show;
+          smudge;
         end;
 
       kbd.RIGHT :
@@ -235,7 +231,7 @@ begin
         self.setto( choice );
         if choice.click then handle( kbd.ENTER );
       end;
-      show;
+      smudge;
     end { clicked }
   end { else }
 end; { domousestuff }
@@ -328,7 +324,7 @@ begin
       endloop := false;
       Reset;
       if mCurrent.value = nil then mCurrent.to_top;
-      show;
+      smudge;
       repeat
         dowhilelooping;
         if (( shiftstate and altpressed ) <> 0 ) then

@@ -16,14 +16,14 @@ begin
 end;
 
 
-procedure zbouncemenu.show;
+procedure zbouncemenu.Render;
 var
   mv :  Boolean;
 begin
   mv  := mvisible;
   if mv then mou.hide;
   fx.greyshadow( tx, ty, tx + width, ty + height - 1 );
-  inherited show;
+  inherited Render;
   if mv then mou.show
 end;
   

@@ -12,7 +12,7 @@ begin
 end;
 
 
-procedure zcounter.show;
+procedure zcounter.Render;
 var mv : Boolean;
 begin  
   mv := mvisible;
@@ -39,14 +39,14 @@ begin
                   endloop := true;
                 end
   end;
-  show
+  smudge;
 end;
   
 
 function zcounter.get : Word;
 begin
   endloop := false;
-  show;
+  render;
   repeat handle( readkey ) until endloop;
   result := value
 end;

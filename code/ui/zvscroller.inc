@@ -10,7 +10,6 @@ begin
   min   := _min;
   max   := _max;
   value := strt;
-  show;
 end;
 
 
@@ -25,12 +24,12 @@ begin
   if pressed and ( my = mY + value - min )
   then while pressed do begin
     value := my - mY + min;
-    show
+    render;
   end
 end;
 
 
-procedure zVScroller.show;
+procedure zVScroller.Render;
 var mv : Boolean;
 begin
   mv := mvisible;
@@ -48,5 +47,5 @@ begin
     kbd.UP : value := decwrap( value, 1, min, max );
     kbd.DOWN : value := incwrap( value, 1, min, max );
   end;
-  show;
+  smudge;
 end;

@@ -12,7 +12,7 @@ begin
 end;
 
   
-procedure ztoggle.show;
+procedure ztoggle.Render;
 begin
   if value
     then cxy( tCol, mX, mY, truestr )
@@ -36,13 +36,13 @@ begin
       if ch = ts then value := true
       else if ch = fs then value := false
   end;
-  show;
+  smudge;
 end;
 
 function ztoggle.toggle : Boolean;
 begin
   value := not value;
-  show;
+  smudge;
   result := value;
 end;
 
@@ -53,7 +53,7 @@ var
 begin
   endloop := False;
   repeat
-    show;
+    render;
     ch := ReadKey;
     if ch = #0 then ch := ReadKey
     else handle( ch )

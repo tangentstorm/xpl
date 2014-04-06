@@ -16,9 +16,12 @@ begin
   y2 := b2;
 end;
 
-procedure zObj.show;
-begin
-  showNormal; self.dirty := false;
+procedure zObj.Show;
+  begin self.render;
+  end;
+
+procedure zObj.Render;
+begin showNormal;
 end;
 
 procedure zObj.showNormal;

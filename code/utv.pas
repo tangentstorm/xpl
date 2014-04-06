@@ -31,7 +31,7 @@ type
       property w : cardinal read _w write SetW;
       property h : cardinal read _h write SetH;
       procedure Nudge(dx, dy : integer);
-      procedure Render(term :  ITerm); virtual;
+      procedure Render; virtual;
       procedure Resize(new_w, new_h : cardinal); virtual;
     end;
 
@@ -42,7 +42,7 @@ type
     published
       property term : TGridTerm read _gridterm implements ITerm;
       constructor Create( aOwner : TComponent ); override;
-      procedure Render(term :  ITerm); override;
+      procedure Render; override;
       procedure Resize(new_w, new_h : cardinal); override;
     end;
 
@@ -93,7 +93,7 @@ procedure TView.Update;
   begin
     kvm.SubTerm(_x, _y, _w, _h);
     try bg(_bg); fg(_fg);
-      if _dirty then Render(kvm.work);
+      if _dirty then begin Render; _dirty := false; end;
       for child in _views do child.Update;
     finally kvm.PopTerm end;
   end;
@@ -102,8 +102,8 @@ procedure TView.Smudge;
   begin _dirty := true;
   end;
   
-procedure TView.Render(term : ITerm);
-  begin term.ClrScr
+procedure TView.Render;
+  begin ClrScr
   end;
 
 procedure TView.Resize(new_w, new_h : cardinal);
@@ -122,18 +122,18 @@ procedure TTermView.Resize(new_w, new_h : cardinal);
     _gridterm.Resize(new_w, new_h);
   end;
 
-procedure TTermView.Render(term : ITerm);
+procedure TTermView.Render;
   var endy, endx, x, y : byte; cell : TTermCell;
   begin
-    endy := min(_h-1, term.yMax);
-    endx := min(_w-1, term.xMax);
+    endy := min(_h-1, kvm.yMax);
+    endx := min(_w-1, kvm.xMax);
     for y := 0 to endy do
       begin
-	term.gotoxy(_x, _y+y);
+	kvm.gotoxy(_x, _y+y);
         for x := 0 to endx do
           begin
             cell := _gridterm[x,y];
-	    term.emit(cell.ch);
+	    kvm.emit(cell.ch);
           end;
       end;
   end;
