@@ -1,10 +1,10 @@
 {$i xpc.inc}{$mode delphi}{$h+}
 unit uapp;
-interface uses xpc, cx, cli, kvm, ukm, custapp, sysutils, classes;
+interface uses xpc, cx, cli, kvm, ukm, utv, custapp, sysutils, classes;
 
 type
   ESetupFailure = class (Exception) end;
-  TCustomApp = class (TComponent)
+  TCustomApp = class (utv.TView)
     protected
       _OnQuit : TNotifyEvent;
       keymap  : TKeyMap;
