@@ -8,8 +8,9 @@ type
     protected
       _OnQuit : TNotifyEvent;
       keymap  : TKeyMap;
-    public { TView interface }
+    published { TView interface }
       constructor Create( aOwner : TComponent ); override;
+      procedure Render; override;
     public { interface for users }
       procedure keys(km : ukm.TKeyMap); virtual;
       procedure init; virtual;
@@ -26,7 +27,7 @@ type
   procedure run(appClass : CCustomApp);
 
 implementation
-
+
 type
   TAppRunner = class (custapp.TCustomApplication)
     app : TCustomApp;
@@ -43,8 +44,7 @@ procedure TAppRunner.DoRun;
   end;
 
 procedure TAppRunner.AppQuit(Sender:TObject);
-  begin
-    self.terminate;
+  begin self.terminate;
   end;
 
 procedure run(appClass : CCustomApp);
@@ -68,6 +68,10 @@ constructor TCustomApp.Create( aOwner : TComponent );
     resize( kvm.width, kvm.height );
   end;
 
+
+procedure TCustomApp.Render;
+  begin self.draw
+  end;
 
 procedure TCustomApp.init;
   begin
