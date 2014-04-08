@@ -33,7 +33,7 @@ constructor zinput.default( a, b, tl, dl : integer; start : String );
 begin
   create( a, b, tl, dl, $4E, $07, true, start );
 end;
-
+
 procedure zinput.reset;
 begin
   work := back;
@@ -168,7 +168,6 @@ procedure zinput.setovr( p : Boolean );
     tovr := p; smudge;
   end;
 
-
 procedure zinput.insert( ch : char );
 begin
   if tovr then
@@ -249,7 +248,7 @@ end;
 procedure zinput.right;
 begin movecursor( cpos + 1 );
 end;
-
+
 procedure zinput.handlestripped( ch : Char );
 begin
   case ch of
@@ -282,5 +281,11 @@ begin
   repeat render; handle( readkey ) until isDone;
   result := work;
 end;
+
+
+
+function ZInput.GetOnAccept : TStrEvent; begin result := _OnAccept end;
+procedure ZInput.SetOnAccept( e : TStrEvent ); begin _OnAccept := e end;
+
 
 { eof }

@@ -124,7 +124,13 @@ type
     end;
 
 
-  zInput = class ( ZObj )
+    ICmdPrompt = interface
+      procedure SetOnAccept( e : TStrEvent );
+      function GetOnAccept : TStrEvent;
+      property OnAccept : TStrEvent read GetOnAccept write SetOnAccept;
+    end;
+
+    zInput = class ( ZObj, ICmdPrompt )
     public { todo: encapsulate these... }
       tcol,                 { text color  }
       acol,                 { arrow color (scroller) }
@@ -147,7 +153,8 @@ type
       procedure handle( ch : Char ); override;
       procedure handlestripped( ch : Char ); override;
       property value : string read work write work;
-    public
+
+    public { string editing interface }
       procedure fw_token;
       procedure bw_token;
       procedure bw_del_token;
@@ -169,10 +176,12 @@ type
       function at_end : boolean;
     protected
       _OnAccept : xpc.TStrEvent;
+      function GetOnAccept : TStrEvent;
+      procedure SetOnAccept( e : TStrEvent );
     published
-      property OnAccept : TStrEvent read _OnAccept write _OnAccept;
+      property OnAccept : TStrEvent read GetOnAccept write SetOnAccept;
     end;
-
+
   zPassword = class ( zInput )
     protected
       pwchar : Char;
