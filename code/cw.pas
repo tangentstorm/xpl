@@ -58,6 +58,7 @@ var
   { colorwrite : color code interpreter }
   procedure cwcommand( cn : command; s : TStr );
   procedure cwrite   ( s : TStr );
+  procedure cwrite   ( args : array of const );
   procedure cwriteln ( s : TStr );
   procedure cwriteln ( args : array of const );
   procedure cwritexy ( x, y : byte; s : TStr );
@@ -240,16 +241,24 @@ procedure cwriteln( s : TStr );
     cwrite( s ); kvm.newline;
   end;
 
-procedure cwriteln( args : array of const );
+procedure cwrite( args : array of const );
   var i : integer;
   begin
     for i := 0 to high( args ) do
       case args[ i ].vtype of
-	vtinteger : cwrite( n2s( args[ i ].vinteger ));
-	vtstring  : cwrite( Utf8Decode( args[ i ].vstring^ ));
-	vtansistring : cwrite( Utf8Decode( ansistring( args[ i ].vansistring )));
+	vtinteger	: cwrite( n2s( args[ i ].vinteger ));
+	vtstring	: cwrite( a2u( args[ i ].vstring^ ));
+	vtansistring	: cwrite( a2u( ansistring(
+					 args[ i ].vansistring )));
+	vtUnicodeString	: cwrite( UnicodeString(
+				    args[ i ].vunicodestring ));
+	vtWideString : cwrite( WideString( args[ i ].vwidestring ));
+	else write('<vtype:', args[i].vtype, '>')
       end;
-    kvm.newline;
+  end;
+
+procedure cwriteln( args : array of const ); inline;
+  begin cwrite( args ); kvm.newline;
   end;
 
 procedure cwritexy( x, y : byte; s : TStr );
