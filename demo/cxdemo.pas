@@ -4,13 +4,12 @@ uses xpc, cx, sysutils;
 type
   ECxDemoException = class (Exception) end;
 
-procedure outer;
-  procedure inner;
-    begin raise ECxDemoException.Create(
-       '"use cx" to get colored exception tracebacks like this!');
-    end;
-  begin inner;
+procedure countdown( i : integer );
+  begin
+    if i <= 0 then raise ECxDemoException.Create(
+       '"use cx" to get colored exception tracebacks like this!')
+    else countdown( i-1 )
   end;
 
-begin outer
+begin countdown(10)
 end.
