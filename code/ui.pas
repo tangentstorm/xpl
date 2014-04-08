@@ -167,12 +167,10 @@ type
       procedure left;
       procedure right;
       function at_end : boolean;
-    public type
-      TStringCallback = procedure (s : string) of object;
     protected
-      _OnAccept : TStringCallback;
+      _OnAccept : xpc.TStrEvent;
     published
-      property OnAccept : TStringCallBack read _OnAccept write _OnAccept;
+      property OnAccept : TStrEvent read _OnAccept write _OnAccept;
     end;
 
   zPassword = class ( zInput )
