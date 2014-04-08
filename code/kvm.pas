@@ -42,11 +42,6 @@ type TTextAttr = record
   end;
 
 
-{ context stack (handy for subterms) }
-procedure PushTerm( term : ITerm );
-function SubTerm( x, y, w, h : word ) : ITerm;
-procedure PopTerm;
-
 { conversion helpers }
 function WordToAttr(w : word): TTextAttr;
 function AttrToWord(a : TTextAttr) : word;
@@ -196,6 +191,17 @@ type
 procedure fg( ch : char );
 procedure bg( ch : char );
 
+
+
+{ context stack }
+procedure PushTerm( term : ITerm );
+function SubTerm( x, y, w, h : word ) : ITerm;
+procedure PopTerm;
+procedure PopTerms;
+
+
+type TTermStack = specialize GStack<ITerm>;
+var termStack : TTermStack;
 
 
 implementation
@@ -536,13 +542,16 @@ implementation
     end;
   {$ENDIF}
   
-  type TTermStack = specialize GStack<ITerm>;
-  var termStack : TTermStack;
-  
   procedure PushTerm( term : ITerm );
     begin
       termStack.push( work );
       work := term;
+    end;
+  
+  function SubTerm( x, y, w, h : word ) : ITerm;
+    begin
+      result := TSubTerm.Create( work, x, y , w , h );
+      pushTerm( result );
     end;
   
   procedure PopTerm;
@@ -550,10 +559,9 @@ implementation
       work := termStack.Pop;
     end;
   
-  function SubTerm( x, y, w, h : word ) : ITerm;
+  procedure PopTerms;
     begin
-      result := TSubTerm.Create( work, x, y , w , h );
-      pushTerm( result );
+      while termStack.count > 0 do work := termStack.Pop;
     end;
   
   
@@ -652,5 +660,6 @@ initialization
   {$ENDIF}
   termstack := TTermStack.Create(32);
 finalization
-  { work is destroyed automatically by reference count }
+  { the terms are freed automatically by reference count }
+  PopTerms; work := nil;
 end.

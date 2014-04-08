@@ -395,20 +395,20 @@ These control the foreground and background colors of the characters generated w
 
 #+name: @kvm:impl
 #+begin_src pascal
-  
+
   constructor TGridTerm.Create( NewW, NewH : word );
     begin
       inherited create( NewW, NewH );
       _grid := TTermGrid.Create( NewW, NewH );
       clrscr;
     end;
-  
+
   destructor TGridTerm.Destroy;
     begin;
       _grid.Free;
       inherited destroy;
     end;
-  
+
   procedure TGridTerm.ClrScr;
     var cell : TTermCell;
     begin
@@ -418,7 +418,7 @@ These control the foreground and background colors of the characters generated w
       _grid.fill(cell);
       gotoxy(0,0);
     end;
-  
+
   procedure TGridTerm.EmitChar( wc : widechar );
     var cell : TTermCell;
     begin
@@ -428,17 +428,17 @@ These control the foreground and background colors of the characters generated w
         _grid[_curs.x, _curs.y] := cell;
       end
     end;
-  
+
   function TGridTerm.GetCell( const x, y : word ) : TTermCell;
     begin
       result := _grid[x,y]
     end;
-  
+
   procedure TGridTerm.PutCell( const x, y : word; const cell : TTermCell );
     begin
       _grid[x,y] := cell;
     end;
-  
+
   procedure TGridTerm.DelLine;
     var curx, cury, x, y : integer; a : TTextAttr; c : TTermCell;
     begin
@@ -456,7 +456,7 @@ These control the foreground and background colors of the characters generated w
       gotoxy(curx, cury);
       settextattr(attrtoword(a));
     end;
-  
+
 #+end_src
 
 * =TAnsiTerm=
@@ -716,7 +716,8 @@ There are basically three steps to deal with:
     <<create-term-obj>>
     <<create-term-stack>>
   finalization
-    { work is destroyed automatically by reference count }
+    { the terms are freed automatically by reference count }
+    PopTerms; work := nil;
 #+end_src
 
 First, we want to redirect the =Output= file, so that calls to =Write= and =WriteLn= are sent through =KvmWrite=. Since we may still need to access the standard output (especially in the case of =ANSITerm=), we'll also create a new file descriptor.
@@ -761,20 +762,74 @@ The third step is just to initialize an empty stack:
   termstack := TTermStack.Create(32);
 #+end_src
 
+* The Terminal Stack
+** interface
+We maintain a stack of ITerm instances so that =kvm.work= can be assigned and later restored.
+
+#+name: @kvm:interface
+#+begin_src pascal
+
+  { context stack }
+  procedure PushTerm( term : ITerm );
+  function SubTerm( x, y, w, h : word ) : ITerm;
+  procedure PopTerm;
+  procedure PopTerms;
+
+#+end_src
+
+=PushTerm= pushes the current terminal onto a stack and sets =kvm.work= to the given terminal.
+
+=SubTerm= instantiates a new =TSubTerm= that controls a subregion of =kvm.work= and then calls =PushTerm= on it. This is handy for drawing nested components. See =TView.Update= in [[file:../code/utv.pas][utv.pas]] for an example.
+
+=PopTerm= discards the topmost item on the stack and restors =kvm.work=.
+
+=PopTerm= calls =PopTerm= until the stack is empty. This is done automatically during finalization, and is only exposed in the interface so that [[file:cx.pas][cx.pas]] can direct the stacktrace to the main terminal in the event of an uncaught exception.
+
+** implementation
+
+#+name: @kvm:interface
+#+begin_src pascal
+
+  type TTermStack = specialize GStack<ITerm>;
+  var termStack : TTermStack;
+
+#+end_src
+
+#+name: @kvm:impl
+#+begin_src pascal
+
+  procedure PushTerm( term : ITerm );
+    begin
+      termStack.push( work );
+      work := term;
+    end;
+
+  function SubTerm( x, y, w, h : word ) : ITerm;
+    begin
+      result := TSubTerm.Create( work, x, y , w , h );
+      pushTerm( result );
+    end;
+
+  procedure PopTerm;
+    begin
+      work := termStack.Pop;
+    end;
+
+  procedure PopTerms;
+    begin
+      while termStack.count > 0 do work := termStack.Pop;
+    end;
+
+#+end_src
+
 
 * APPENDIX Top-level convenience routines
 
 In general, you're only going to work with one screen at a time, so it's convenient to have a set of routines that deal with whatever the current screen happens to be at the moment.
 
-
 ** interface
 #+name: toplevel
 #+begin_src  pascal
-
-  { context stack (handy for subterms) }
-  procedure PushTerm( term : ITerm );
-  function SubTerm( x, y, w, h : word ) : ITerm;
-  procedure PopTerm;
 
   { conversion helpers }
   function WordToAttr(w : word): TTextAttr;
@@ -806,34 +861,6 @@ In general, you're only going to work with one screen at a time, so it's conveni
 #+end_src
 
 ** implementation
-
-** context stack
-
-#+name: @kvm:impl
-#+begin_src pascal
-  
-  type TTermStack = specialize GStack<ITerm>;
-  var termStack : TTermStack;
-  
-  procedure PushTerm( term : ITerm );
-    begin
-      termStack.push( work );
-      work := term;
-    end;
-  
-  procedure PopTerm;
-    begin
-      work := termStack.Pop;
-    end;
-  
-  function SubTerm( x, y, w, h : word ) : ITerm;
-    begin
-      result := TSubTerm.Create( work, x, y , w , h );
-      pushTerm( result );
-    end;
-
-#+end_src
-
 ** conversions
 
 #+name: @kvm:impl
@@ -930,6 +957,7 @@ The others just delegate to the =work= term.
   procedure bg( ch : char );
 
   <<extras>>
+  <<@kvm:interface>>
 
   implementation
     <<@kvm:impl>>
