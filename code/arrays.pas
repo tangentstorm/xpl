@@ -17,6 +17,7 @@ type
     constructor Create( growBy : cardinal = 16 );
     function Grow : cardinal;
     function Append( item : T ) : cardinal;
+    function Extend( items : array of T ) : cardinal;
   public { IArray }
     function GetLength : cardinal; override;
     procedure SetLength( len : cardinal ); override;
@@ -53,6 +54,12 @@ function GArray<T>.Append( item : T ) : cardinal;
   begin
     result := self.Grow;
     _items[ result ] := item;
+  end;
+  
+function GArray<T>.Extend( items : array of T ) : cardinal;
+  var item : T;
+  begin
+    for item in items do result := self.append(item);
   end;
 
 function GArray<T>.GetLength : cardinal;
