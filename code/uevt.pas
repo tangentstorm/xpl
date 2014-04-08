@@ -42,15 +42,16 @@ type
 {%region -- TModel and GModel : Observable Base Classes ------ }
 type
 
-  { TModel is a normal object, made observable through composition. }
-  TModel = class(TObject, IObservable)
+  { TModel is a normal component, made observable through composition. }
+  TModel = class(TComponent, IObservable)
   public
-    constructor Create;
+    constructor Create(aOwner : TComponent); override;
+    procedure Notify( var msg );
   private
     fAsSubject : IObservable;
-    procedure Notify( var msg );
   public
-    property asSubject: IObservable read fAsSubject implements IObservable;
+    property asSubject: IObservable
+      read fAsSubject implements IObservable;
   end;
 
   { GModel is a generic Model that notifies when .value changes. }
@@ -60,7 +61,7 @@ type
     procedure SetValue( val : t );
     type TTMessage = GMessage<t>;
   public
-    constructor Create( val : t );
+    constructor Create( aOwner : TComponent; val : t ); overload;
     property value : t read _value write SetValue;
   end;
 {%endregion}
@@ -118,9 +119,9 @@ destructor _TSubject.Destroy;
 {%endregion}
 
 {%region TModel}
-constructor TModel.Create;
+constructor TModel.Create(aOwner : TComponent);
   begin
-    inherited Create;
+    inherited Create(aOwner);
     fAsSubject := _TSubject.Create( self )
   end;
 
@@ -131,9 +132,9 @@ procedure TModel.notify( var msg );
 {%endregion}
 
 {%region GModel}
-constructor GModel<T>.Create( val : T );
+constructor GModel<T>.Create( aOwner : TComponent; val : T );
   begin
-    inherited Create;
+    inherited Create(aOwner);
     _value := val;
   end;
 
