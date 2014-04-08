@@ -11,9 +11,11 @@ unit stacks;
 interface uses xpc, sysutils;
 
   type
-    EStackOverflow = class (Exception) end;
-    EStackUnderflow = class (Exception) end;
-
+    EStackError = class (Exception) end;
+    EStackOverflow = class (EStackError) end;
+    EStackUnderflow = class (EStackError) end;
+    EStackIndexError = class (EStackError) end;
+
   type GStack<A> = class
     _count   : cardinal;  // stack pointer
     cells : array of A;
@@ -30,6 +32,7 @@ interface uses xpc, sysutils;
     procedure push3( x, n, t : A );
     procedure pop3( var t, n, x : A );
     function pick( const i : integer ) : A;
+    function GetItem(const i : integer; const default : A) : A;
     function tos: A;
     function nos: A;
     procedure dup;
@@ -152,7 +155,14 @@ function GStack<A>.pick( const i : integer ) : A;
     if i >= 0 then j := count - i
     else j := -i;
     if (j > 0) and (j <= count) then result := cells[j]
-    else raise Exception.Create(u2a('Invalid Index: ') + IntToStr(i));
+    else raise EStackIndexError.Create(
+      u2a('Invalid Index: ') + IntToStr(i));
+  end;
+
+function GStack<A>.GetItem(const i : integer; const default : A) : A;
+  begin
+    try result := pick(i)
+    except on EStackIndexError do result := default end;
   end;
 
 
@@ -172,8 +182,8 @@ function GStack<a>.dumps : TStr;
     result := '';
     if assigned( self.show ) then
       if _count > 0 then begin
-	for i := 1 to _count - 1 do result += self.show(cells[ i ]) + ' ';
-	result += self.show( cells[ _count ]);
+        for i := 1 to _count - 1 do result += self.show(cells[i]) + ' ';
+        result += self.show( cells[ _count ]);
       end else result := '<stack.show not defined>';
   end; { GStack<a>.dumps }
 

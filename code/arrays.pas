@@ -22,7 +22,8 @@ type
     function GetLength : cardinal; override;
     procedure SetLength( len : cardinal ); override;
     procedure SetItem( i : cardinal; const item : T ); override;
-    function GetItem( i : cardinal ) : T; override;
+    function GetItem( i : cardinal ) : T; override; overload;
+    function GetItem( i : cardinal; default : T) : T; overload;
     property at[ i : cardinal ]: T read GetItem write SetItem; default;
     property length : cardinal read GetLength write SetLength;
   end;
@@ -55,7 +56,7 @@ function GArray<T>.Append( item : T ) : cardinal;
     result := self.Grow;
     _items[ result ] := item;
   end;
-  
+
 function GArray<T>.Extend( items : array of T ) : cardinal;
   var item : T;
   begin
@@ -85,13 +86,19 @@ function GArray<T>.GetItem( i : cardinal ) : T;
     else raise Exception.Create('array index out of bounds')
   end;
 
+function GArray<T>.GetItem( i : cardinal; default : T ) : T;
+  begin
+    if i < _count then result := _items[ i ]
+    else result := default
+  end;
+
 function GEqArray<T>.Find( item : T; out i : cardinal ) : boolean;
   begin
     i := self.length;
     if i = 0 then result := false
     else
       repeat
-	dec( i ); result := item = _items[ i ]
+        dec( i ); result := item = _items[ i ]
       until result or (i = 0);
   end;
 
