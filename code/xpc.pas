@@ -1,50 +1,50 @@
-{$i xpc.inc}{$mode objfpc}
+{$i xpc.inc}{$mode delphi}
 unit xpc; { cross-platform compilation help }
 interface uses sysutils;
 
-  const { Boolean synonyms }
-    Yes	 = true;
-    No	 = false;
-    On	 = true;
-    Off	 = false;
-  type
-    TStr = UnicodeString;
-    TChr = WideChar;
+const { Boolean synonyms }
+  Yes	 = true;
+  No	 = false;
+  On	 = true;
+  Off	 = false;
+type
+  TStr = UnicodeString;
+  TChr = WideChar;
+  set32 = set of 0 .. 31;
+  int32 = longint;
+  tbytes = array of byte;
+type
+  TStrEvent = procedure (s : TStr) of object;
+  thunk = procedure of object;
+  ENotImplementedError = class(Exception);
 
-  function u2a(const u : TStr) : ansistring;
-  function a2u(const a : ansistring) : TStr;
+function u2a(const u : TStr) : ansistring;
+function a2u(const a : ansistring) : TStr;
 
-  procedure pass; deprecated 'use "ok" instead of "pass"';
-  procedure ok;
+procedure ok;
 
-  { some handy debug routines }
-  procedure die( msg :  TStr );
-  procedure pause( msg : TStr );
-  procedure hexdump( data : TStr );
+{ some handy debug routines }
+procedure die( msg :  TStr );
+procedure pause( msg : TStr );
+procedure hexdump( data : TStr );
 
-  type set32 = set of 0 .. 31;
-  type int32 = longint;
-  function toint( s : set32 ) : int32;
-  function hex( x : int32; pad : byte = 0 ) : TStr;
-  function min( a, b : int32 ): int32;
-  function max( a, b : int32 ): int32;
+function toint( s : set32 ) : int32;
+function hex( x : int32; pad : byte = 0 ) : TStr;
+function min( a, b : int32 ): int32;
+function max( a, b : int32 ): int32;
 
-  function paramline : TStr;
-  function fileparam : boolean;
+function paramline : TStr;
+function fileparam : boolean;
 
-  type thunk = procedure of object;
-  type logger = object
-    procedure debug( arg : TStr );
-    procedure debug( args : array of const );
-  end;
-  var log : logger;
+type logger = object
+  procedure debug( arg : TStr );
+  procedure debug( args : array of const );
+end;
+var log : logger;
 
-  type ENotImplementedError = class(Exception);
-  type tbytes = array of byte;
-  function bytes(data : array of byte):tbytes;
-  function vinc(var i:integer):integer;
-  function incv(var i:integer):integer;
-
+function bytes(data : array of byte):tbytes;
+function vinc(var i:integer):integer;
+function incv(var i:integer):integer;
 
 implementation
 
@@ -73,23 +73,23 @@ implementation
 
 
 
-  procedure hexdump( data :  TStr );
-    var ch : TChr; hexstr, ascstr : TStr; i : integer;
+procedure hexdump( data : TStr );
+  var ch : TChr; hexstr, ascstr : TStr; i : integer;
   begin
     i := 0;
     hexstr := ''; ascstr := '';
     for ch in data do begin
-
       hexstr += hex( ord( ch ));
-      if ord( ch ) in [ 0 .. 32, 128 .. 255] then ascstr += '.' else ascstr += ch;
+      if ord( ch ) in [ 0 .. 32, 128 .. 255] then ascstr += '.'
+      else ascstr += ch;
       if i mod 4 = 0 then hexstr += ' ';
     end;
     writeln( '-- hexdump --' );
     writeln( '[', hexstr, ' ', ascstr, ']' );
   end;
 
-  function toint( s : set32 ) : Int32;
-    var i : byte;
+function toint( s : set32 ) : Int32;
+  var i : byte;
   begin
     result := 0;
     for i := low(set32) to high(set32) do begin
@@ -113,29 +113,25 @@ function a2u(const a : ansistring) : TStr; inline;
   end;
 
 
-
 procedure logger.debug( args :  array of const );
-    var i : integer;
+  var i : integer;
   begin
     write( '(DEBUG: ' );
-    for i := 0 to length( args ) - 1 do
-    begin
+    for i := 0 to length( args ) - 1 do begin
       case args[ i ].vtype of
 	vtinteger : write( args[ i ].vinteger );
 	vtstring  : write( args[ i ].vstring^ );
 	vtansistring  : write( ansistring( args[ i ].vansistring ));
-	else
-	  write( '??' );
+	else write( '??' );
       end; { case }
     end;
     writeln( ')' );
   end;
 
-  procedure logger.debug( arg : TStr );
-  begin
-    debug([arg]);
+procedure logger.debug( arg : TStr );
+  begin debug([arg]);
   end;
-
+
 function hex( x : int32; pad : byte = 0 ) : TStr;
   const hexits = '0123456789ABCDEF';
   var i, d : int32; count : byte;
@@ -170,8 +166,7 @@ function paramline : TStr;
   var i	: byte; s : TStr;
   begin
     s := '';
-    for i := 1 to paramcount do
-      s := s + Utf8Decode(paramstr( i )+ ' ');
+    for i := 1 to paramcount do s := s + a2u(paramstr( i )+ ' ');
     result := s;
   end; { paramline }
 
@@ -185,22 +180,37 @@ function fileparam : boolean;
     end
   end;
 
-function bytes(data : array of byte):tbytes;
-  var i :integer;
-  begin
-    setlength(result, length(data));
-    for i := 0 to high(data) do result[i]:=data[i];
-  end; { bytes }
+{ convert open arrays to dynamic arrays }
+type
+  GDynArray<T> = class
+    public
+      type ArrayOfT = array of T;
+      class function FromOpenArray( a : array of T ) : ArrayOfT;
+    end;
 
-function vinc(var i:integer):integer;
+class function GDynArray<T>.FromOpenArray( a : array of T) : ArrayOfT;
+  var i : cardinal;
   begin
-    result := i; i := i+1;
+    setlength(result, length(a));
+    for i := 0 to high(a) do result[i] := a[i];
   end;
 
-function incv(var i:integer):integer;
+function bytes(data : array of byte):tbytes;
   begin
-    i := i+1; result := i;
+    result := GDynArray<byte>.FromOpenArray(data)
   end;
 
 
+function vinc(var i:integer):integer;
+  // take value, then increment it
+  begin result := i; i := i+1;
+  end;
+
+function incv(var i:integer):integer;
+  // increment, then take the value
+  begin i := i+1; result := i;
+  end;
+
+
+begin
 end.
