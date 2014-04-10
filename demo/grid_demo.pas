@@ -1,9 +1,15 @@
-{$DEFINE DumpGrids}
+{$mode delphi}{$i xpc}
 program grid_demo;
-uses ugrid2d, chk;
+uses xpc, ugrid2d, chk, cx;
 
 type
-  TCharGrid = specialize GGrid2d<Char>;
+  TCharGrid = class (GGrid2d<TChr>)
+    public function CharToStr( ch : TChr ) : TStr;
+    end;
+
+function TCharGrid.CharToStr( ch : TChr ) : TStr;
+  begin result := a2u(ch)
+  end;
 
 const
   hex = '0123456789ABCDEF';
@@ -15,5 +21,5 @@ begin
   chk.equal( g.Count, 256 );
   g.Fill( '.' );
   for i := $0 to $f do g[ i, i ] := hex[ i + 1 ];
-  writeln(g.ToString);
+  writeln(g.tostr(g.CharToStr));
 end.
