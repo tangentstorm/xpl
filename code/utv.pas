@@ -5,7 +5,7 @@
 //
 {$i xpc.inc}{$mode delphi}
 unit utv;
-interface uses xpc, classes, kvm, arrays, cli, ug2d, num, cw, math, ustr;
+interface uses xpc, classes, kvm, arrays, cli, ug2d, num, cw, math, ustr, chk;
 
 type
   TView = class(TComponent, IPoint2D, ISize2D, IBounds2D)
@@ -14,6 +14,7 @@ type
       _w, _h : cardinal;
       _bg, _fg : byte;
       _dirty : boolean;
+      _ioctx : ITerm; // kvm parent term
       _views : GArray<TView>; // subviews
       function GetX : integer;  procedure SetX(value : integer);
       function GetY : integer;  procedure SetY(value : integer);
@@ -37,11 +38,13 @@ type
 
   // A class with its own video ram buffer:
   TTermView = class (TView, ITerm)
-    protected
+     protected
+      _asIterm  : ITerm;
       _gridterm : TGridTerm;
-    published
-      property term : TGridTerm read _gridterm implements ITerm;
+    public
       constructor Create( aOwner : TComponent ); override;
+      property term : ITerm read _asITerm implements ITerm;
+    published
       procedure Render; override;
       procedure Resize(new_w, new_h : cardinal); override;
     end;
@@ -75,8 +78,8 @@ destructor TView.Destroy;
 
 procedure TView.SetX(value : integer); begin _x := value; end;
 procedure TView.SetY(value : integer); begin _y := value; end;
-procedure TView.SetW(value : cardinal); begin _w := value; end;
-procedure TView.SetH(value : cardinal); begin _h := value; end;
+procedure TView.SetW(value : cardinal); begin resize(value, _h) end;
+procedure TView.SetH(value : cardinal); begin resize(_w, value) end;
 
 function TView.GetX : integer; begin result := _x end;
 function TView.GetY : integer; begin result := _y end;
@@ -88,14 +91,25 @@ procedure TView.Nudge(dx, dy : integer);
     _x += dx; _y += dy;
   end;
 
+
+type
+  Weak<T:IUnknown> = class
+    class function Ref(obj : T) : T;
+    end;
+
+class function Weak<T>.Ref(obj : T) : T;
+  begin obj._addRef; result := obj;
+  end;
+
 procedure TView.Update;
   var child : TView;
   begin
+    _ioctx := Weak<ITerm>.Ref(kvm.work);
     kvm.SubTerm(_x, _y, _w, _h);
-    try bg(_bg); fg(_fg);
+    try kvm.bg(_bg); kvm.fg(_fg);
       if _dirty then begin Render; _dirty := false; end;
       for child in _views do child.Update;
-    finally kvm.PopTerm end;
+    finally kvm.PopTerm; end;
   end;
 
 procedure TView.Smudge;
@@ -113,7 +127,11 @@ procedure TView.Resize(new_w, new_h : cardinal);
 constructor TTermView.Create( aOwner : TComponent );
   begin
     inherited Create( aOwner );
-    _gridterm := TGridTerm.Create(1, 1);
+    _gridterm := TGridTerm.Create(1, 1); resize(32, 16);
+    with _gridterm do begin
+      _gridterm.bg(8); _gridterm.fg(7);
+    end;
+    _asITerm := _gridTerm;
   end;
 
 procedure TTermView.Resize(new_w, new_h : cardinal);
@@ -123,17 +141,19 @@ procedure TTermView.Resize(new_w, new_h : cardinal);
   end;
 
 procedure TTermView.Render;
-  var endy, endx, x, y : byte; cell : TTermCell;
+  var yEnd, xEnd, x, y : byte; cell : TTermCell;
   begin
-    endy := min(_h-1, kvm.yMax);
-    endx := min(_w-1, kvm.xMax);
-    for y := 0 to endy do
+    assert(assigned(_ioctx));
+    yEnd := min(yMax, _ioctx.yMax);
+    xEnd := min(_w-1, _ioctx.xMax);
+    for y := 0 to yEnd do
       begin
-	kvm.gotoxy(_x, _y+y);
-        for x := 0 to endx do
+	_ioctx.gotoxy(_x,_y+y);
+	for x := 0 to xEnd do
           begin
-            cell := _gridterm[x,y];
-	    kvm.emit(cell.ch);
+	    cell := _gridterm[x,y];
+	    _ioctx.textattr := attrtoword(cell.attr);
+	    _ioctx.emit(cell.ch);
           end;
       end;
   end;
