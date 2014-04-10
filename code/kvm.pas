@@ -1,4 +1,3 @@
-
 {!! WARNING!! GENERATED FILE. edit ../text/kvm.pas.org instead!! !!}
 
 
@@ -104,34 +103,23 @@ type TBaseTerm = class (TInterfacedObject, ITerm)
     _w, _h : word;
   public
     constructor Create( NewW, NewH : word ); virtual;
-    function Width : word; virtual;
-    function Height : word; virtual;
-    function xMax : word; virtual;
-    function yMax : word; virtual;
-    function WhereX : word; virtual;
-    function WhereY : word; virtual;
+    function Width : word; virtual; function Height : word; virtual;
+    function xMax : word; virtual; function yMax : word; virtual;
+    function WhereX : word; virtual; function WhereY : word; virtual;
     procedure GotoXY( x, y : word ); virtual;
-    procedure ClrScr; virtual;
-    procedure ClrEol; virtual;
-    procedure NewLine; virtual;
-    procedure ScrollUp; virtual;
-    procedure Fg( color : byte );
-    procedure Bg( color : byte );
+    procedure ClrScr; virtual; procedure ClrEol; virtual;
+    procedure NewLine; virtual; procedure ScrollUp; virtual;
+    procedure Fg( color : byte ); procedure Bg( color : byte );
     function GetTextAttr : word;
     procedure SetTextAttr( value : word ); virtual;
     procedure EmitChar( ch : TChr ); virtual;
     procedure Emit( s : TStr );
-    procedure InsLine; virtual;
-    procedure DelLine; virtual;
-    procedure ShowCursor; virtual;
-    procedure HideCursor; virtual;
-    procedure Resize( NewW, NewH : word );
+    procedure InsLine; virtual; procedure DelLine; virtual;
+    procedure ShowCursor; virtual; procedure HideCursor; virtual;
+    procedure Resize( NewW, NewH : word ); virtual;
   protected
-    _OnEmit : TOnEmit;
-    _OnGotoXY : TOnGotoXY;
-    _OnSetTextAttr : TOnSetTextAttr;
-    _OnSetFg : TOnSetColor;
-    _OnSetBg : TOnSetColor;
+    _OnEmit : TOnEmit; _OnGotoXY : TOnGotoXY;
+    _OnSetTextAttr : TOnSetTextAttr; _OnSetFg, _OnSetBg : TOnSetColor;
   published
     property w : word read Width;
     property h : word read Height;
@@ -155,6 +143,7 @@ type TGridTerm = class (TBaseTerm, ITerm)
     property cells[ x, y : word ] : TTermCell
       read GetCell write PutCell; default;
     procedure DelLine; override;
+    procedure Resize( newW, newH : word ); override;
   end;
 type TAnsiTerm = class (TBaseTerm)
   public
@@ -280,13 +269,16 @@ implementation
     end;
   
   procedure TBaseTerm.NewLine;
-    var oldY : word;
+    var yOld : word;
     begin
-      oldY := wherey;
-      if oldY = yMax then begin scrollUp; gotoXY( 0, yMax ) end
-      else self.gotoXY( 0, oldY+1 );
+      yOld := wherey;
+      if yOld = yMax then
+        begin
+          scrollUp; gotoXY( 0, yMax );
+          chk.equal( _curs.y, yMax, 'should be at bottom' )
+        end
+      else begin gotoXY( 0, yOld+1 ) end;
       chk.equal( _curs.x, 0 );
-      chk.equal( _curs.y, min( oldY+1, yMax ));
     end;
   
   procedure TBaseTerm.ScrollUp;
@@ -360,6 +352,11 @@ implementation
     begin;
       _grid.Free;
       inherited destroy;
+    end;
+  
+  procedure TGridTerm.Resize( newW, newH : word );
+    begin
+      inherited resize( newW, newH ); _grid.Resize( newW, newH ); clrscr;
     end;
   
   procedure TGridTerm.ClrScr;
