@@ -23,7 +23,7 @@ type
     public
       constructor Create( aOwner : TComponent ); override;
       destructor Destroy; override;
-      procedure Update;
+      procedure Update; virtual;
       procedure Smudge;
       property dirty : boolean read _dirty write _dirty;
     published
