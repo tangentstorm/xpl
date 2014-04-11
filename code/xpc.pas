@@ -45,6 +45,12 @@ var log : logger;
 function bytes(data : array of byte):tbytes;
 function vinc(var i:integer):integer;
 function incv(var i:integer):integer;
+
+type
+  Weak<T:IUnknown> = class
+    class function Ref(obj : T) : T;
+    end;
+
 
 implementation
 
@@ -212,5 +218,9 @@ function incv(var i:integer):integer;
   end;
 
 
+class function Weak<T>.Ref(obj : T) : T;
+  begin obj._addRef; result := obj;
+  end;
+
 begin
 end.
