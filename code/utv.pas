@@ -127,7 +127,7 @@ procedure TView.Resize(new_w, new_h : cardinal);
 constructor TTermView.Create( aOwner : TComponent );
   begin
     inherited Create( aOwner );
-    _gridterm := TGridTerm.Create(1, 1); resize(32, 16);
+    _gridterm := TGridTerm.Create(Self); resize(32, 16);
     with _gridterm do begin
       _gridterm.bg(8); _gridterm.fg(7);
     end;

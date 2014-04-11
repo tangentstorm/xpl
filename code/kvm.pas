@@ -4,7 +4,7 @@
 
 {$mode objfpc}{$i xpc.inc}
 unit kvm;
-interface uses xpc, ugrid2d, sysutils, strutils, chk, stacks,
+interface uses xpc, classes, ugrid2d, sysutils, strutils, chk, stacks,
   {$ifdef VIDEOKVM}video
   {$else}terminal
   {$endif}
@@ -97,13 +97,14 @@ type
   TOnSetTextAttr = procedure( a : TTextAttr ) of object;
   TOnSetColor = procedure( color : byte ) of object;
 
-type TBaseTerm = class (TInterfacedObject, ITerm)
+type TBaseTerm = class (TComponent, ITerm)
   protected
     _attr  : TTextAttr;
     _curs  : TPoint;
     _w, _h : word;
   public
-    constructor Create( NewW, NewH : word ); virtual;
+    constructor Create( aOwner : TComponent ); override;
+    function Init( newW, newH : word ): TBaseTerm;
     function Width : word; virtual; function Height : word; virtual;
     function xMax : word; virtual; function yMax : word; virtual;
     function WhereX : word; virtual; function WhereY : word; virtual;
@@ -135,7 +136,8 @@ type TGridTerm = class (TBaseTerm, ITerm)
   private
     _grid : TTermGrid;
   public
-    constructor Create( NewW, NewH : word ); override;
+    constructor Create( aOwner : TComponent ); override;
+    function Init( NewW, NewH : word ) : TGridTerm; reintroduce;
     destructor Destroy; override;
     function GetCell( const x, y : word ) : TTermCell;
     procedure PutCell( const x, y : word; const cell : TTermCell );
@@ -148,7 +150,8 @@ type TGridTerm = class (TBaseTerm, ITerm)
   end;
 type TAnsiTerm = class (TBaseTerm)
   public
-    constructor Create( NewW, NewH : word; CurX, CurY : byte );
+    constructor Create( aOwner : TComponent ); override;
+    function Init( NewW, NewH : Word; CurX, CurY : byte ) : TAnsiTerm;
       reintroduce;
     procedure DoGotoXY( x, y : word );
     procedure DoEmit( s : TStr );
@@ -169,7 +172,8 @@ type
       _term : ITerm;
       _x, _y : word;
     public
-      constructor Create(term : ITerm; x, y, NewW, NewH : word ); reintroduce;
+      function Init(term : ITerm; x, y, NewW, NewH : word ) : TSubTerm;
+         reintroduce;
       procedure DoGotoXY( x, y : word );
       procedure DoEmit( s : TStr );
       procedure DoSetFg( color : byte );
@@ -223,12 +227,19 @@ implementation
       _data[ xyToI( x, y ) ].ch := value;
     end;
   
-  constructor TBaseTerm.Create( NewW, NewH : word );
+  
+  constructor TBaseTerm.Create( aOwner: TComponent );
+    begin inherited Create(aOwner); _w := 0; _h := 0; _curs := TPoint.Create;
+    end;
+  
+  function TBaseTerm.Init( NewW, NewH : word ) : TBaseTerm;
     begin
       _w := NewW; _h := NewH;
-      _curs := TPoint.Create; _curs.x := 0; _curs.y := 0;
+      _curs.x := 0; _curs.y := 0;
       _attr.fg := $07; _attr.bg := $00; // light gray on black
+      result := self;
     end;
+  
   function TBaseTerm.Width : word; begin result := _w end;
   function TBaseTerm.Height: word; begin result := _h end;
   function TBaseTerm.XMax : word; begin result := max(0, _w-1) end;
@@ -342,11 +353,14 @@ implementation
       end
     end;
   
-  constructor TGridTerm.Create( NewW, NewH : word );
+  constructor TGridTerm.Create( aOwner : TComponent );
     begin
-      inherited create( NewW, NewH );
-      _grid := TTermGrid.Create( NewW, NewH );
-      clrscr;
+      inherited Create( aOwner );
+      _grid := TTermGrid.Create( 0, 0 );
+    end;
+  
+  function TGridTerm.Init( NewW, NewH : word ) : TGridTerm;
+    begin resize(NewW, NewH); result := self;
     end;
   
   destructor TGridTerm.Destroy;
@@ -408,18 +422,20 @@ implementation
       settextattr(attrtoword(a));
     end;
   
-  constructor TAnsiTerm.Create(NewW, NewH : word; CurX, CurY : byte);
-    begin
-      inherited Create( NewW, NewH );
-      // we set xy directly because the cursor is already
-      // somewhere when the program starts.
-      _curs.x := curx;
-      _curs.y := cury;
+  constructor TAnsiTerm.Create(aOwner : TComponent);
+    begin inherited;
       _OnGotoXY := @DoGotoXY;
       _OnEmit := @DoEmit;
       _OnSetFg := @DoSetFg;
       _OnSetBg := @DoSetBg;
+    end;
+  
+  function TAnsiTerm.Init( NewW, NewH : word; curX, curY : byte ) : TAnsiTerm;
+    begin
+      _curs.x := curx;
+      _curs.y := cury;
       resetcolor;
+      result := self;
     end;
   
   procedure TAnsiTerm.DoSetFg( color : byte );
@@ -480,9 +496,8 @@ implementation
     end;
   
   
-  constructor TSubTerm.Create(term : ITerm; x, y, NewW, NewH : word );
+  function TSubTerm.init(term : ITerm; x, y, NewW, NewH : word ) : TSubTerm;
     begin
-      inherited Create(NewW, NewH);
       _term := term;
       _x := x; _y := y;
       _OnEmit := @DoEmit;
@@ -510,6 +525,7 @@ implementation
   procedure TSubTerm.HideCursor;
     begin _term.HideCursor;
     end;
+  
   procedure TSubTerm.ShowCursor;
     begin _term.ShowCursor;
     end;
@@ -536,7 +552,7 @@ implementation
       terminal.getwh(termw, termh);
       curx := terminal.startX;
       cury := terminal.startY;
-      result := TAnsiTerm.Create( termw, termh, curx, cury );
+      result := TAnsiTerm.Create( Nil ).init( termw, termh, curx, cury );
     end;
   {$ENDIF}
   
@@ -548,7 +564,7 @@ implementation
   
   function SubTerm( x, y, w, h : word ) : ITerm;
     begin
-      result := TSubTerm.Create( work, x, y , w , h );
+      result := TSubTerm.Create( Nil ).Init( work, x, y , w , h );
       pushTerm( result );
     end;
   
@@ -654,7 +670,7 @@ initialization
     work :={$IFDEF VIDEOKVM}TVideoTerm.Create
            {$ELSE}GetLiveANSITerm{$ENDIF};
   {$ELSE}
-    work := TGridTerm.Create(64, 16);
+    work := TGridTerm.Create(Nil).Init(64, 16);
   {$ENDIF}
   termstack := TTermStack.Create(32);
 finalization

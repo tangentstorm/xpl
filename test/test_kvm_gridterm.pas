@@ -9,7 +9,7 @@ var
 procedure setup;
   begin
     if assigned(term) then term.free;
-    term := TGridTerm.Create(8,4);
+    term := TGridTerm.Create(Nil).Init(8,4);
   end;
 
 procedure dump(term : TGridTerm);
