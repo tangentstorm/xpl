@@ -2,7 +2,7 @@
 {!! WARNING!! GENERATED FILE. edit ../org/kvm.pas.org instead!! !!}
 
 
-{$mode objfpc}{$i xpc.inc}
+{$mode objfpc}{$i xpc.inc}{$m+}
 unit kvm;
 interface uses xpc, ugrid2d, sysutils, strutils, chk, stacks,
   {$ifdef VIDEOKVM}video
@@ -13,12 +13,15 @@ interface uses xpc, ugrid2d, sysutils, strutils, chk, stacks,
 var stdout : text;
 
 type ITerm = interface
+  { queries }
   function  Width : word;
   function  Height: word;
   function  XMax  : word;
   function  YMax  : word;
   function  WhereX: word;
   function  WhereY: word;
+  function  GetTextAttr : word;
+  { commands }
   procedure ClrScr;
   procedure ClrEol;
   procedure NewLine;
@@ -30,11 +33,11 @@ type ITerm = interface
   procedure InsLine;
   procedure DelLine;
   procedure SetTextAttr( value : word );
-  function  GetTextAttr : word;
-  property  TextAttr : word read GetTextAttr write SetTextAttr;
   procedure ShowCursor;
   procedure HideCursor;
   procedure Resize( NewW, NewH : word );
+  { properties }
+  property  TextAttr : word read GetTextAttr write SetTextAttr;
 end;
 type TTextAttr = record
     bg : byte;
@@ -84,12 +87,8 @@ type TTermGrid = class (specialize GGrid2d<TTermCell>)
     property attrs[ x, y : word ] : TTextAttr read GetAttr write SetAttr;
     property chars[ x, y : word ] : WideChar read GetChar write SetChar;
   end;
-type TPoint = class
+type TPoint = record
   x, y : cardinal;
-end;
-type TRect = class
-  x, y : cardinal;
-  w, h : cardinal;
 end;
 type
   TOnEmit = procedure( s : TStr ) of object;
@@ -178,6 +177,44 @@ type
       procedure ShowCursor; override;
     end;
 
+type TTermMessage = (hkClrScr, hkClrEol, hkNewLine, hkScrollUp,
+         hkFg, hkBg, hkEmit, hkGoXY, hkInsLine, hkDelLine,
+         hkAttr, hkShowCursor, hkHideCursor, hkResize );
+     TTermCallback =
+         procedure( msg : TTermMessage; args : array of variant )
+            of object;
+type THookTerm = class (TInterfacedObject, ITerm)
+  protected
+    _Subject : ITerm; // the term to which we will relay events
+    _OnChange : TTermCallback;
+  published
+    constructor Create;
+    procedure DoNothing( msg : TTermMessage; args : array of variant );
+    property OnChange : TTermCallback read _OnChange write _OnChange;
+    function  Width : word;
+    function  Height: word;
+    function  XMax  : word;
+    function  YMax  : word;
+    function  WhereX: word;
+    function  WhereY: word;
+    procedure ClrScr;
+    procedure ClrEol;
+    procedure NewLine;
+    procedure ScrollUp;
+    procedure Fg( color : byte );
+    procedure Bg( color : byte );
+    procedure Emit( s : TStr );
+    procedure GotoXY( x, y : word );
+    procedure InsLine;
+    procedure DelLine;
+    procedure SetTextAttr( value : word );
+    function  GetTextAttr : word;
+    procedure ShowCursor;
+    procedure HideCursor;
+    procedure Resize( NewW, NewH : word );
+  end;
+
+
 procedure fg( ch : char );
 procedure bg( ch : char );
 
@@ -223,12 +260,14 @@ implementation
       _data[ xyToI( x, y ) ].ch := value;
     end;
   
+  
   constructor TBaseTerm.Create( NewW, NewH : word );
     begin
       _w := NewW; _h := NewH;
-      _curs := TPoint.Create; _curs.x := 0; _curs.y := 0;
+      _curs.x := 0; _curs.y := 0;
       _attr.fg := $07; _attr.bg := $00; // light gray on black
     end;
+  
   function TBaseTerm.Width : word; begin result := _w end;
   function TBaseTerm.Height: word; begin result := _h end;
   function TBaseTerm.XMax : word; begin result := max(0, _w-1) end;
@@ -602,6 +641,104 @@ implementation
   
   function  GetTextAttr : word;
     begin result := work.TextAttr
+    end;
+  
+  
+  constructor THookTerm.Create;
+    begin inherited;
+      _OnChange := @self.DoNothing;
+      _Subject := kvm.work;
+    end;
+  
+  procedure THookTerm.DoNothing( msg : TTermMessage;
+                                 args : array of variant );
+    begin // empty method as default callback
+    end;
+  
+  
+  function THookTerm.Width : word;
+    begin result := _subject.width
+    end;
+  
+  function THookTerm.Height: word;
+    begin result := _subject.height
+    end;
+  
+  function THookTerm.XMax  : word;
+    begin result := _subject.xmax
+    end;
+  
+  function THookTerm.YMax  : word;
+    begin result := _subject.ymax
+    end;
+  
+  function THookTerm.WhereX: word;
+    begin result := _subject.wherex
+    end;
+  
+  function THookTerm.WhereY: word;
+    begin result := _subject.wherex
+    end;
+  
+  function THookTerm.GetTextAttr : word;
+    begin result := _subject.textattr
+    end;
+  
+  
+  procedure THookTerm.ClrScr;
+    begin _subject.ClrScr; OnChange( hkClrScr, [ ]);
+    end;
+  
+  procedure THookTerm.ClrEol;
+    begin _subject.ClrScr; OnChange( hkClrEol, [ ]);
+    end;
+  
+  procedure THookTerm.NewLine;
+    begin _subject.ClrScr; OnChange( hkNewLine, [ ]);
+    end;
+  
+  procedure THookTerm.ScrollUp;
+    begin _subject.ScrollUp; OnChange( hkScrollUp, [ ]);
+    end;
+  
+  procedure THookTerm.Fg( color : byte );
+    begin _subject.Fg(color); OnChange( hkFg, [ color ]);
+    end;
+  
+  procedure THookTerm.Bg( color : byte );
+    begin _subject.Bg(color); OnChange( hkBg, [ color ]);
+    end;
+  
+  procedure THookTerm.Emit( s : TStr );
+    begin _subject.Emit( s ); OnChange( hkEmit, [ s ]);
+    end;
+  
+  procedure THookTerm.GotoXY( x, y : word );
+    begin _subject.GotoXY( x, y ); OnChange( hkGoXY, [ x, y ]);
+    end;
+  
+  procedure THookTerm.InsLine;
+    begin _subject.InsLine; OnChange( hkInsLine, [ ]);
+    end;
+  
+  procedure THookTerm.DelLine;
+    begin _subject.DelLine; OnChange( hkDelLine, [ ]);
+    end;
+  
+  procedure THookTerm.SetTextAttr( value : word );
+    begin _subject.SetTexTAttr(value); OnChange( hkAttr, [ value ]);
+    end;
+  
+  procedure THookTerm.ShowCursor;
+    begin _subject.ShowCursor; OnChange( hkShowCursor, [ ]);
+    end;
+  
+  procedure THookTerm.HideCursor;
+    begin _subject.HideCursor; OnChange( hkHideCursor, [ ]);
+    end;
+  
+  procedure THookTerm.Resize( NewW, NewH : word );
+    begin _subject.Resize( newW, newH ); OnChange( hkResize, [ NewW, NewH ]);
     end;
   
   

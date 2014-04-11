@@ -16,6 +16,7 @@ This module implements an enhanced terminal device with support for unicode and 
       - =TSubTerm= :: represents the sub-window of another term
     - =TAnsiTerm= :: outputs ansi escape codes, for external terminal emulators
     - =TVideoTerm= :: uses free pascal's =video= unit
+  - =THookTerm= :: allows callbacks on emit, resize, etc
 
 * =ITerm= : the abstract screen interface
 
@@ -24,12 +25,15 @@ A screen tracks a cursor position, bounds, color.
 #+name: ITerm
 #+begin_src pascal
   type ITerm = interface
+    { queries }
     function  Width : word;
     function  Height: word;
     function  XMax  : word;
     function  YMax  : word;
     function  WhereX: word;
     function  WhereY: word;
+    function  GetTextAttr : word;
+    { commands }
     procedure ClrScr;
     procedure ClrEol;
     procedure NewLine;
@@ -41,11 +45,11 @@ A screen tracks a cursor position, bounds, color.
     procedure InsLine;
     procedure DelLine;
     procedure SetTextAttr( value : word );
-    function  GetTextAttr : word;
-    property  TextAttr : word read GetTextAttr write SetTextAttr;
     procedure ShowCursor;
     procedure HideCursor;
     procedure Resize( NewW, NewH : word );
+    { properties }
+    property  TextAttr : word read GetTextAttr write SetTextAttr;
   end;
 #+end_src
 
@@ -127,17 +131,8 @@ A terminal's display buffer is essentially a grid of such cells. I'm using my [[
 
 #+name: TPoint
 #+begin_src pascal
-  type TPoint = class
+  type TPoint = record
     x, y : cardinal;
-  end;
-#+end_src
-
-** TRect
-#+name: TRect
-#+begin_src pascal
-  type TRect = class
-    x, y : cardinal;
-    w, h : cardinal;
   end;
 #+end_src
 
@@ -198,12 +193,14 @@ type
 *** constructor
 #+name: @kvm:impl
 #+begin_src pascal
+
   constructor TBaseTerm.Create( NewW, NewH : word );
     begin
       _w := NewW; _h := NewH;
-      _curs := TPoint.Create; _curs.x := 0; _curs.y := 0;
+      _curs.x := 0; _curs.y := 0;
       _attr.fg := $07; _attr.bg := $00; // light gray on black
     end;
+
 #+end_src
 
 *** display geometry
@@ -615,6 +612,162 @@ We start with a handful of member variables to track the bounds:
 
 #+end_src
 
+* =THookTerm= : wraps another term with callbacks for all routines
+** interface
+#+name: THookTerm
+#+begin_src pascal
+
+  type TTermMessage = (hkClrScr, hkClrEol, hkNewLine, hkScrollUp,
+           hkFg, hkBg, hkEmit, hkGoXY, hkInsLine, hkDelLine,
+           hkAttr, hkShowCursor, hkHideCursor, hkResize );
+       TTermCallback =
+           procedure( msg : TTermMessage; args : array of variant )
+              of object;
+  type THookTerm = class (TInterfacedObject, ITerm)
+    protected
+      _Subject : ITerm; // the term to which we will relay events
+      _OnChange : TTermCallback;
+    published
+      constructor Create;
+      procedure DoNothing( msg : TTermMessage; args : array of variant );
+      property OnChange : TTermCallback read _OnChange write _OnChange;
+      function  Width : word;
+      function  Height: word;
+      function  XMax  : word;
+      function  YMax  : word;
+      function  WhereX: word;
+      function  WhereY: word;
+      procedure ClrScr;
+      procedure ClrEol;
+      procedure NewLine;
+      procedure ScrollUp;
+      procedure Fg( color : byte );
+      procedure Bg( color : byte );
+      procedure Emit( s : TStr );
+      procedure GotoXY( x, y : word );
+      procedure InsLine;
+      procedure DelLine;
+      procedure SetTextAttr( value : word );
+      function  GetTextAttr : word;
+      procedure ShowCursor;
+      procedure HideCursor;
+      procedure Resize( NewW, NewH : word );
+    end;
+
+#+end_src
+** implementation
+*** constructor and empty callback
+#+name: @hook:impl
+#+begin_src pascal
+
+  constructor THookTerm.Create;
+    begin inherited;
+      _OnChange := @self.DoNothing;
+      _Subject := kvm.work;
+    end;
+
+  procedure THookTerm.DoNothing( msg : TTermMessage;
+                                 args : array of variant );
+    begin // empty method as default callback
+    end;
+
+#+end_src
+*** passthrough queries (no callback)
+#+name: @hook:impl
+#+begin_src pascal
+
+  function THookTerm.Width : word;
+    begin result := _subject.width
+    end;
+
+  function THookTerm.Height: word;
+    begin result := _subject.height
+    end;
+
+  function THookTerm.XMax  : word;
+    begin result := _subject.xmax
+    end;
+
+  function THookTerm.YMax  : word;
+    begin result := _subject.ymax
+    end;
+
+  function THookTerm.WhereX: word;
+    begin result := _subject.wherex
+    end;
+
+  function THookTerm.WhereY: word;
+    begin result := _subject.wherex
+    end;
+
+  function THookTerm.GetTextAttr : word;
+    begin result := _subject.textattr
+    end;
+
+#+end_src
+
+***  callbacks
+#+name: @hook:impl
+#+begin_src pascal
+
+  procedure THookTerm.ClrScr;
+    begin _subject.ClrScr; OnChange( hkClrScr, [ ]);
+    end;
+
+  procedure THookTerm.ClrEol;
+    begin _subject.ClrScr; OnChange( hkClrEol, [ ]);
+    end;
+
+  procedure THookTerm.NewLine;
+    begin _subject.ClrScr; OnChange( hkNewLine, [ ]);
+    end;
+
+  procedure THookTerm.ScrollUp;
+    begin _subject.ScrollUp; OnChange( hkScrollUp, [ ]);
+    end;
+
+  procedure THookTerm.Fg( color : byte );
+    begin _subject.Fg(color); OnChange( hkFg, [ color ]);
+    end;
+
+  procedure THookTerm.Bg( color : byte );
+    begin _subject.Bg(color); OnChange( hkBg, [ color ]);
+    end;
+
+  procedure THookTerm.Emit( s : TStr );
+    begin _subject.Emit( s ); OnChange( hkEmit, [ s ]);
+    end;
+
+  procedure THookTerm.GotoXY( x, y : word );
+    begin _subject.GotoXY( x, y ); OnChange( hkGoXY, [ x, y ]);
+    end;
+
+  procedure THookTerm.InsLine;
+    begin _subject.InsLine; OnChange( hkInsLine, [ ]);
+    end;
+
+  procedure THookTerm.DelLine;
+    begin _subject.DelLine; OnChange( hkDelLine, [ ]);
+    end;
+
+  procedure THookTerm.SetTextAttr( value : word );
+    begin _subject.SetTexTAttr(value); OnChange( hkAttr, [ value ]);
+    end;
+
+  procedure THookTerm.ShowCursor;
+    begin _subject.ShowCursor; OnChange( hkShowCursor, [ ]);
+    end;
+
+  procedure THookTerm.HideCursor;
+    begin _subject.HideCursor; OnChange( hkHideCursor, [ ]);
+    end;
+
+  procedure THookTerm.Resize( NewW, NewH : word );
+    begin _subject.Resize( newW, newH ); OnChange( hkResize, [ NewW, NewH ]);
+    end;
+
+#+end_src
+
 * TODO =TVideoTerm= : uses free pascal's =video= unit
 #+name: TVideoTerm
 #+begin_src pascal
@@ -924,7 +1077,7 @@ The others just delegate to the =work= term.
   {!! WARNING!! GENERATED FILE. edit ../org/kvm.pas.org instead!! !!}
 
 
-  {$mode objfpc}{$i xpc.inc}
+  {$mode objfpc}{$i xpc.inc}{$m+}
   unit kvm;
   interface uses xpc, ugrid2d, sysutils, strutils, chk, stacks,
     {$ifdef VIDEOKVM}video
@@ -942,7 +1095,6 @@ The others just delegate to the =work= term.
   <<TTermCell>>
   <<TTermGrid>>
   <<TPoint>>
-  <<TRect>>
   <<event-types>>
 
   <<TBaseTerm>>
@@ -950,6 +1102,7 @@ The others just delegate to the =work= term.
   <<TAnsiTerm>>
   <<TVideoTerm>>
   <<TSubTerm>>
+  <<THookTerm>>
 
   procedure fg( ch : char );
   procedure bg( ch : char );
@@ -959,6 +1112,7 @@ The others just delegate to the =work= term.
 
   implementation
     <<@kvm:impl>>
+    <<@hook:impl>>
     <<textdriver>>
   <<lifecycle>>
   end.
