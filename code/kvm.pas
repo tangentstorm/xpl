@@ -1,4 +1,5 @@
-{!! WARNING!! GENERATED FILE. edit ../text/kvm.pas.org instead!! !!}
+
+{!! WARNING!! GENERATED FILE. edit ../org/kvm.pas.org instead!! !!}
 
 
 {$mode objfpc}{$i xpc.inc}
@@ -457,7 +458,7 @@ implementation
       else begin
         x := _curs.x;
         gotoxy(0,ymax);
-        write(stdout, lineEnding);
+        writeln(stdout);
         gotoxy(x,y);
       end;
     end;
