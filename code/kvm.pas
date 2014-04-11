@@ -212,6 +212,7 @@ type THookTerm = class (TInterfacedObject, ITerm)
     procedure ShowCursor;
     procedure HideCursor;
     procedure Resize( NewW, NewH : word );
+    property subject : ITerm read _subject write _subject;
   end;
 
 

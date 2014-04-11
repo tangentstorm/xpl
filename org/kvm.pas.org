@@ -652,6 +652,7 @@ We start with a handful of member variables to track the bounds:
       procedure ShowCursor;
       procedure HideCursor;
       procedure Resize( NewW, NewH : word );
+      property subject : ITerm read _subject write _subject;
     end;
 
 #+end_src

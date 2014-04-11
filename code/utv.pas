@@ -40,8 +40,10 @@ type
   TTermView = class (TView, ITerm)
      protected
       _asIterm  : ITerm;
+      _hookterm : THookTerm;
       _gridterm : TGridTerm;
-    public
+      procedure _OnGridChange( msg : TTermMessage; args : array of variant );
+   public
       constructor Create( aOwner : TComponent ); override;
       property term : ITerm read _asITerm implements ITerm;
     published
@@ -127,11 +129,18 @@ procedure TView.Resize(new_w, new_h : cardinal);
 constructor TTermView.Create( aOwner : TComponent );
   begin
     inherited Create( aOwner );
-    _gridterm := TGridTerm.Create(1, 1); resize(32, 16);
-    with _gridterm do begin
-      _gridterm.bg(8); _gridterm.fg(7);
-    end;
-    _asITerm := _gridTerm;
+    _gridterm := TGridTerm.Create(1, 1);
+    _gridterm.bg(8);
+    _gridterm.fg(7);
+    resize(32, 16);
+    _hookterm := THookTerm.Create;
+    _hookterm.subject := _gridterm;
+    _hookterm.OnChange := _OnGridChange;
+    _asITerm := _hookterm;
+  end;
+
+procedure TTermView._OnGridChange( msg : TTermMessage; args : array of variant );
+  begin self.smudge;
   end;
 
 procedure TTermView.Resize(new_w, new_h : cardinal);
