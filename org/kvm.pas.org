@@ -33,6 +33,7 @@ A screen tracks a cursor position, bounds, color.
     function  WhereX: word;
     function  WhereY: word;
     function  GetTextAttr : word;
+    function  asTerm : ITerm;
     { commands }
     procedure ClrScr;
     procedure ClrEol;
@@ -161,6 +162,7 @@ type
       _w, _h : word;
     public
       constructor Create( NewW, NewH : word ); virtual;
+      function asTerm : ITerm; // weak reference
       function Width : word; virtual; function Height : word; virtual;
       function xMax : word; virtual; function yMax : word; virtual;
       function WhereX : word; virtual; function WhereY : word; virtual;
@@ -199,6 +201,17 @@ type
       _w := NewW; _h := NewH;
       _curs.x := 0; _curs.y := 0;
       _attr.fg := $07; _attr.bg := $00; // light gray on black
+    end;
+#+end_src
+*** weak reference helper
+
+This is so you can treat the instance as an ITerm without accidentally freeing the thing.
+
+#+name: @kvm:impl
+#+begin_src pascal
+
+  function TBaseTerm.asTerm : ITerm;
+    begin result := self; result._AddRef
     end;
 
 #+end_src
@@ -629,6 +642,7 @@ We start with a handful of member variables to track the bounds:
       _OnChange : TTermCallback;
     published
       constructor Create;
+      function  asTerm : ITerm;
       procedure DoNothing( msg : TTermMessage; args : array of variant );
       property OnChange : TTermCallback read _OnChange write _OnChange;
       function  Width : word;
@@ -665,6 +679,11 @@ We start with a handful of member variables to track the bounds:
     begin inherited;
       _OnChange := @self.DoNothing;
       _Subject := kvm.work;
+    end;
+
+  // HookTerms don't descend from baseterm ( for now, anyway )
+  function THookTerm.asTerm : ITerm;
+    begin result := self; result._AddRef
     end;
 
   procedure THookTerm.DoNothing( msg : TTermMessage;
@@ -939,16 +958,12 @@ We maintain a stack of ITerm instances so that =kvm.work= can be assigned and la
 
 ** implementation
 
-#+name: @kvm:interface
+#+name: @kvm:impl
 #+begin_src pascal
 
   type TTermStack = specialize GStack<ITerm>;
   var termStack : TTermStack;
-
-#+end_src
-
-#+name: @kvm:impl
-#+begin_src pascal
+  var work : ITerm;
 
   procedure PushTerm( term : ITerm );
     begin
@@ -988,8 +1003,7 @@ In general, you're only going to work with one screen at a time, so it's conveni
   function AttrToWord(a : TTextAttr) : word;
 
   { convenience routines for global instance }
-  var work : ITerm;
-
+  function  asTerm : ITerm; // always a weak reference
   function  Width : word;
   function  Height: word;
   function  XMax  : word;
@@ -1010,6 +1024,7 @@ In general, you're only going to work with one screen at a time, so it's conveni
   property  TextAttr : word read GetTextAttr write SetTextAttr;
   procedure ShowCursor;
   procedure HideCursor;
+
 #+end_src
 
 ** implementation
@@ -1037,6 +1052,8 @@ The others just delegate to the =work= term.
 
 #+name: @kvm:impl
 #+begin_src pascal
+
+  function  asTerm : ITerm; begin result := work.asTerm end;
 
   function  Width  : word; begin result := work.Width end;
   function  Height : word; begin result := work.Height end;

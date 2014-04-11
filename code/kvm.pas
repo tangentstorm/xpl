@@ -21,6 +21,7 @@ type ITerm = interface
   function  WhereX: word;
   function  WhereY: word;
   function  GetTextAttr : word;
+  function  asTerm : ITerm;
   { commands }
   procedure ClrScr;
   procedure ClrEol;
@@ -50,8 +51,7 @@ function WordToAttr(w : word): TTextAttr;
 function AttrToWord(a : TTextAttr) : word;
 
 { convenience routines for global instance }
-var work : ITerm;
-
+function  asTerm : ITerm; // always a weak reference
 function  Width : word;
 function  Height: word;
 function  XMax  : word;
@@ -72,6 +72,7 @@ function  GetTextAttr : word;
 property  TextAttr : word read GetTextAttr write SetTextAttr;
 procedure ShowCursor;
 procedure HideCursor;
+
 
 type TTermCell = record
     ch   : widechar;
@@ -103,6 +104,7 @@ type TBaseTerm = class (TInterfacedObject, ITerm)
     _w, _h : word;
   public
     constructor Create( NewW, NewH : word ); virtual;
+    function asTerm : ITerm; // weak reference
     function Width : word; virtual; function Height : word; virtual;
     function xMax : word; virtual; function yMax : word; virtual;
     function WhereX : word; virtual; function WhereY : word; virtual;
@@ -189,6 +191,7 @@ type THookTerm = class (TInterfacedObject, ITerm)
     _OnChange : TTermCallback;
   published
     constructor Create;
+    function  asTerm : ITerm;
     procedure DoNothing( msg : TTermMessage; args : array of variant );
     property OnChange : TTermCallback read _OnChange write _OnChange;
     function  Width : word;
@@ -228,10 +231,6 @@ procedure PopTerm;
 procedure PopTerms;
 
 
-type TTermStack = specialize GStack<ITerm>;
-var termStack : TTermStack;
-
-
 implementation
   
   function TTermGrid.GetAttr( const x, y : word ) : TTextAttr;
@@ -267,6 +266,10 @@ implementation
       _w := NewW; _h := NewH;
       _curs.x := 0; _curs.y := 0;
       _attr.fg := $07; _attr.bg := $00; // light gray on black
+    end;
+  
+  function TBaseTerm.asTerm : ITerm;
+    begin result := self; result._AddRef
     end;
   
   function TBaseTerm.Width : word; begin result := _w end;
@@ -580,6 +583,10 @@ implementation
     end;
   {$ENDIF}
   
+  type TTermStack = specialize GStack<ITerm>;
+  var termStack : TTermStack;
+  var work : ITerm;
+  
   procedure PushTerm( term : ITerm );
     begin
       termStack.push( work );
@@ -615,6 +622,8 @@ implementation
     end;
   
   
+  function  asTerm : ITerm; begin result := work.asTerm end;
+  
   function  Width  : word; begin result := work.Width end;
   function  Height : word; begin result := work.Height end;
   function  XMax   : word; begin result := work.xMax end;
@@ -649,6 +658,11 @@ implementation
     begin inherited;
       _OnChange := @self.DoNothing;
       _Subject := kvm.work;
+    end;
+  
+  // HookTerms don't descend from baseterm ( for now, anyway )
+  function THookTerm.asTerm : ITerm;
+    begin result := self; result._AddRef
     end;
   
   procedure THookTerm.DoNothing( msg : TTermMessage;
