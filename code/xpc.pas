@@ -1,6 +1,6 @@
 {$i xpc.inc}{$mode delphi}
 unit xpc; { cross-platform compilation help }
-interface uses sysutils;
+interface uses sysutils, classes;
 
 const { Boolean synonyms }
   Yes	 = true;
@@ -18,8 +18,17 @@ type
   thunk = procedure of object;
   ENotImplementedError = class(Exception);
 
+  var XPCOUT : text;
+
 function u2a(const u : TStr) : ansistring;
 function a2u(const a : ansistring) : TStr;
+
+
+  procedure indent;
+  procedure dedent;
+  procedure trace( s : variant ); overload;
+  procedure trace( ss : array of variant; ln : boolean = true ); overload;
+
 
 procedure ok;
 
@@ -45,11 +54,13 @@ var log : logger;
 function bytes(data : array of byte):tbytes;
 function vinc(var i:integer):integer;
 function incv(var i:integer):integer;
+function vdec(var i:integer):integer;
+function decv(var i:integer):integer;
 
 type
   Weak<T:IUnknown> = class
     class function Ref(obj : T) : T;
-    end;
+  end;
 
 
 implementation
@@ -107,7 +118,6 @@ function toint( s : set32 ) : Int32;
   end; { toint }
 
 
-
 function u2a(const u : TStr) : ansistring; inline;
   begin
     result := utf8encode(u);
@@ -217,10 +227,30 @@ function incv(var i:integer):integer;
   begin i := i+1; result := i;
   end;
 
+function vdec(var i:integer):integer;
+  begin result := i; i := i+1;
+  end;
+
+function decv(var i:integer):integer;
+  begin i := i-1; result := i;
+  end;
 
 class function Weak<T>.Ref(obj : T) : T;
   begin obj._addRef; result := obj;
   end;
 
-begin
+  var _indent : integer = 0;
+  procedure indent; begin inc(_indent) end;
+  procedure dedent; begin dec(_indent) end;
+  procedure trace( ss : array of variant; ln : boolean = true );
+    var s : variant; i : integer;
+    begin
+      for i := 0 to _indent-1 do write(XPCOUT, '  ');
+      for s in ss do write(XPCOUT, s);
+      if ln then writeln(XPCOUT, ^M);
+    end;
+  procedure trace( s : variant ); begin trace([s]) end;
+
+initialization assign(XPCOUT, ''); rewrite(XPCOUT);
+finalization close(XPCOUT);
 end.
