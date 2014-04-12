@@ -12,7 +12,7 @@ interface uses xpc, ugrid2d, sysutils, strutils, chk, stacks,
 
 var stdout : text;
 
-type ITerm = interface
+type ITerm = interface ['{8309B694-C1C4-11E3-8461-00188B5936E2}']
   { queries }
   function  Width : word;
   function  Height: word;
@@ -39,6 +39,7 @@ type ITerm = interface
   procedure Resize( NewW, NewH : word );
   { properties }
   property  TextAttr : word read GetTextAttr write SetTextAttr;
+  procedure dump;
 end;
 type TTextAttr = record
     bg : byte;
@@ -119,6 +120,7 @@ type TBaseTerm = class (TInterfacedObject, ITerm)
     procedure InsLine; virtual; procedure DelLine; virtual;
     procedure ShowCursor; virtual; procedure HideCursor; virtual;
     procedure Resize( NewW, NewH : word ); virtual;
+    procedure dump; virtual;
   protected
     _OnEmit : TOnEmit; _OnGotoXY : TOnGotoXY;
     _OnSetTextAttr : TOnSetTextAttr; _OnSetFg, _OnSetBg : TOnSetColor;
@@ -131,6 +133,7 @@ type TBaseTerm = class (TInterfacedObject, ITerm)
       read _OnSetTextAttr write _OnSetTextAttr;
     property OnSetFg : TOnSetColor read _OnSetFg write _OnSetFg;
     property OnSetBg : TOnSetColor read _OnSetBg write _OnSetBg;
+    property  TextAttr : word read GetTextAttr write SetTextAttr;
   end;
 type TGridTerm = class (TBaseTerm, ITerm)
   private
@@ -187,6 +190,7 @@ type TTermMessage = (hkClrScr, hkClrEol, hkNewLine, hkScrollUp,
             of object;
 type THookTerm = class (TInterfacedObject, ITerm)
   protected
+    _self : ITerm;
     _Subject : ITerm; // the term to which we will relay events
     _OnChange : TTermCallback;
   published
@@ -215,7 +219,11 @@ type THookTerm = class (TInterfacedObject, ITerm)
     procedure ShowCursor;
     procedure HideCursor;
     procedure Resize( NewW, NewH : word );
-    property subject : ITerm read _subject write _subject;
+    property  TextAttr : word read GetTextAttr write SetTextAttr;
+  public { debug stuff }
+    function  GetSubject : ITerm;
+    property subject : ITerm read GetSubject write _subject;
+    procedure dump;
   end;
 
 
@@ -267,6 +275,7 @@ implementation
       _curs.x := 0; _curs.y := 0;
       _attr.fg := $07; _attr.bg := $00; // light gray on black
     end;
+  
   
   function TBaseTerm.asTerm : ITerm;
     begin result := self; result._AddRef
@@ -342,7 +351,7 @@ implementation
   
   function  TBaseTerm.GetTextAttr : word;
     begin
-      result := _attr.bg shl 16 + _attr.fg
+      result := _attr.bg shl 8 + _attr.fg
     end;
   
   procedure TBaseTerm.SetTextAttr( value : word );
@@ -383,6 +392,16 @@ implementation
           if assigned(_OnEmit) then _OnEmit(ch);
         end
       end
+    end;
+  procedure tbaseterm.dump;
+    begin
+      if self = nil then trace('[NIL]')
+      else begin
+        trace(['TERM[', self.classname, ']']);
+        indent; begin
+          trace(['w:', _w, ' h:', _h]);
+        end; dedent;
+      end;
     end;
   
   constructor TGridTerm.Create( NewW, NewH : word );
@@ -656,13 +675,28 @@ implementation
   
   constructor THookTerm.Create;
     begin inherited;
+      _self := ITerm(self);
       _OnChange := @self.DoNothing;
-      _Subject := kvm.work;
+      _Subject := kvm.asTerm;
+    end;
+  
+  procedure THookTerm.Dump;
+    var indent : TStr;
+    begin
+      if self = nil then trace('[NIL]')
+      else begin
+        trace('THookTerm');
+        trace(' _subject: '); _subject.dump;
+      end
     end;
   
   // HookTerms don't descend from baseterm ( for now, anyway )
   function THookTerm.asTerm : ITerm;
-    begin result := self; result._AddRef
+    begin result := _self; result._addref;
+    end;
+  
+  function THookTerm.GetSubject : ITerm;
+    begin result := _subject.asTerm
     end;
   
   procedure THookTerm.DoNothing( msg : TTermMessage;
