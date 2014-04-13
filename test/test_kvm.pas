@@ -64,7 +64,6 @@ procedure test_hookterm;
       hook.textattr := $1234;           // update the hook
       chk.equal($1234, kvm.textattr);   // ... and kvm changes too
       chk.equal($1234, hook.textattr);
-      chk.equal($1234, hook.asterm.textattr);
 
       // we can hook other objects, too:
       base := GridTerm(10,10);
@@ -74,10 +73,7 @@ procedure test_hookterm;
       hook.subject := base;
       hook.textattr := $1234;
       chk.equal($1234, base.textattr);
-      hook.asTerm.textattr := $2345;
-      chk.equal($2345, base.textattr);
 
-//      base.free;
     finally kvm.textattr := old end;
   end;
 

@@ -21,7 +21,6 @@ type ITerm = interface ['{8309B694-C1C4-11E3-8461-00188B5936E2}']
   function  WhereX: word;
   function  WhereY: word;
   function  GetTextAttr : word;
-  function  asTerm : ITerm;
   { commands }
   procedure ClrScr;
   procedure ClrEol;
@@ -151,7 +150,6 @@ type TBaseTerm = class (TInterfacedObject, ITerm)
     _w, _h : word;
   public
     constructor Create( NewW, NewH : word ); virtual;
-    function asTerm : ITerm; // weak reference
     function Width : word; virtual; function Height : word; virtual;
     function xMax : word; virtual; function yMax : word; virtual;
     function WhereX : word; virtual; function WhereY : word; virtual;
@@ -238,7 +236,6 @@ type THookTerm = class (TInterfacedObject, ITerm, IHookTerm)
     procedure SetCallback( cb : TTermCallback );
   published
     constructor Create;
-    function  asTerm : ITerm;
     procedure DoNothing( msg : TTermMessage; args : array of variant );
     property Callback : TTermCallback write SetCallback;
     function  Width : word;
@@ -305,11 +302,6 @@ type THookTerm = class (TInterfacedObject, ITerm, IHookTerm)
       _w := NewW; _h := NewH;
       _curs.x := 0; _curs.y := 0;
       _attr.fg := $07; _attr.bg := $00; // light gray on black
-    end;
-  
-  
-  function TBaseTerm.asTerm : ITerm;
-    begin result := self; result._AddRef
     end;
   
   function TBaseTerm.Width : word; begin result := _w end;
@@ -689,7 +681,7 @@ type THookTerm = class (TInterfacedObject, ITerm, IHookTerm)
     end;
   
   
-  function  asTerm : ITerm; begin result := work.asTerm end;
+  function  asTerm : ITerm; begin result := work end;
   
   function  Width  : word; begin result := work.Width end;
   function  Height : word; begin result := work.Height end;
@@ -737,13 +729,8 @@ type THookTerm = class (TInterfacedObject, ITerm, IHookTerm)
       end
     end;
   
-  // HookTerms don't descend from baseterm ( for now, anyway )
-  function THookTerm.asTerm : ITerm;
-    begin result := _self; result._addref;
-    end;
-  
   function THookTerm.GetSubject : ITerm;
-    begin result := _subject.asTerm
+    begin result := _subject
     end;
   
   procedure THookTerm.SetSubject( term : ITerm );
@@ -898,6 +885,6 @@ initialization
   {$ENDIF}
   termstack := TTermStack.Create(32);
 finalization
-  { the terms are freed automatically by reference count }
+  { the popped terms are freed automatically by reference count }
   PopTerms; work := nil; termstack.free;
 end.
