@@ -724,7 +724,6 @@ We start with a handful of member variables to track the bounds:
 
   constructor THookTerm.Create;
     begin inherited;
-      _self := ITerm(self);
       _OnChange := @self.DoNothing;
       _Subject := kvm.asTerm;
     end;
@@ -1088,8 +1087,7 @@ function HookTerm( term : ITerm ) : IHookTerm;
     end;
 
   function HookTerm( term : ITerm ) : IHookTerm;
-    var hook : THookTerm;
-    begin hook := THookTerm.Create; hook.subject := term; result := hook;
+    begin result := THookTerm.Create; result.subject := term
     end;
 #+end_src
 

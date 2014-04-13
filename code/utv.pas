@@ -40,7 +40,7 @@ type
       constructor Create( aOwner : TComponent ); override;
       function Init( x, y : integer ; w, h : cardinal ) : TTermView; reintroduce;
       destructor Destroy; override;
-      function asTerm : ITerm; // weak reference
+      function asTerm : ITerm;
       property term : ITerm read asTerm implements ITerm;
     published
       procedure Render; override;
@@ -149,7 +149,7 @@ function TTermView.Init( x, y : integer ; w, h : cardinal ) : TTermView;
   end;
 
 function TTermView.asTerm : ITerm;
-  begin (_hookterm as TObject).getInterfaceWeak(StringToGUID(kITermGUID), result);
+  begin result := _hookterm
   end;
 
 destructor TTermView.Destroy;

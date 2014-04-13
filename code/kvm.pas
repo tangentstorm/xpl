@@ -667,8 +667,7 @@ type THookTerm = class (TInterfacedObject, ITerm, IHookTerm)
     end;
   
   function HookTerm( term : ITerm ) : IHookTerm;
-    var hook : THookTerm;
-    begin hook := THookTerm.Create; hook.subject := term; result := hook;
+    begin result := THookTerm.Create; result.subject := term
     end;
   
   function WordToAttr(w : word): TTextAttr; inline;
@@ -717,7 +716,6 @@ type THookTerm = class (TInterfacedObject, ITerm, IHookTerm)
   
   constructor THookTerm.Create;
     begin inherited;
-      _self := ITerm(self);
       _OnChange := @self.DoNothing;
       _Subject := kvm.asTerm;
     end;
