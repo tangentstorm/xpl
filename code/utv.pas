@@ -5,7 +5,8 @@
 
 {$i xpc.inc}{$mode delphi}
 unit utv;
-interface uses xpc, classes, kvm, arrays, cli, ug2d, num, cw, math, ustr, chk;
+interface uses xpc, classes, sysutils,
+  kvm, arrays, cli, ug2d, num, cw, math, ustr, chk;
 type
   TView = class(ug2d.TBounds2D)
     protected
@@ -148,14 +149,14 @@ function TTermView.Init( x, y : integer ; w, h : cardinal ) : TTermView;
   end;
 
 function TTermView.asTerm : ITerm;
-  begin result := _hookterm
+  begin (_hookterm as TObject).getInterfaceWeak(StringToGUID(kITermGUID), result);
   end;
 
 destructor TTermView.Destroy;
   begin
-    //   figure out why this gives invalid pointer operation
-    // if assigned(_gridterm) then _gridterm.free;
-    // if assigned(_hookterm) then _hookterm.free;
+    _hookterm.subject := nil;
+    _hookterm := nil;
+    _gridterm := nil;
     inherited;
   end;
 
