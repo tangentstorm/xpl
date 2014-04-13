@@ -22,7 +22,7 @@ interface uses xpc, sysutils;
     overflow, underflow : thunk;
     show : function( x : A ) : TStr;
     constructor Create( len:word );
-    procedure push( t : A );
+    function push( t : A ) : A;
     function pop: A;
     function popGet( default : A ) : A;
     function shift: A;
@@ -58,11 +58,12 @@ implementation
     underflow := default_underflow;
   end;
 
-procedure GStack<a>.push( t : A );
+function GStack<a>.push( t : A ) : A;
   begin
     inc( _count );
     if _count >= length( cells ) then overflow
     else cells[ _count ] := t;
+    result := t;
   end; { GStack<a>.push }
 
 function GStack<a>.pop : A;
