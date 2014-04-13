@@ -20,7 +20,7 @@ function HeapReport(sub : TSubroutine; x : byte= 1) : TMemData;
 procedure test_memleaks_0;
   procedure subtermRamUsage(numterms : byte);
     var i : byte;
-    begin for i := 1 to numterms do subterm(0, 0, 10, 10);
+    begin for i := 1 to numterms do pushSub(0, 0, 10, 10);
           for i := 1 to numterms do popterm;
     end;
   var report : TMemData;
@@ -38,43 +38,23 @@ procedure test_memleaks_0;
 
 { it looked like the culprit might be TGridTerm... }
 procedure test_memleaks_1;
-  procedure cycle_gridterm_as_class(_ :byte);
-    begin TGridTerm.Create(10, 10).free
-    end;
   procedure cycle_gridterm_interface(n:byte);
-    var i : byte; term : ITerm;
-    begin for i := 1 to n do term := TGridTerm.Create(10, 10)
+    var i : byte;
+    begin for i := 1 to n do GridTerm(10, 10)
     end;
   var report : TMemData;
   begin
-    report := HeapReport(cycle_gridterm_as_class);
-    chk.equal(0, report.diff, 'cycle_gridterm_as_class grew ram');
     report := HeapReport(cycle_gridterm_interface);
     chk.equal(0, report.diff, 'cycle_gridterm_interface grew ram');
   end;
 
-procedure test_memleaks_2;
-  procedure cycle_gridterm_asterm(n:byte);
-    var i : byte; core : TGridTerm; term : ITerm;
-    begin
-      for i := 1 to n do begin
-	term := TGridTerm.Create(10, 10).asterm;
-	term := nil;
-      end;
-    end;
-  var report : TMemData;
-  begin
-    report := HeapReport(cycle_gridterm_asterm);
-    chk.equal(0, report.diff, 'cycle_gridterm_asterm grew ram');
-  end;
-
 
 procedure test_hookterm;
-  var base : kvm.TBaseTerm; hook : kvm.THookTerm; old : word;
+  var base : kvm.ITerm; hook : kvm.IHookTerm; old : word;
   begin
     old := kvm.textattr;
     try
-      hook := THookTerm.Create;
+      hook := HookTerm(kvm.asTerm);
 
       // by default, hooks should read from kvm.work
       chk.equal(old, hook.textattr);
@@ -87,7 +67,7 @@ procedure test_hookterm;
       chk.equal($1234, hook.asterm.textattr);
 
       // we can hook other objects, too:
-      base := TBaseTerm.Create(10,10);
+      base := GridTerm(10,10);
       base.textattr := $9999;
       chk.equal($9999, base.textattr);
 

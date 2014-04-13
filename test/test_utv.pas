@@ -8,7 +8,7 @@ procedure test_view;
   end;
 
 procedure test_termview_pointers;
-  var tv : utv.TTermView; hook : THookTerm;
+  var tv : utv.TTermView;
   begin
     tv := TTermView.Create(Nil);
     chk.equal(tv.asterm.textattr, $0807,   'this works');

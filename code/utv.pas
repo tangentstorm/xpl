@@ -32,8 +32,8 @@ type
   // A class with its own video ram buffer:
   TTermView = class (TView, ITerm)
     protected
-      _hookterm : THookTerm;
-      _gridterm : TGridTerm;
+      _hookterm : IHookTerm;
+      _gridterm : IGridTerm;
       procedure _OnGridChange( msg : TTermMessage; args : array of variant );
     public
       constructor Create( aOwner : TComponent ); override;
@@ -75,11 +75,11 @@ procedure TView.Update;
   begin
     if _visible then begin
       _ioctx := kvm.asTerm;
-      kvm.SubTerm(_x, _y, _w, _h);
+      kvm.pushSub(_x, _y, _w, _h);
       try kvm.bg(_bg); kvm.fg(_fg);
         if _dirty then begin Render; _dirty := false; end;
         for child in _views do child.Update;
-      finally kvm.PopTerm end
+      finally kvm.PopTerm; _ioctx := nil end
     end;
   end;
 
@@ -105,8 +105,7 @@ begin
   trace('--[ done with termview.dump ]-------');
 end;
 
-
-  
+
 { display management }
 
 procedure TView.Smudge;
@@ -136,13 +135,12 @@ procedure TView.Resize(new_w, new_h : cardinal);
 constructor TTermView.Create( aOwner : TComponent );
   begin
     inherited Create( aOwner );
-    _gridterm := TGridTerm.Create(1, 1);
+    _gridterm := GridTerm(1, 1);
     _gridterm.bg(8);
     _gridterm.fg(7);
     resize(32, 16);
-    _hookterm := THookTerm.Create;
-    _hookterm.subject := _gridterm.asTerm;
-    _hookterm.OnChange := _OnGridChange;
+    _hookterm := HookTerm(_gridterm);
+    _hookterm.callback := _OnGridChange;
   end;
 
 function TTermView.Init( x, y : integer ; w, h : cardinal ) : TTermView;
@@ -150,7 +148,7 @@ function TTermView.Init( x, y : integer ; w, h : cardinal ) : TTermView;
   end;
 
 function TTermView.asTerm : ITerm;
-  begin result := _hookterm.asTerm;
+  begin result := _hookterm
   end;
 
 destructor TTermView.Destroy;
@@ -183,7 +181,7 @@ procedure TTermView.Render;
 	_ioctx.gotoxy(_x,_y+y);
 	for x := 0 to xEnd do
           begin
-	    cell := _gridterm[x,y];
+	    cell := _gridterm.GetCell(x,y);
 	    _ioctx.textattr := attrtoword(cell.attr);
 	    _ioctx.emit(cell.ch);
           end;

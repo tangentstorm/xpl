@@ -3,16 +3,15 @@
 implementation uses xpc, kvm, num, kbd;
 
 var
-  term : TGridTerm;
+  term : IGridTerm;
   cell : TTermCell;
 
 procedure setup;
   begin
-    if assigned(term) then term.free;
-    term := TGridTerm.Create(8,4);
+    term := GridTerm(8,4);
   end;
 
-procedure dump(term : TGridTerm);
+procedure dump(term : IGridTerm);
   var y, x : integer;
   begin
     clrscr; writeln;
@@ -21,7 +20,7 @@ procedure dump(term : TGridTerm);
     for y := 0 to term.ymax do
       begin
 	write(y, '|');
-	for x := 0 to term.xmax do write(stdout, term[x,y].ch);
+	for x := 0 to term.xmax do write(stdout, term.GetCell(x,y).ch);
 	writeln;
       end;
     write(' +'); for x := 0 to term.xmax do write(stdout, '-'); writeln;
@@ -49,9 +48,9 @@ procedure test_sanity;
 
 procedure test_cells;
   begin
-    cell := term[0,0];
-    cell.ch := 'x'; term[0,0] := cell;
-    cell.ch := 'y'; cell := term[0,0];
+    cell := term.GetCell(0, 0);
+    cell.ch := 'x'; term.PutCell(0, 0, cell);
+    cell.ch := 'y'; cell := term.GetCell(0, 0);
     chk.equal(cell.ch, 'x');
   end;
 
@@ -62,9 +61,9 @@ procedure test_emit;
     term.emit('xyz');
     chk.equal(3, term.wherex);
     chk.equal(0, term.wherey);
-    chk.equal('x', term[0,0].ch);
-    chk.equal('y', term[1,0].ch);
-    chk.equal('z', term[2,0].ch);
+    chk.equal('x', term.GetCell(0,0).ch);
+    chk.equal('y', term.GetCell(1,0).ch);
+    chk.equal('z', term.GetCell(2,0).ch);
   end;
 
 procedure test_gotoxy;
@@ -83,20 +82,20 @@ procedure test_gotoxy;
 procedure test_clrscr;
   begin
     with term do begin
-      cell.ch := 'A'; term[0,0]:= cell;
-      cell.ch := 'Z'; term[7,3]:= cell;
+      cell.ch := 'A'; term.PutCell(0,0,cell);
+      cell.ch := 'Z'; term.PutCell(7,3,cell);
 
       gotoxy(0,0); emit('a');
       gotoxy(xmax, ymax); emit('b');
 
-      chk.equal('a', term[0,0].ch);
-      chk.equal('b', term[xmax, ymax].ch);
+      chk.equal('a', term.GetCell(0,0).ch);
+      chk.equal('b', term.GetCell(xmax, ymax).ch);
       chk.equal(wherex, width);
       chk.equal(wherey, ymax);
 
       clrscr;
-      chk.equal(' ', term[0,0].ch);
-      chk.equal(' ', term[xmax, ymax].ch);
+      chk.equal(' ', term.GetCell(0,0).ch);
+      chk.equal(' ', term.GetCell(xmax, ymax).ch);
       chk.equal(wherex, 0);
       chk.equal(wherey, 0);
     end;
@@ -119,10 +118,10 @@ procedure test_linewrap;
     term.clrscr;
     for y := 0 to term.ymax do
       for x := 0 to term.xmax do term.emit(n2s(y));
-    chk.equal('0', term[0,0].ch);
-    chk.equal('1', term[2,1].ch);
-    chk.equal('2', term[5,2].ch);
-    chk.equal('3', term[7,3].ch);
+    chk.equal('0', term.GetCell(0,0).ch);
+    chk.equal('1', term.GetCell(2,1).ch);
+    chk.equal('2', term.GetCell(5,2).ch);
+    chk.equal('3', term.GetCell(7,3).ch);
     chk.equal(8, term.wherex);
     chk.equal(3, term.wherey);
   end;
@@ -143,15 +142,14 @@ procedure test_delline;
     term.gotoxy(1,1);
     term.delline;
     // 1. it should delete the line:
-    chk.equal('0', term[0,0].ch);
-    chk.equal('2', term[2,1].ch);
-    chk.equal('3', term[5,2].ch);
-    chk.equal(' ', term[7,3].ch);
+    chk.equal('0', term.GetCell(0,0).ch);
+    chk.equal('2', term.GetCell(2,1).ch);
+    chk.equal('3', term.GetCell(5,2).ch);
+    chk.equal(' ', term.GetCell(7,3).ch);
     // 2. it should restore the cursor position:
     chk.equal(1, term.wherex);
     chk.equal(1, term.wherey);
   end;
 
 finalization
-  if assigned(term) then term.free;
 end.

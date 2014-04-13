@@ -46,6 +46,23 @@ type TTextAttr = record
     fg : byte;
   end;
 
+type TTermMessage = (hkClrScr, hkClrEol, hkNewLine, hkScrollUp,
+         hkFg, hkBg, hkEmit, hkGoXY, hkInsLine, hkDelLine,
+         hkAttr, hkShowCursor, hkHideCursor, hkResize );
+
+     TTermCallback =
+         procedure( msg : TTermMessage; args : array of variant )
+            of object;
+
+     IHookTerm = interface (ITerm)
+        procedure SetCallback( cb : TTermCallback );
+        property Callback : TTermCallback write SetCallback;
+
+        function  GetSubject : ITerm;
+        procedure  SetSubject( term : ITerm );
+        property Subject : ITerm read GetSubject write SetSubject;
+      end;
+
 
 { conversion helpers }
 function WordToAttr(w : word): TTextAttr;
@@ -89,6 +106,15 @@ type TTermGrid = class (specialize GGrid2d<TTermCell>)
     property attrs[ x, y : word ] : TTextAttr read GetAttr write SetAttr;
     property chars[ x, y : word ] : WideChar read GetChar write SetChar;
   end;
+
+type IGridTerm = interface(ITerm)
+  function GetCell( const x, y : word ) : TTermCell;
+  procedure PutCell( const x, y : word; const cell : TTermCell );
+
+  // "this kind of property cannot be published." :(
+  // property cells[ x, y : word ] : TTermCell read GetCell write PutCell;
+end;
+
 type TPoint = record
   x, y : cardinal;
 end;
@@ -97,6 +123,26 @@ type
   TOnGotoXY = procedure( x, y : word ) of object;
   TOnSetTextAttr = procedure( a : TTextAttr ) of object;
   TOnSetColor = procedure( color : byte ) of object;
+procedure fg( ch : char );
+procedure bg( ch : char );
+
+
+
+{ context stack }
+procedure PushTerm( term : ITerm );
+function  PushSub( x, y, w, h : word ) : ITerm;
+procedure PopTerm;
+procedure PopTerms;
+
+
+
+function GridTerm( w, h : cardinal ): IGridTerm;
+function SubTerm( term : ITerm; x, y : integer; w, h : cardinal ): ITerm;
+function HookTerm( term : ITerm ) : IHookTerm;
+
+
+implementation
+
 
 type TBaseTerm = class (TInterfacedObject, ITerm)
   protected
@@ -135,20 +181,21 @@ type TBaseTerm = class (TInterfacedObject, ITerm)
     property OnSetBg : TOnSetColor read _OnSetBg write _OnSetBg;
     property  TextAttr : word read GetTextAttr write SetTextAttr;
   end;
-type TGridTerm = class (TBaseTerm, ITerm)
+type TGridTerm = class (TBaseTerm, ITerm, IGridTerm)
   private
     _grid : TTermGrid;
   public
     constructor Create( NewW, NewH : word ); override;
     destructor Destroy; override;
-    function GetCell( const x, y : word ) : TTermCell;
-    procedure PutCell( const x, y : word; const cell : TTermCell );
     procedure ClrScr; override;
     procedure EmitChar( wc : widechar ); override;
-    property cells[ x, y : word ] : TTermCell
-      read GetCell write PutCell; default;
     procedure DelLine; override;
     procedure Resize( newW, newH : word ); override;
+  public { IGridTerm }
+    function GetCell( const x, y : word ) : TTermCell;
+    procedure PutCell( const x, y : word; const cell : TTermCell );
+    property cells[ x, y : word ] : TTermCell
+      read GetCell write PutCell; default;
   end;
 type TAnsiTerm = class (TBaseTerm)
   public
@@ -174,6 +221,7 @@ type
       _x, _y : word;
     public
       constructor Create(term : ITerm; x, y, NewW, NewH : word ); reintroduce;
+      destructor Destroy; override;
       procedure DoGotoXY( x, y : word );
       procedure DoEmit( s : TStr );
       procedure DoSetFg( color : byte );
@@ -181,23 +229,18 @@ type
       procedure HideCursor; override;
       procedure ShowCursor; override;
     end;
-
-type TTermMessage = (hkClrScr, hkClrEol, hkNewLine, hkScrollUp,
-         hkFg, hkBg, hkEmit, hkGoXY, hkInsLine, hkDelLine,
-         hkAttr, hkShowCursor, hkHideCursor, hkResize );
-     TTermCallback =
-         procedure( msg : TTermMessage; args : array of variant )
-            of object;
-type THookTerm = class (TInterfacedObject, ITerm)
+type THookTerm = class (TInterfacedObject, ITerm, IHookTerm)
   protected
     _self : ITerm;
     _Subject : ITerm; // the term to which we will relay events
     _OnChange : TTermCallback;
+  public
+    procedure SetCallback( cb : TTermCallback );
   published
     constructor Create;
     function  asTerm : ITerm;
     procedure DoNothing( msg : TTermMessage; args : array of variant );
-    property OnChange : TTermCallback read _OnChange write _OnChange;
+    property Callback : TTermCallback write SetCallback;
     function  Width : word;
     function  Height: word;
     function  XMax  : word;
@@ -222,24 +265,12 @@ type THookTerm = class (TInterfacedObject, ITerm)
     property  TextAttr : word read GetTextAttr write SetTextAttr;
   public { debug stuff }
     function  GetSubject : ITerm;
-    property subject : ITerm read GetSubject write _subject;
+    procedure  SetSubject( term : ITerm );
+    property subject : ITerm read GetSubject write SetSubject;
     procedure dump;
   end;
 
 
-procedure fg( ch : char );
-procedure bg( ch : char );
-
-
-
-{ context stack }
-procedure PushTerm( term : ITerm );
-function SubTerm( x, y, w, h : word ) : ITerm;
-procedure PopTerm;
-procedure PopTerms;
-
-
-implementation
   
   function TTermGrid.GetAttr( const x, y : word ) : TTextAttr;
     begin
@@ -553,6 +584,10 @@ implementation
       _OnSetBg := @DoSetBg;
     end;
   
+  destructor TSubTerm.Destroy;
+    begin _term := nil; inherited
+    end;
+  
   procedure TSubTerm.DoGotoXY( x, y : word );
     begin _term.GotoXY( x + _x, y + _y );
     end;
@@ -612,9 +647,9 @@ implementation
       work := term;
     end;
   
-  function SubTerm( x, y, w, h : word ) : ITerm;
+  function PushSub( x, y, w, h : word ) : ITerm;
     begin
-      result := TSubTerm.Create( work, x, y , w , h );
+      result := SubTerm( work, x, y , w , h );
       pushTerm( result );
     end;
   
@@ -628,6 +663,19 @@ implementation
       while termStack.count > 0 do work := termStack.Pop;
     end;
   
+  
+  function GridTerm( w, h : cardinal ): IGridTerm;
+    begin result := TGridTerm.Create( w, h )
+    end;
+  
+  function SubTerm( term : ITerm; x, y : integer; w, h : cardinal ): ITerm;
+    begin result := TSubTerm.Create( term, x, y, w, h )
+    end;
+  
+  function HookTerm( term : ITerm ) : IHookTerm;
+    var hook : THookTerm;
+    begin hook := THookTerm.Create; hook.subject := term; result := hook;
+    end;
   
   function WordToAttr(w : word): TTextAttr; inline;
     begin
@@ -681,7 +729,6 @@ implementation
     end;
   
   procedure THookTerm.Dump;
-    var indent : TStr;
     begin
       if self = nil then trace('[NIL]')
       else begin
@@ -699,11 +746,18 @@ implementation
     begin result := _subject.asTerm
     end;
   
+  procedure THookTerm.SetSubject( term : ITerm );
+    begin _subject := term
+    end;
+  
   procedure THookTerm.DoNothing( msg : TTermMessage;
                                  args : array of variant );
     begin // empty method as default callback
     end;
   
+  procedure THookTerm.SetCallback( cb : TTermCallback );
+    begin  _onchange := cb
+    end;
   
   function THookTerm.Width : word;
     begin result := _subject.width
@@ -735,59 +789,59 @@ implementation
   
   
   procedure THookTerm.ClrScr;
-    begin _subject.ClrScr; OnChange( hkClrScr, [ ]);
+    begin _subject.ClrScr; _OnChange( hkClrScr, [ ]);
     end;
   
   procedure THookTerm.ClrEol;
-    begin _subject.ClrScr; OnChange( hkClrEol, [ ]);
+    begin _subject.ClrScr; _OnChange( hkClrEol, [ ]);
     end;
   
   procedure THookTerm.NewLine;
-    begin _subject.ClrScr; OnChange( hkNewLine, [ ]);
+    begin _subject.ClrScr; _OnChange( hkNewLine, [ ]);
     end;
   
   procedure THookTerm.ScrollUp;
-    begin _subject.ScrollUp; OnChange( hkScrollUp, [ ]);
+    begin _subject.ScrollUp; _OnChange( hkScrollUp, [ ]);
     end;
   
   procedure THookTerm.Fg( color : byte );
-    begin _subject.Fg(color); OnChange( hkFg, [ color ]);
+    begin _subject.Fg(color); _OnChange( hkFg, [ color ]);
     end;
   
   procedure THookTerm.Bg( color : byte );
-    begin _subject.Bg(color); OnChange( hkBg, [ color ]);
+    begin _subject.Bg(color); _OnChange( hkBg, [ color ]);
     end;
   
   procedure THookTerm.Emit( s : TStr );
-    begin _subject.Emit( s ); OnChange( hkEmit, [ s ]);
+    begin _subject.Emit( s ); _OnChange( hkEmit, [ s ]);
     end;
   
   procedure THookTerm.GotoXY( x, y : word );
-    begin _subject.GotoXY( x, y ); OnChange( hkGoXY, [ x, y ]);
+    begin _subject.GotoXY( x, y ); _OnChange( hkGoXY, [ x, y ]);
     end;
   
   procedure THookTerm.InsLine;
-    begin _subject.InsLine; OnChange( hkInsLine, [ ]);
+    begin _subject.InsLine; _OnChange( hkInsLine, [ ]);
     end;
   
   procedure THookTerm.DelLine;
-    begin _subject.DelLine; OnChange( hkDelLine, [ ]);
+    begin _subject.DelLine; _OnChange( hkDelLine, [ ]);
     end;
   
   procedure THookTerm.SetTextAttr( value : word );
-    begin _subject.SetTexTAttr(value); OnChange( hkAttr, [ value ]);
+    begin _subject.SetTexTAttr(value); _OnChange( hkAttr, [ value ]);
     end;
   
   procedure THookTerm.ShowCursor;
-    begin _subject.ShowCursor; OnChange( hkShowCursor, [ ]);
+    begin _subject.ShowCursor; _OnChange( hkShowCursor, [ ]);
     end;
   
   procedure THookTerm.HideCursor;
-    begin _subject.HideCursor; OnChange( hkHideCursor, [ ]);
+    begin _subject.HideCursor; _OnChange( hkHideCursor, [ ]);
     end;
   
   procedure THookTerm.Resize( NewW, NewH : word );
-    begin _subject.Resize( newW, newH ); OnChange( hkResize, [ NewW, NewH ]);
+    begin _subject.Resize( newW, newH ); _OnChange( hkResize, [ NewW, NewH ]);
     end;
   
   
@@ -845,5 +899,5 @@ initialization
   termstack := TTermStack.Create(32);
 finalization
   { the terms are freed automatically by reference count }
-  PopTerms; work := nil;
+  PopTerms; work := nil; termstack.free;
 end.
