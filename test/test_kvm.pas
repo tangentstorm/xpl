@@ -45,15 +45,6 @@ procedure test_memleaks_1;
     var i : byte; term : ITerm;
     begin for i := 1 to n do term := TGridTerm.Create(10, 10)
     end;
-  procedure cycle_gridterm_asterm(n:byte);
-    var i : byte; core : TGridTerm; term : ITerm;
-    begin
-      for i := 1 to n do begin
-	core := TGridTerm.Create(10, 10);
-	term := core.asterm; term := nil;
-	core.free;
-      end;
-    end;
   var report : TMemData;
   begin
     report := HeapReport(cycle_gridterm_as_class);
@@ -61,8 +52,6 @@ procedure test_memleaks_1;
     report := HeapReport(cycle_gridterm_interface);
     chk.equal(0, report.diff, 'cycle_gridterm_interface grew ram');
   end;
-
-
 
 procedure test_memleaks_2;
   procedure cycle_gridterm_asterm(n:byte);
