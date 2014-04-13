@@ -53,4 +53,6 @@ procedure test_setdefault;
     chk.equal( 2, dict.setdefault( 'z', 0 ));
   end;
 
+finalization
+  if Assigned(dict) then dict.Free;
 end.
