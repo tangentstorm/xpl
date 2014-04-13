@@ -47,16 +47,6 @@ type
       procedure dump; override;
     end;
 
-  TStepper = class (TComponent)
-    protected
-      fstep : TNotifyEvent;
-      procedure DoStep; virtual;
-    public
-      procedure Step(times:cardinal=1);
-    published
-      property OnStep : TNotifyEvent read fStep write fStep;
-    end;
-
 
 implementation
 
@@ -200,22 +190,7 @@ procedure TTermView.Render;
       end;
   end;
 
-procedure TStepper.DoStep;
-  begin
-  end;
-
-procedure TStepper.Step(times:cardinal=1);
-  var i : integer;
-  begin
-    if times > 0 then for i := 0 to times do
-      begin
-        DoStep;
-        if Assigned(fStep) then fStep(self);
-      end;
-  end;
-
 initialization
   RegisterClass(TView);
   RegisterClass(TTermView);
-  RegisterClass(TStepper);
 end.
