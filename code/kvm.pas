@@ -12,7 +12,9 @@ interface uses xpc, ugrid2d, sysutils, strutils, chk, stacks,
 
 var stdout : text;
 
-type ITerm = interface ['{8309B694-C1C4-11E3-8461-00188B5936E2}']
+const
+  kITermGUID = '{8309B694-C1C4-11E3-8461-00188B5936E2}';
+type ITerm = interface [kITermGUID]
   { queries }
   function  Width : word;
   function  Height: word;
