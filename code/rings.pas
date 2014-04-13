@@ -108,7 +108,6 @@ interface uses xpc, sysutils, stacks, dicts;
       /////////////////////////////////////////////////////////////
     protected
       _clasp : GClaspNode<T>; // holds the two ends together
-      _count : cardinal;
       function FindNext( const start : GCellNode<T>;
                          var p : GNodeStack;
                          out v : GCellNode<T> ) : boolean;
@@ -130,6 +129,7 @@ interface uses xpc, sysutils, stacks, dicts;
       procedure DeleteAt( i : cardinal );
       procedure Remove( val : T );
       procedure Drop;
+      procedure Clear;
       procedure ForEach( action : GNodeAction );
       function Find( pred : GNodePredicate ) : T;
       function IsEmpty: boolean;
@@ -141,7 +141,6 @@ interface uses xpc, sysutils, stacks, dicts;
       procedure SetItem(position: cardinal; val : T);
       property items[at:cardinal] : T
         read GetItem write SetItem; default;
-  
     { -- interface for for..in loops -- }
     public
       function GetEnumerator : IRingCursor<T>;
@@ -229,7 +228,6 @@ implementation
   constructor GRing<T>.Create;
     begin
       _clasp := GClaspNode<T>.Create;
-      _count := 0;
     end;
   
   function GRing<T>.MakeCursor : IRingCursor<T>;
@@ -296,7 +294,6 @@ implementation
   { Insert : add to the start of the list, right after the clasp }
   procedure GRing<T>.Insert( n : GNode<T> );
     begin
-      inc(_count);
       n.PrevLink := _clasp;
       n.NextLink := _clasp.NextLink;
       _clasp.NextLink.PrevLink := n;
@@ -306,7 +303,6 @@ implementation
   { Append : add to the end of the list, right before the clasp }
   procedure GRing<T>.Append( n : GNode<T> );
     begin
-      inc(_count);
       n.NextLink := _clasp;
       n.PrevLink := _clasp.PrevLink;
       _clasp.PrevLink.NextLink := n;
@@ -365,25 +361,23 @@ implementation
         end
       end
     end; { Remove }
-    
+  
   procedure GRing<T>.Drop;
       var temp : GNode<T>;
     begin
-      if IsEmpty then raise 
-        Exception.Create(Utf8Encode('attempted to drop from empty list'))
-      else begin
-        temp := _clasp.PrevLink;
-        _clasp.PrevLink := _clasp.PrevLink.PrevLink;
-        temp.PrevLink := nil;
-        temp.NextLink := nil;
-        temp.free;
-      end
+      if IsEmpty then raise
+        Exception.Create(a2u('attempted to drop from empty list'))
+      else with makeCursor do begin toend; moveprev; deletenext end
     end;
-    
+  
+  procedure GRing<T>.Clear;
+    begin while not isempty do drop
+    end;
+  
   function GRing<T>.IsEmpty : boolean;
-    begin result := _count = 0
+    begin result := _clasp.nextlink.equals(_clasp)
     end;
-    
+  
   function GRing<T>.FindNext(const start : GCellNode<T>;
                                var p     : GNodeStack;
                                out v     : GCellNode<T>) : boolean;
@@ -411,7 +405,7 @@ implementation
       until result or ( ln = _clasp );
       v := ln as GCellNode<T>;
     end;
-    
+  
   { should be exactly the same as above but s/Next/Prev/g }
   function GRing<T>.FindPrev(
                      const start : GCellNode<T>;
@@ -440,7 +434,7 @@ implementation
       until result or ( ln = _clasp );
       v := ln as GCellNode<T>;
     end;
-    
+  
   function GRing<T>.FirstCell : GCellNode<T>;
     var p : GNodeStack;
     begin
@@ -450,12 +444,12 @@ implementation
       else if not FindNext( _clasp, p, result ) then
         raise Exception.Create('nested empty list has no first member.')
     end;
-    
+  
   function GRing<T>.First : T;
     begin
       result := self.FirstCell.value;
     end;
-    
+  
   function GRing<T>.LastCell : GCellNode<T>;
     var p : GNodeStack;
     begin
@@ -465,11 +459,13 @@ implementation
       else if not FindPrev( _clasp, p, result ) then
         raise Exception.Create('nested empty list has no last member.')
     end;
-    
+  
   function GRing<T>.Last: T;
     begin
       result := self.LastCell.value;
     end; { Last }
+  
+  
   
   constructor GRing<T>.TCursor.Create( lis : GRing<T> );
     begin
@@ -605,7 +601,6 @@ implementation
   procedure GRing<T>.TCursor.InjectPrev( const val : T );
     var ln : GNode<T>;
   begin
-    inc( self._ring._count );
     inc( self._idx );
     ln := GCellNode<T>.Create( val );
     ln.NextLink := self._cell;
@@ -618,7 +613,6 @@ implementation
     var ln : GNode<T>;
   begin
     // we don't increase the index here because we're injecting *after*
-    inc( self._ring._count );
     ln := GCellNode<T>.Create( val );
     ln.PrevLink := self._cell;
     ln.NextLink := self._cell.NextLink;
