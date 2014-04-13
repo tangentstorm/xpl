@@ -6,12 +6,10 @@ type
   TMemData    = record before, after: cardinal; diff : integer end;
 
 function HeapReport(sub : TSubroutine; x : byte= 1) : TMemData;
-  var mgr : TMemoryManager;
   begin
-    GetMemoryManager(mgr);
-    result.before := mgr.GetHeapStatus.TotalAllocated;
+    result.before := GetFPCHeapStatus.CurrHeapUsed;
     sub(x);
-    result.after := mgr.GetHeapStatus.TotalAllocated;
+    result.after := GetFPCHeapStatus.CurrHeapUsed;
     result.diff := result.after - result.before;
   end;
 
