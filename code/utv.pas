@@ -14,6 +14,7 @@ type
       _dirty : boolean; _visible : boolean;
       _ioctx : ITerm; // kvm parent term
       _views : GArray<TView>; // subviews
+      _focused : boolean;
     public
       constructor Create( aOwner : TComponent ); override;
       function Init( x, y : integer ; w, h : cardinal ) : TView; reintroduce;
@@ -23,11 +24,13 @@ type
       procedure SetVisible( val : boolean ); virtual;
       procedure Show; procedure Hide;
       property dirty : boolean read _dirty write _dirty;
-    published
-      property visible : boolean read _visible write _visible;
       procedure Render; virtual;
       procedure Resize(new_w, new_h : cardinal); override;
       procedure dump; virtual;
+      procedure GainFocus; virtual;
+      procedure LoseFocus; virtual;
+    published
+      property visible : boolean read _visible write _visible;
     end;
 
   // A class with its own video ram buffer:
@@ -38,7 +41,8 @@ type
       procedure _OnGridChange( msg : TTermMessage; args : array of variant );
     public
       constructor Create( aOwner : TComponent ); override;
-      function Init( x, y : integer ; w, h : cardinal ) : TTermView; reintroduce;
+      function Init( x, y : integer ; w, h : cardinal ) : TTermView;
+        reintroduce;
       destructor Destroy; override;
       function asTerm : ITerm;
       property term : ITerm read asTerm implements ITerm;
@@ -68,6 +72,14 @@ destructor TView.Destroy;
   begin
     _views.Free; // members are TViews, so owners will free
     inherited Destroy;
+  end;
+
+procedure TView.GainFocus;
+  begin _focused := true; smudge;
+  end;
+
+procedure TView.LoseFocus;
+  begin _focused := false; smudge;
   end;
 
 
