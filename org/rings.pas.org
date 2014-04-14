@@ -183,6 +183,7 @@ As an alternative to looking up the parent nodes, if you started at the hub and 
       // TODO: procedure InsertAt( i : cardinal; val : GNode<T> ); overload;
     public { interface for adding / removing values }
       procedure Append( val : T ); overload;
+      procedure Extend( vals : array of T );
       procedure Insert( val : T ); overload;
       procedure InsertAt( i : cardinal; val : T );
       procedure DeleteAt( i : cardinal );
@@ -609,6 +610,7 @@ Values are stored in cell nodes.
 #+end_src
 
 *** Insert / Append (values)
+*** insert
 #+name: GRing.methods
 #+begin_src pascal
   { Insert : add to the start of the list, right after the clasp }
@@ -616,7 +618,7 @@ Values are stored in cell nodes.
     begin
       self.Insert(GCellNode<T>.Create( val ));
     end;
-
+  
   procedure GRing<T>.InsertAt( i : cardinal; val : T );
     var cur : IRingCursor<T>;
     begin
@@ -625,7 +627,10 @@ Values are stored in cell nodes.
       else while cur.index < i do cur.MoveNext;
       cur.InjectNext( val );
     end; { InsertAt }
-
+#+end_src
+*** deleteat
+#+name: GRing.methods
+#+begin_src pascal
   procedure GRing<T>.DeleteAt( i : cardinal );
     var c : IRingCursor<T>; n : cardinal;
     begin
@@ -641,12 +646,22 @@ Values are stored in cell nodes.
           c.DeleteNext;
         end;
     end; { DeleteAt }
+#+end_src
 
+*** append/extend
+#+name: GRing.methods
+#+begin_src pascal
+  
   { Append : add to the end of the list, right before the clasp }
   procedure GRing<T>.Append( val : T );
-    begin
-      self.Append(GCellNode<T>.Create( val ));
+    begin self.Append(GCellNode<T>.Create( val ));
     end;
+  
+  procedure GRing<T>.Extend( vals : array of T );
+    var val : T;
+    begin for val in vals do self.Append(GCellNode<T>.Create(val));
+    end;
+  
 #+end_src
 
 

@@ -124,6 +124,7 @@ interface uses xpc, sysutils, stacks, dicts;
       // TODO: procedure InsertAt( i : cardinal; val : GNode<T> ); overload;
     public { interface for adding / removing values }
       procedure Append( val : T ); overload;
+      procedure Extend( vals : array of T );
       procedure Insert( val : T ); overload;
       procedure InsertAt( i : cardinal; val : T );
       procedure DeleteAt( i : cardinal );
@@ -323,7 +324,6 @@ implementation
       else while cur.index < i do cur.MoveNext;
       cur.InjectNext( val );
     end; { InsertAt }
-  
   procedure GRing<T>.DeleteAt( i : cardinal );
     var c : IRingCursor<T>; n : cardinal;
     begin
@@ -342,9 +342,14 @@ implementation
   
   { Append : add to the end of the list, right before the clasp }
   procedure GRing<T>.Append( val : T );
-    begin
-      self.Append(GCellNode<T>.Create( val ));
+    begin self.Append(GCellNode<T>.Create( val ));
     end;
+  
+  procedure GRing<T>.Extend( vals : array of T );
+    var val : T;
+    begin for val in vals do self.Append(GCellNode<T>.Create(val));
+    end;
+  
   procedure GRing<T>.Remove( val : T );
     var c : IRingCursor<T>; found : boolean = false;
     begin
