@@ -12,8 +12,8 @@ type
     protected
       _top : cardinal;
       _cur : TDbCursor;
-    published
       procedure Render; override;
+    published
       property DataCursor : TDbCursor read _cur write _cur;
     end;
 
@@ -25,16 +25,19 @@ type
       function Choose : variant;
     end;
 
+  
+var // default background colors for lines
+  hibar	: byte = $08; // ansi dark gray
+  lobar	: byte = $ea; // ever darker dgray
+  nobar	: byte = $00; // black
+
 implementation
 
 {---------------------------------------------------------------}
 { TDbTreeGrid                                                   }
 {---------------------------------------------------------------}
 procedure TDbTreeGrid.Render;
-  var
-    sigil : char = ' ';
-    count : cardinal =  0;
-    rs    : TRecordSet;
+  var sigil : char = ' '; count : cardinal = 0; rs : TRecordSet;
 begin
   bg('b'); fg('W');   rs := _cur.RecordSet.open.first;
   while (count < yMax) and not rs.eof do
@@ -45,7 +48,9 @@ begin
       { draw visible nodes }
       if rs['hidden']=1 then ok
       else begin
-        if _cur.AtMark then bg('b') else bg('k'); gotoxy(0,count);
+	if _cur.AtMark then if _focused then bg(hibar) else bg(lobar)
+	else bg(nobar);
+	gotoxy(0,count);
         { draw the outline controls }
 	if rs['depth']>0 then write(ntimes(' ', rs['depth']*2));
 	fg('r'); write(sigil +  ' ');
@@ -57,7 +62,7 @@ begin
       end;
       rs.Next;
     end;
-  bg('k');
+  bg('k'); { clear to bottom of screen }
   while count < kvm.yMax do begin
     gotoxy(0,count); clreol; inc(count)
   end
