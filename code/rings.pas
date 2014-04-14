@@ -82,6 +82,7 @@ interface uses xpc, sysutils, stacks, dicts;
           function PrevCell : GCellNode<T>; virtual;
         public
           constructor Create( lis : GRing<T> );
+          destructor Destroy; override;
           procedure Reset;
           procedure ToTop;
           procedure ToEnd;
@@ -478,6 +479,10 @@ implementation
       //  todo: use a dynamically resizable stack
       _path := GNodeStack.Create( kMaxDepth );
       self.Reset;
+    end;
+  
+  destructor GRing<T>.TCursor.Destroy;
+    begin _path.Free;
     end;
   
   procedure GRing<T>.TCursor.Reset;
