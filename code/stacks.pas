@@ -28,9 +28,9 @@ interface uses xpc, sysutils;
     function shift: A;
     procedure pop1( var t : A );
     procedure push2( n, t : A );
-    procedure pop2( var t, n : A );
+    procedure pop2( var n, t : A );
     procedure push3( x, n, t : A );
-    procedure pop3( var t, n, x : A );
+    procedure pop3( var x, n, t : A );
     function pick( const i : integer ) : A;
     function GetItem(const i : integer; const default : A) : A;
     function tos: A;
@@ -97,7 +97,7 @@ procedure GStack<a>.push2( n, t :  A );
     self.push( t );
   end; { GStack<a>.push2 }
 
-procedure GStack<a>.pop2( var t, n :  A );
+procedure GStack<a>.pop2( var n, t :  A );
   begin
     t := self.pop;
     n := self.pop;
@@ -110,7 +110,7 @@ procedure GStack<a>.push3( x, n, t :  A );
     self.push( t );
   end; { GStack<a>.push3 }
 
-procedure GStack<a>.pop3( var t, n, x :  A );
+procedure GStack<a>.pop3( var x, n, t :  A );
   begin
     t := self.pop;
     n := self.pop;

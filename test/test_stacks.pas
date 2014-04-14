@@ -11,6 +11,29 @@ procedure setup;
     ints := GStack<Int32>.Create(16);
   end;
 
+
+procedure test_pushpop2;
+  var x,y : Int32;
+  begin
+    ints.push2(1,2);
+    chk.equal(ints.tos, 2, 'tos');
+    ints.pop2(x, y);
+    chk.equal(y, 2, 'y');
+    chk.equal(x, 1, 'x');
+  end;
+
+procedure test_pushpop3;
+  var x,y,z : Int32;
+  begin
+    ints.push3(1,2,3);
+    chk.equal(ints.tos, 3, 'tos');
+    ints.pop3(x,y,z);
+    chk.equal(z, 3, 'z');
+    chk.equal(y, 2, 'y');
+    chk.equal(x, 1, 'x');
+  end;
+
+  
 procedure test_pick;
   begin
     ints.push(2); ints.push2(1, 0);
