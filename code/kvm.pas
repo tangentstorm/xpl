@@ -1,4 +1,3 @@
-
 {!! WARNING!! GENERATED FILE. edit ../org/kvm.pas.org instead!! !!}
 
 
@@ -340,7 +339,7 @@ type THookTerm = class (TInterfacedObject, ITerm, IHookTerm)
     var oldX, i : word;
     begin
       oldX := _curs.x;
-      if oldX < xMax then for i := oldX to xMax do Emit(' ')
+      if oldX <= xMax then for i := oldX to xMax do Emit(' ')
       else ok;
     { ensure curs'.x = curs.x ; curs'.y = curs.y }
       self.gotoXY( oldX, _curs.y );
