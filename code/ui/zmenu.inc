@@ -3,7 +3,7 @@ constructor zMenu.create( esc, alt, usetemp : Boolean; head : zchoice );
 begin
   mChoices := choicelist.create;
   mChoices.append( head );
-  mCurrent := mChoices.make_cursor;
+  mCurrent := mChoices.MakeCursor;
   setonfirst;
   escexits  := esc;
   altexits  := esc;
@@ -43,9 +43,9 @@ procedure zMenu.Render;
 var
   oldIsMV : Boolean;
   choice  : ui.zChoice;
-  cur	  : choicelist.cursor;
+  cur	  : choicecursor;
 begin
-  cur  := mChoices.make_cursor;
+  cur  := mChoices.MakeCursor;
   while cur.next( choice ) do begin
     choice.draw( mCurrent.index = cur.index );
   end;
@@ -73,10 +73,10 @@ end;
 
 procedure zMenu.setonfirst;
 begin
- if not mChoices.is_empty then
+ if not mChoices.IsEmpty then
  begin
-   mCurrent.to_top;
-   while not ( thischoice.on or mcurrent.at_end ) do mcurrent.move_next
+   mCurrent.ToTop;
+   while not ( thischoice.on or mcurrent.AtEnd ) do mcurrent.MoveNext
  end;
 end;
 
@@ -134,8 +134,8 @@ begin
 	  //  todo: move wrapping to list.cursor
 	  old := mCurrent.index;
 	  repeat
-	    if mCurrent.at_top then mCurrent.to_end
-	    else mCurrent.move_prev;
+	    if mCurrent.AtTop then mCurrent.ToEnd
+	    else mCurrent.MovePrev;
 	  until thisChoice.enabled or ( mCurrent.index = old );
           smudge;
         end;
@@ -154,8 +154,8 @@ begin
 	  old := mCurrent.index;
 	  //  todo: move wrapping to list.cursor
 	  repeat
-	    if mCurrent.at_end then mCurrent.to_top
-	    else mCurrent.move_next;
+	    if mCurrent.AtEnd then mCurrent.ToTop
+	    else mCurrent.MoveNext;
 	  until thisChoice.enabled or ( mcurrent.index = old );
           smudge;
         end;
@@ -170,14 +170,14 @@ begin
 
       #71, #73 : { home }
         begin
-          mCurrent.to_top;
+          mCurrent.ToTop;
           if not thisChoice.enabled then
              handlestripped( kbd.DOWN );
         end;
 
       #79, #81 : { end }
         begin
-          mCurrent.to_end;
+          mCurrent.ToEnd;
           if not thisChoice.enabled then
              handlestripped( kbd.UP );
         end;
@@ -188,13 +188,13 @@ end; { handlestripped }
 
 procedure zMenu.Reset;
 begin
-  if not mChoices.is_empty then
+  if not mChoices.IsEmpty then
   begin
     setonfirst;
     repeat
-      mCurrent.move_next;
+      mCurrent.MoveNext;
       if thisChoice.sub <> nil then submenu.Reset
-    until mCurrent.at_end;
+    until mCurrent.AtEnd;
     setonfirst;
     subactive := submenu <> nil;
     endloop   := false;
@@ -202,7 +202,7 @@ begin
 end;
 
 procedure zMenu.domousestuff;
-var cur : choicelist.cursor; choice : zchoice;
+var cur : choicecursor; choice : zchoice;
 begin
   if not mpresent then exit;
   getmpos;
@@ -223,7 +223,7 @@ begin
   end
   else { no right click, procede as usual }
   begin
-    cur := mchoices.make_cursor;
+    cur := mchoices.MakeCursor;
     while cur.next( choice ) do
     begin
       if ( choice.on ) and ( choice.pressed ) then
@@ -313,7 +313,7 @@ end;
 function zMenu.get : Byte;
 var mv : Boolean;
 begin
-  if mChoices.is_empty then
+  if mChoices.IsEmpty then
     result := 0
   else
     begin
@@ -323,7 +323,7 @@ begin
       if mv then mou.show;
       endloop := false;
       Reset;
-      if mCurrent.value = nil then mCurrent.to_top;
+      if mCurrent.value = nil then mCurrent.ToTop;
       smudge;
       repeat
         dowhilelooping;

@@ -3,14 +3,14 @@
 }
 {$mode delphiunicode}{$i xpc.inc}
 unit li;
-interface uses classes, xpc, ascii, ll, num;
+interface uses classes, xpc, ascii, rings, num;
 
   type
     kinds = ( kINT, kSYM, kSTR, kLIS, kEND, kNUL, kOBJ );
     {TODO: come back to this once I have syntax
        for algebraic data types }
     node = class kind : kinds end;
-    nodelist = ll.list< node >;
+    nodelist = GRing< node >;
     LisNode = class( node )
       lis : nodelist;
       constructor create( _lis : nodelist );

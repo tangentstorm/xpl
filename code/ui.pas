@@ -1,7 +1,7 @@
 {$mode delphiunicode}{$i xpc.inc}
 unit ui;
-interface uses classes, xpc, cw, ll, kvm, mou, kbd, ustr,
-  fx, num, cli, sysutils, utv, ukm;
+interface uses classes, xpc, cw, kvm, mou, kbd, ustr,
+  fx, num, cli, sysutils, utv, ukm, rings;
 
 { note : this module considers (0,0) to be the top left corner! }
 
@@ -87,10 +87,11 @@ type
       function value : Byte;
       function get : Byte;
     protected type
-      choicelist = ll.List<zChoice>;
+      choicelist = GRing<zChoice>;
+      choicecursor = IRingCursor<zChoice>;
     protected
       mChoices : choicelist;
-      mCurrent : choicelist.cursor;
+      mCurrent : choicecursor;
     public
       function firstChoice : zChoice;
       function lastChoice : zChoice;
