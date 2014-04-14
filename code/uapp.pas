@@ -1,6 +1,6 @@
 {$i xpc.inc}{$mode delphi}{$h+}
 unit uapp;
-interface uses xpc, cx, cli, kvm, ukm, utv, custapp, sysutils, classes;
+interface uses xpc, sysutils, classes, custapp, cx, cli, kvm, ukm, utv, rings;
 
 type
   ESetupFailure = class (Exception) end;
@@ -8,9 +8,12 @@ type
     protected
       _OnQuit : TNotifyEvent;
       keymap  : TKeyMap;
+      _focusables : GRing<TView>;
+      _focus : IRingCursor<TView>;   { which child is focused ? }
     published { TView interface }
       constructor Create( aOwner : TComponent ); override;
       procedure Render; override;
+      procedure Update; override;
     public { interface for users }
       procedure keys(km : ukm.TKeyMap); virtual;
       procedure init; virtual;
@@ -66,8 +69,16 @@ constructor TCustomApp.Create( aOwner : TComponent );
   begin
     inherited Create( aOwner );
     resize( kvm.width, kvm.height );
+    _focusables := GRing<TView>.Create;
+    _focus := _focusables.MakeCursor;
   end;
 
+
+procedure TCustomApp.Update;
+  begin inherited;
+    if _focus.atClasp then ok
+    else _focus.value.RestoreCursor;
+  end;
 
 procedure TCustomApp.Render;
   begin self.draw
