@@ -143,14 +143,14 @@ type
       escexits, tovr,       { type over toggle }
       frst,                 { first key to be pressed }
       isdone : Boolean;     { end-loop flag }
-    published
+    public
       constructor create( aOwner : TComponent ); override; overload;
       constructor create( a, b, tl, dl, tc, ac : integer; esc : Boolean;
 		       start : String ); overload;
       constructor default( a, b, tl, dl : integer; start : String='' );
       procedure reset;
-      function get : String;
       procedure Render; override;
+      function get : String;
       procedure handle( ch : Char ); override;
       procedure handlestripped( ch : Char ); override;
       property value : string read work write work;
