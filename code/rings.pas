@@ -119,6 +119,7 @@ interface uses xpc, sysutils, stacks, dicts;
       function LastCell: GCellNode<T>;
     public
       constructor Create;
+      destructor Destroy; override;
     public { interface for adding nodes }
       procedure Append( n : GNode<T> ); overload;
       procedure Insert( n : GNode<T> ); overload;
@@ -228,8 +229,11 @@ implementation
   
   
   constructor GRing<T>.Create;
-    begin
-      _clasp := GClaspNode<T>.Create;
+    begin _clasp := GClaspNode<T>.Create;
+    end;
+  
+  destructor GRing<T>.Destroy;
+    begin _clasp.Free; inherited;
     end;
   
   function GRing<T>.MakeCursor : IRingCursor<T>;
@@ -482,7 +486,7 @@ implementation
     end;
   
   destructor GRing<T>.TCursor.Destroy;
-    begin _path.Free;
+    begin inherited; _path.Free;
     end;
   
   procedure GRing<T>.TCursor.Reset;
