@@ -14,7 +14,7 @@ type
       _dirty : boolean; _visible : boolean;
       _ioctx : ITerm; // kvm parent term
       _views : GArray<TView>; // subviews
-      _focused : boolean;
+      _focused : boolean; { do we, or one of our children have focus? }
     public
       constructor Create( aOwner : TComponent ); override;
       function Init( x, y : integer ; w, h : cardinal ) : TView; reintroduce;
@@ -29,6 +29,7 @@ type
       procedure dump; virtual;
       procedure GainFocus; virtual;
       procedure LoseFocus; virtual;
+      procedure RestoreCursor; virtual; { after drawing other widgets }
     published
       property visible : boolean read _visible write _visible;
     end;
@@ -80,6 +81,10 @@ procedure TView.GainFocus;
 
 procedure TView.LoseFocus;
   begin _focused := false; smudge;
+  end;
+
+procedure TView.RestoreCursor;
+  begin
   end;
 
 
