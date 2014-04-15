@@ -24,6 +24,8 @@ Var
   CursorAttr : word;           { cursorattribs }
 
   {■ ascii graphics }
+  procedure vln( x, y, h : byte; c : word );
+  procedure hln( x, y, w : byte; c : word );
   procedure txtline( a, b, x, y	: byte; c : word );
   procedure greyshadow( a1, b1, a2, b2 : byte );
   procedure Rectangle( a, b, x, y : byte; c : word );
@@ -56,14 +58,19 @@ Var
 
 implementation
 
-//  break this into vl / hl
+
+procedure vln( x, y, h : byte; c : word );
+  begin colorxyv( x, y, c, ustr.chntimes( '│',  h ))
+  end;
+
+procedure hln( x, y, w : byte; c : word );
+  begin cxy( c, x, y, ustr.chntimes( '─', w ));
+  end;
 
 procedure txtline( a, b, x, y : byte; c : word );
   begin
-    if a = x then
-      colorxyv( a, b, c, ustr.chntimes( '│',  y - b + 1 ) )
-    else if b = y then
-      cxy( c, a, b, ustr.chntimes( '─', x - a + 1 ) );
+    if a = x then vln(a,b,y-b+1,c)
+    else if b = y then hln(a,b,x-a+1,c)
   end;
 
 procedure Rectangle( a, b, x, y : byte; c : word );
