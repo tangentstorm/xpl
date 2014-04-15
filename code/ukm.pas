@@ -1,6 +1,6 @@
 {$i xpc.inc}{$mode delphiunicode}
 unit ukm;
-interface uses classes, xpc, kbd;
+interface uses classes, xpc, kbd, umsg;
 
 //  TODO : improve the keyboard handling
 //    - probably should use use sparse arrays
@@ -8,7 +8,7 @@ interface uses classes, xpc, kbd;
 //    - update kbd module to use widechars.
 //    - set up state transitions to allow emacs-style sequences
 type
-  TKeyEvtKind = ( keNil, keCmd, keNfy, keCRT ); //  keKbd for keyboard module
+  TKeyEvtKind = ( keNil, keCmd, keNfy, keCRT, keMsg );
   TCommandEvent = procedure of object;
   TCrtKeyEvent  = procedure (ext : boolean; ch : char) of object;
   TKeyboardEvent = record
@@ -17,6 +17,7 @@ type
       keCmd : (eCmd: TCommandEvent);
       keNfy : (eNfy: TNotifyEvent);
       keCrt : (eCrt: TCrtKeyEvent);
+      keMsg : (eMsg: umsg.TMsg);
     end;
 
 const
@@ -30,15 +31,17 @@ type
       procedure SetKeyCmd( ch : widechar; e : TCommandEvent );
       procedure SetKeyNfy( ch : widechar; e : TNotifyEvent );
       procedure SetKeyCrt( ch : widechar; e : TCrtKeyEvent );
-    published
+      procedure SetKeyMsg( ch : widechar; e : umsg.TMsg );
+    public
       constructor Create( aOwner : TComponent ); override;
       property cmd[ ch : widechar ] : TCommandEvent write SetKeyCmd;
       property nfy[ ch : widechar ] : TNotifyEvent  write SetKeyNfy;
       property crt[ ch : widechar ] : TCrtKeyEvent  write SetKeyCrt;
+      property msg[ ch : widechar ] : umsg.TMsg     write SetKeyMsg;
       procedure HandleKeys;
       procedure CopyTo( other : TKeyMap );
     end;
-
+
 implementation
 
 {---------------------------------------------------------------}
@@ -51,7 +54,7 @@ constructor TKeyMap.Create( aOwner : TComponent );
     for ch := #0 to #$FF do _key[ch] := DoNothing;
     for ch := #0 to #$FF do _ext[ch] := DoNothing;
   end;
-
+
 procedure TKeyMap.SetKeyEvt( ch : widechar; e : TKeyboardEvent );
   begin
     if ch > #255 then _ext[ char(ord(ch) and $ff) ] := e
@@ -76,20 +79,22 @@ procedure TKeyMap.SetKeyCrt( ch : widechar; e : TCrtKeyEvent );
     kbe.kind := keCrt; kbe.eCrt := e; SetKeyEvt(ch, kbe);
   end;
 
+procedure TKeyMap.SetKeyMsg( ch : widechar; e : umsg.TMsg );
+  var kbe : TKeyboardEvent;
+  begin
+    kbe.kind := keMsg; kbe.eMsg := e; SetKeyEvt(ch, kbe);
+  end;
+
 procedure TKeyMap.HandleKeys;
   var ch : TChr;
   procedure send(ext : boolean; e : TKeyboardEvent);
     begin
-      // if ch >= #32 then s := ch else s := '^' + chr(ord(ch) + ord('@'));
-      // write ('kind:', e.Kind);
-      // if ext
-      //   then writeln('ext: #', ord(ch))
-      //   else writeln('chr: #', ord(ch), ' (" ', s, ' ")');
       case e.kind of
         keNil : ok;
         keCmd : e.eCmd();
         keNfy : e.eNfy( self );
         keCrt : e.eCrt( ext, ch );
+	keMsg : umsg.Send(e.eMsg);
       end;
     end;
   begin
