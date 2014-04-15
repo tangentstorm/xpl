@@ -22,6 +22,7 @@ interface uses xpc, sysutils, strutils;
   function nwords( const s : TStr ) : cardinal;
   function startswith(const haystack, needle : TStr) : boolean;
   function boolstr(const b : boolean; const trueStr, falseStr : TStr ) : TStr;
+  function replace( s, x, y : TStr ) : TStr;
 
 implementation
 
@@ -154,7 +155,7 @@ function wordn( const s : TStr; n : cardinal ) : TStr;
     foreach_wordloc( s, 1, @nth_word );
     result := r;
   end;
-
+
 function nwords( const s : TStr ) : cardinal;
   procedure count_word_handler( num, pos, len : cardinal; var stop : boolean );
     begin result := num;
@@ -175,8 +176,13 @@ function startswith(const haystack, needle : TStr) : boolean;
   end;
 
 function boolstr(const b : boolean; const trueStr, falseStr : TStr ) : TStr; inline;
+  begin if b then result := trueStr else result := falseStr
+  end;
+
+
+function replace( s, x, y : TStr ) : TStr;
   begin
-    if b then result := trueStr else result := falseStr
+    result := a2u(sysutils.StringReplace(u2a(s), u2a(x), u2a(y), [rfReplaceAll]))
   end;
 
 end.
