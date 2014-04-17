@@ -14,7 +14,9 @@ var
   msg_nav_up, msg_nav_dn,
   msg_nav_lf, msg_nav_rt,
   msg_nav_top, msg_nav_end,
-  msg_cmd_toggle : umsg.TMsg;
+  msg_cmd_toggle,
+  msg_cmd_delete : umsg.TMsg;
+
 
 type
   TView = class(ug2d.TBounds2D)
@@ -221,22 +223,26 @@ procedure TTermView.Render;
   end;
 
 initialization
+
   RegisterClass(TView);
   RegisterClass(TTermView);
+
   chan_nav := umsg.NewChan;
-  msg_nav_up  := Msg( chan_nav, umsg.newCode,  0, -1 );
-  msg_nav_dn  := Msg( chan_nav, umsg.newCode,  0, +1 );
-  msg_nav_lf  := Msg( chan_nav, umsg.newCode, -1,  0 );
-  msg_nav_rt  := Msg( chan_nav, umsg.newCode, +1,  0 );
-  msg_nav_top := Msg( chan_nav, umsg.newCode,  0,  0 );
-  msg_nav_end := Msg( chan_nav, umsg.newCode,  0,  0 );
+  msg_nav_up  := Msg( chan_nav, umsg.newCode );
+  msg_nav_dn  := Msg( chan_nav, umsg.newCode );
+  msg_nav_lf  := Msg( chan_nav, umsg.newCode );
+  msg_nav_rt  := Msg( chan_nav, umsg.newCode );
+  msg_nav_top := Msg( chan_nav, umsg.newCode );
+  msg_nav_end := Msg( chan_nav, umsg.newCode );
 
   chan_cmd  := umsg.NewChan;
   msg_cmd_toggle  := Msg( chan_cmd, umsg.newCode );
+  msg_cmd_delete  := Msg( chan_cmd, umsg.newCode );
 
 finalization
   msg_nav_up.free;  msg_nav_dn.free;
   msg_nav_lf.free;  msg_nav_rt.free;
   msg_nav_top.free; msg_nav_end.free;
   msg_cmd_toggle.free;
+  msg_cmd_delete.free;
 end.
