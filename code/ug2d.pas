@@ -1,7 +1,7 @@
 // 2d geometry unit
 {$i xpc.inc}{$mode delphi}
 unit ug2d;
-interface uses classes;
+interface uses classes, uoo;
 
 type IPoint2D = interface// A point in 2D space
   function GetX : integer; procedure SetX( value : integer );
@@ -37,7 +37,7 @@ end;
 
 { concrete implementations }
 
-type TPoint2D = class (TComponent, IPoint2D)
+type TPoint2D = class (uoo.TObj, IPoint2D)
   protected
     _x, _y : integer;
   public

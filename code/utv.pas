@@ -5,7 +5,7 @@
 
 {$i xpc.inc}{$mode delphi}
 unit utv;
-interface uses xpc, classes, sysutils,
+interface uses xpc, classes, sysutils, umsg,
   kvm, arrays, cli, ug2d, num, cw, math, ustr, chk;
 type
   TView = class(ug2d.TBounds2D)
@@ -32,6 +32,7 @@ type
       procedure RestoreCursor; virtual; { after drawing other widgets }
     published
       property visible : boolean read _visible write _visible;
+      procedure Handle( msg : TMsg ); virtual;
     end;
 
   // A class with its own video ram buffer:
@@ -73,6 +74,10 @@ destructor TView.Destroy;
   begin
     _views.Free; // members are TViews, so owners will free
     inherited Destroy;
+  end;
+
+procedure TView.Handle( msg : TMsg );
+  begin
   end;
 
 procedure TView.GainFocus;
