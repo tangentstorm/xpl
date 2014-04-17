@@ -5,7 +5,8 @@
 //
 {$i xpc.inc}{$mode delphiunicode}
 unit udv;
-interface uses xpc, utv, udb, udc, kvm, classes, db, sqldb, ustr, kbd, cw;
+interface uses xpc, utv, udb, udc, kvm, classes, db, sqldb, ustr, kbd, cw,
+  ug2d, umsg;
 
 type
   TDBTreeGrid = class (TView)
@@ -13,6 +14,8 @@ type
       _top : cardinal;
       _cur : TDbCursor;
       procedure Render; override;
+    public
+      procedure Handle( msg : umsg.TMsg ); override;
     published
       property DataCursor : TDbCursor read _cur write _cur;
     end;
@@ -25,7 +28,7 @@ type
       function Choose : variant;
     end;
 
-  
+
 var // default background colors for lines
   hibar	: byte = $08; // ansi dark gray
   lobar	: byte = $ea; // ever darker dgray
@@ -67,6 +70,17 @@ begin
     gotoxy(0,count); clreol; inc(count)
   end
 end;
+
+
+
+procedure TDbTreeGrid.Handle( msg : umsg.TMsg );
+  begin if msg.code = msg_nav_up.code then _cur.Prev
+   else if msg.code = msg_nav_dn.code then _cur.Next
+   else if msg.code = msg_nav_top.code then _cur.ToTop
+   else if msg.code = msg_nav_end.code then _cur.ToEnd
+   else ok
+  end;
+
 
 {---------------------------------------------------------------}
 { TDbMenu                                                       }
