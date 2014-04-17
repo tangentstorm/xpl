@@ -15,8 +15,6 @@ function newChan : word;
 function newCode : word;
 
 function Msg( chan, code : word ) : TMsg;
-function Msg( chan, code : word; x : integer ) : TMsg;
-function Msg( chan, code : word; x, y : integer ) : TMsg;
 
 procedure Send( msg : TMsg );
 procedure Subscribe( chan : word; handler : TMsgHandler );
@@ -48,21 +46,11 @@ function NewChan : word;
 
 { message constructors }
 
-function Msg( chan, code : word; x, y : integer ) : TMsg; inline;
+function Msg( chan, code : word ) : TMsg; inline;
   begin
     result := TMsg.Create(Nil);
     result.chan := chan;
     result.code := code;
-    result.x := x;
-    result.y := y;
-  end;
-
-function Msg( chan, code : word; x : integer ) : TMsg; inline;
-  begin result := Msg( chan, code, x, 0 )
-  end;
-
-function Msg( chan, code : word ) : TMsg; inline;
-  begin result := Msg( chan, code, 0, 0 )
   end;
 
 
