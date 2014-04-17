@@ -1,37 +1,35 @@
 {
-| object oriented programming based on concurrency and message passing
+| an object oriented programming system
+| with concurrency and message passing
 }
 {$mode delphi}{$i xpc.inc}
 unit uoo;
 interface uses xpc, classes;
 type
-  tMsg<a> = class
+  tBuf = class (TComponent)
     {
-    | Base class for messages.
+    | Base class for typed data.
     }
   end;
 
-  tVoMeth = procedure of object;
-  tRuMeth = procedure ( msg : tMsg ) of object;
-  tNaMeth = function : tMsg of object;
-  tTiMeth = function ( msg : tMsg ) : tMsg of object;
-
-  tObj = class (TComponent)
+  tObj = class (tBuf)
     {
-    | Base class for all other objects.
+    | Base class for objects.
     |
     | Fundamentally, an object is a stateful machine
-    | that sends and receives messages:
-    |
-    |   type Obj = Obj a -> Msg b -> (Obj c, Msg d)
-    |
-    | This corresponds to vorunati protocol 'ti'.
-    | However, it seems convenient to provide the other three
-    | fundamental messages.
+    | that sends and receives messages.
     }
+    function  eval( buf : tBuf ) : tBuf;
+    procedure exec( buf : tBuf );
   end;
 
+  { really there are four generic signatures }
+  tVoMeth = procedure of object;
+  tRuMeth = procedure ( buf : tBuf ) of object;
+  tNaMeth = function : tBuf of object;
+  tTiMeth = function ( buf : tBuf ) : tBuf of object;
+
 implementation
-
+
 begin
 end.
