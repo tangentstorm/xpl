@@ -3,7 +3,7 @@
 // Copyright © 2014 Michal J Wallace http://tangentstorm.com/
 // Available for use under the MIT license. See LICENSE.txt
 
-{$i xpc.inc}{$mode delphi}
+{$mode delphiunicode}{$i xpc.inc}
 unit utv;
 interface uses xpc, classes, sysutils, umsg,
   kvm, arrays, cli, ug2d, num, cw, math, ustr, chk;
@@ -16,6 +16,11 @@ var
   msg_nav_top, msg_nav_end,
   msg_cmd_toggle,
   msg_cmd_delete : umsg.TMsg;
+
+var // default background colors for lines
+  hibar	: byte = $08; // ansi dark gray
+  lobar	: byte = $ea; // ever darker dgray
+  nobar	: byte = $00; // black
 
 
 type
@@ -45,8 +50,34 @@ type
       property visible : boolean read _visible write _visible;
       procedure Handle( msg : TMsg ); virtual;
     end;
+
 
-  // A class with its own video ram buffer:
+type
+  TGridThunk = procedure (gx, gy: word) of object;
+  TGridStrFn = function (gx, gy: word) : TStr of object;
+  TWordFn = function : word of object;
+  TGridView = class (TView)
+    protected
+      _cellh : TBytes;
+      _cellw : TBytes;
+      _gw, _gh : byte;
+      _igx, _igy : cardinal; // cursor position
+      _DeleteAt   : TGridThunk;
+      _RenderCell : TGridStrFn;
+      _GetRowCount : TWordFn;
+    public
+      constructor Create(aOwner : TComponent); override;
+      procedure Render; override;
+      procedure LoadData; virtual;
+      procedure Handle(msg : umsg.TMsg); override;
+      function GetRowCount : word;
+      procedure RestoreCursor; override;
+    published
+      property OnRenderCell : TGridStrFn read _RenderCell write _RenderCell;
+      property RowCount : word read GetRowCount;
+    end;
+
+type // A class with its own video ram buffer:
   TTermView = class (TView, ITerm)
     protected
       _hookterm : IHookTerm;
@@ -165,6 +196,78 @@ procedure TView.Render;
 procedure TView.Resize(new_w, new_h : cardinal);
   begin inherited; Smudge;
   end;
+
+{ TGridView - event handling }
+
+constructor TGridView.Create( aOwner : TComponent );
+  begin inherited; _w := 31; _h := 8; _igx := 0; _igy := 0; _gw := 1
+  end;
+
+procedure TGridView.LoadData;
+  begin
+  end;
+
+function TGridView.GetRowCount : word;
+  begin if assigned(_GetRowCount) then result := _GetRowCount else result := 0
+  end;
+
+procedure TGridView.Handle(msg : umsg.TMsg);
+  begin
+    //--TODO: replace ugly Handle(msg) dispatch with
+    //-- case statements (requires making message id's static)
+    if msg.code = msg_nav_up.code then
+      if _igy > 0 then dec(_igy) else ok
+    else if msg.code = msg_nav_dn.code then
+      if _igy < rowCount-1 then inc(_igy) else ok
+    else if msg.code = msg_nav_top.code then
+      _igy := 0
+    else if msg.code = msg_nav_end.code then
+      if rowCount > 0 then _igy := rowCount - 1 else _igy := 0
+    else if msg.code = msg_cmd_toggle.code then
+      _igx := 1 - _igx
+    else if msg.code = msg_cmd_delete.code then
+      if assigned(_DeleteAt) then _DeleteAt(_igx, _igy) else ok
+    else ok;
+    smudge;
+  end;
+
+
+
+{ TGridView - Rendering }
+
+function prepstr(s : string; len : byte) : TStr;
+  begin result := rfit(replace(replace(cstrip(s), ^M, ''), ^J, ''), len)
+  end;
+
+procedure TGridView.Render;
+  var gy : word; bar : byte; gh : word = 0;
+  begin bg(0); fg('w'); clrscr;
+    if assigned(_RenderCell) then begin
+      if _focused then bar := hibar else bar := lobar;
+      LoadData; gh := self.rowCount;
+      if gh = 0 then _igy := 0 else _igy := xpc.min(_igy, gh-1);
+      if gh > 0 then for gy := 0 to gh-1 do begin
+        gotoxy(0,gy); if gy = _igy then bg(bar) else bg(0);
+        write(prepstr(_RenderCell(0,gy), _cellw[0]));
+        fg('k'); emit('│'); fg('w');
+        write(prepstr(_RenderCell(1,gy), _cellw[1]));
+      end;
+      if gh = 0 then begin
+        bg(bar); clreol; fg('k');
+        write(chntimes(' ', _cellw[0]), '|');
+      end
+    end
+  end;
+
+procedure TGridView.RestoreCursor;
+  var i : word; cx : word = 0;
+  begin { show the cursor on the current cell }
+    if _igx > 0 then for i:= 0 to _igx-1 do inc(cx, _cellw[i]);
+    if rowCount > 0 then begin
+      gotoxy(_x+cx, _y+_igy); ShowCursor;
+    end
+  end;
+
 
 constructor TTermView.Create( aOwner : TComponent );
   begin

@@ -29,11 +29,6 @@ type
     end;
 
 
-var // default background colors for lines
-  hibar	: byte = $08; // ansi dark gray
-  lobar	: byte = $ea; // ever darker dgray
-  nobar	: byte = $00; // black
-
 implementation
 
 {---------------------------------------------------------------}
