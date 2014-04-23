@@ -44,7 +44,7 @@ begin
       else if rs['collapsed'] then sigil := '+'
       else sigil := '-';
       { draw visible nodes }
-      if rs['hidden']=1 then ok
+      if rs['hidden'] then ok
       else begin
 	if _cur.AtMark then if _focused then bg(hibar) else bg(lobar)
 	else bg(nobar);
