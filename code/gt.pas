@@ -25,7 +25,7 @@ type
     property nodes[ nid : cardinal ] : nodeT read GetNode;
     property edges[ eid : cardinal ] : edgeT read GetEdge;
   end;
-
+
   TGraphData = class ( TInterfacedObject, ISimpleGraph )
   private
     type TEdgeArray = GArray<TNidArray>;
@@ -49,15 +49,15 @@ type
   end;
 
 implementation
-
-  constructor TGraphData.Create;
+
+constructor TGraphData.Create;
   begin
     _nodeCount := 0;
     _incoming := TEdgeArray.Create( 0 );
     _outgoing := TEdgeArray.Create( 0 );
   end;
 
-  function TGraphData.Node : cardinal;
+function TGraphData.Node : cardinal;
   begin
     result := _nodeCount;
     inc( _nodeCount );
@@ -65,8 +65,8 @@ implementation
     _outgoing.Append( TNidArray.Create( 0 ));
   end;
 
-  function TGraphData.Edge( a, b : cardinal ) : cardinal;
-    var c : cardinal;
+function TGraphData.Edge( a, b : cardinal ) : cardinal;
+  var c : cardinal;
   begin
     for c in [ a, b ] do if c >= _nodeCount then
       raise Exception.Create( 'invalid node: ' + IntToStr( a ));
@@ -75,36 +75,35 @@ implementation
   end;
 
 
-  function TGraphData.GetNodeCount : cardinal;
-  begin
-    result := _nodeCount;
+function TGraphData.GetNodeCount : cardinal;
+  begin result := _nodeCount;
   end;
 
-  function TGraphData.GetEdgeCount : cardinal;
-  begin
-    result := _edgeCount;
+function TGraphData.GetEdgeCount : cardinal;
+  begin result := _edgeCount;
   end;
 
-  { TODO : Incoming and Outgoing should make copies... }
+
+{ TODO : Incoming and Outgoing should make copies... }
 
-  function TGraphData.Incoming( nid : cardinal ) : TNidArray;
+function TGraphData.Incoming( nid : cardinal ) : TNidArray;
   begin
     result := _incoming[ nid ];
   end;
 
-  function TGraphData.Outgoing( nid : cardinal ) : TNidArray;
+function TGraphData.Outgoing( nid : cardinal ) : TNidArray;
   begin
     result := _outgoing[ nid ];
   end;
 
+
+function TGraphData.TopSort : TNidArray;
+  var
+    marked : array of boolean;
+    node   : cardinal = 0;
+    slot   : cardinal = 0;
 
-  function TGraphData.TopSort : TNidArray;
-    var
-      marked : array of boolean;
-      node   : cardinal = 0;
-      slot   : cardinal = 0;
-
-    function find_unmarked : boolean;
+  function find_unmarked : boolean;
     begin
       result := false;
       repeat
@@ -113,8 +112,8 @@ implementation
       until result or ( node = length( marked ));
     end; { find_unmarked }
 
-    procedure visit( n : cardinal );
-      var m : cardinal;
+  procedure visit( n : cardinal );
+    var m : cardinal;
     begin
       if marked[ n ] then raise Exception.Create( 'Not a DAG' )
       else begin
@@ -133,6 +132,7 @@ implementation
     for node := 0 to _nodeCount - 1 do marked[ node ] := false;
     node := 0;
     while find_unmarked do visit( node );
-  end; { TopSort }
-
+  end;
+
+begin
 end.
