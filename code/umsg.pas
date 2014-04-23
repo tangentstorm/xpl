@@ -25,8 +25,11 @@ implementation
 { internal variables }
 type THandlerArray = GArray<TMsgHandler>;
 
+
+const k_dynamic_code = 1024; // smaller than this are manually allocated
+
 var
-  nextCode : word = 0;
+  nextCode : word = k_dynamic_code;
   nextChan : word = 0;
   channels : GArray<THandlerArray>;
 
