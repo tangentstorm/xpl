@@ -59,7 +59,7 @@ type
     end;
 
 
-type
+type // TGridView : a scrolling 2d grid of text cells (like a spreadsheet)
   TGridThunk = procedure (gx, gy: word) of object;
   TGridStrFn = function (gx, gy: word) : TStr of object;
   TWordFn = function : word of object;
@@ -69,6 +69,7 @@ type
       _cellw : TBytes;
       _gw, _gh : byte;
       _igx, _igy : cardinal; // cursor position
+      _vgx, _vgy : cardinal; // grid cell in upper left of scrolled view
       _DeleteAt   : TGridThunk;
       _RenderCell : TGridStrFn;
       _GetRowCount : TWordFn;
@@ -207,7 +208,9 @@ procedure TView.Resize(new_w, new_h : cardinal);
 { TGridView - event handling }
 
 constructor TGridView.Create( aOwner : TComponent );
-  begin inherited; _w := 31; _h := 8; _igx := 0; _igy := 0; _gw := 1
+  begin inherited;
+    _w := 31; _h := 8;  _gw := 1;
+    _igx := 0; _igy := 0; _vgx := 0; _vgy := 0;
   end;
 
 procedure TGridView.LoadData;
@@ -231,8 +234,6 @@ procedure TGridView.Handle(msg : umsg.TMsg);
     end;
     smudge;
   end;
-
-
 
 { TGridView - Rendering }
 
