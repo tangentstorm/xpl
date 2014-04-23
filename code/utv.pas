@@ -79,6 +79,7 @@ type // TGridView : a scrolling 2d grid of text cells (like a spreadsheet)
       procedure LoadData; virtual;
       procedure Handle(msg : umsg.TMsg); override;
       function GetRowCount : word;
+      procedure UpdateCamera;
       procedure RestoreCursor; override;
     published
       property OnRenderCell : TGridStrFn read _RenderCell write _RenderCell;
@@ -232,8 +233,32 @@ procedure TGridView.Handle(msg : umsg.TMsg);
       k_cmd_del	: if assigned(_DeleteAt) then _DeleteAt(_igx, _igy) else ok;
       else ok;
     end;
+    if msg.code in [k_nav_up, k_nav_dn, k_nav_top, k_nav_end] then UpdateCamera
+    else ok;
     smudge;
   end;
+
+procedure TGridView.UpdateCamera;
+  var yCam : word;
+  begin
+    while _vgy > _igy do dec(_vgy);
+    yCam := _igy - _vgy;
+    if ( yCam < 5 ) and ( _vgy > 1 ) then
+      begin
+        dec(_vgy)
+        //  scrolldown1(1,80,y1,y2,nil);
+        //  scrolldown1(1,80,14,25,nil);
+      end
+    else if ( yCam > self.h - 5 )
+      and ( self._vgy < self.RowCount ) then
+      begin
+	inc( _vgy );
+	//  scrollup1(1,80,y1,y2,nil);
+	//  scrollup1(1,80,14,25,nil);
+      end;
+    smudge;
+  end;
+
 
 { TGridView - Rendering }
 
