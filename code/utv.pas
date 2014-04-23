@@ -8,6 +8,13 @@ unit utv;
 interface uses xpc, classes, sysutils, umsg,
   kvm, arrays, cli, ug2d, num, cw, math, ustr, chk;
 
+
+const
+  k_nav_up  = 1; k_nav_dn  = 2;
+  k_nav_lf  = 3; k_nav_rt  = 4;
+  k_nav_top = 5; k_nav_end = 6;
+  k_cmd_tog = 8; k_cmd_del = 9;
+
 var
   chan_nav,
   chan_cmd: word;
@@ -102,7 +109,7 @@ implementation
 constructor TView.Create( aOwner : TComponent );
   begin
     inherited Create( aOwner );
-    _x := 0; _y := 0; _w := 30; _h := 10;
+    _x := 0; _y := 0; _w := kvm.width; _h := kvm.height;
     _bg := $FC; _fg := $0; _dirty := true;
     _views := GArray<TView>.Create();
     _visible := true;
@@ -213,21 +220,15 @@ function TGridView.GetRowCount : word;
 
 procedure TGridView.Handle(msg : umsg.TMsg);
   begin
-    //--TODO: replace ugly Handle(msg) dispatch with
-    //-- case statements (requires making message id's static)
-    if msg.code = msg_nav_up.code then
-      if _igy > 0 then dec(_igy) else ok
-    else if msg.code = msg_nav_dn.code then
-      if _igy < rowCount-1 then inc(_igy) else ok
-    else if msg.code = msg_nav_top.code then
-      _igy := 0
-    else if msg.code = msg_nav_end.code then
-      if rowCount > 0 then _igy := rowCount - 1 else _igy := 0
-    else if msg.code = msg_cmd_toggle.code then
-      _igx := 1 - _igx
-    else if msg.code = msg_cmd_delete.code then
-      if assigned(_DeleteAt) then _DeleteAt(_igx, _igy) else ok
-    else ok;
+    case msg.code of
+      k_nav_up	: if _igy > 0 then dec(_igy) else ok;
+      k_nav_dn	: if _igy < rowCount-1 then inc(_igy) else ok;
+      k_nav_top	: _igy := 0;
+      k_nav_end	: if rowCount > 0 then _igy := rowCount - 1 else _igy := 0;
+      k_cmd_tog	: _igx := (_igx + 1) mod _gw;
+      k_cmd_del	: if assigned(_DeleteAt) then _DeleteAt(_igx, _igy) else ok;
+      else ok;
+    end;
     smudge;
   end;
 
@@ -331,16 +332,16 @@ initialization
   RegisterClass(TTermView);
 
   chan_nav := umsg.NewChan;
-  msg_nav_up  := Msg( chan_nav, umsg.newCode );
-  msg_nav_dn  := Msg( chan_nav, umsg.newCode );
-  msg_nav_lf  := Msg( chan_nav, umsg.newCode );
-  msg_nav_rt  := Msg( chan_nav, umsg.newCode );
-  msg_nav_top := Msg( chan_nav, umsg.newCode );
-  msg_nav_end := Msg( chan_nav, umsg.newCode );
+  msg_nav_up  := Msg( chan_nav, k_nav_up );
+  msg_nav_dn  := Msg( chan_nav, k_nav_dn );
+  msg_nav_lf  := Msg( chan_nav, k_nav_lf );
+  msg_nav_rt  := Msg( chan_nav, k_nav_rt );
+  msg_nav_top := Msg( chan_nav, k_nav_top );
+  msg_nav_end := Msg( chan_nav, k_nav_end );
 
   chan_cmd  := umsg.NewChan;
-  msg_cmd_toggle  := Msg( chan_cmd, umsg.newCode );
-  msg_cmd_delete  := Msg( chan_cmd, umsg.newCode );
+  msg_cmd_toggle  := Msg( chan_cmd, k_cmd_tog );
+  msg_cmd_delete  := Msg( chan_cmd, k_cmd_del );
 
 finalization
   msg_nav_up.free;  msg_nav_dn.free;
