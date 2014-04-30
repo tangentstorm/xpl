@@ -25,9 +25,9 @@ var
   msg_cmd_delete : umsg.TMsg;
 
 var // default background colors for lines
-  hibar	: byte = $08; // ansi dark gray
-  lobar	: byte = $ea; // ever darker dgray
-  nobar	: byte = $00; // black
+  hibar : byte = $08; // ansi dark gray
+  lobar : byte = $ea; // ever darker dgray
+  nobar : byte = $00; // black
 
 
 type
@@ -62,28 +62,30 @@ type
 type // TGridView : a scrolling 2d grid of text cells (like a spreadsheet)
   TGridThunk = procedure (gx, gy: word) of object;
   TGridStrFn = function (gx, gy: word) : TStr of object;
+  TCellSizer = procedure (gx, gy : word; out cellw, cellh : byte) of object;
   TWordFn = function : word of object;
   TGridView = class (TView)
     protected
       _cellh : TBytes;
       _cellw : TBytes;
-      _gw, _gh : byte;
+      _gw, _gh : word;
       _igx, _igy : cardinal; // cursor position
       _vgx, _vgy : cardinal; // grid cell in upper left of scrolled view
       _DeleteAt   : TGridThunk;
-      _RenderCell : TGridStrFn;
-      _GetRowCount : TWordFn;
+      _RenderCell : TGridThunk;
+      _CellSizer : TCellSizer;
     public
       constructor Create(aOwner : TComponent); override;
       procedure Render; override;
-      procedure LoadData; virtual;
       procedure Handle(msg : umsg.TMsg); override;
-      function GetRowCount : word;
       procedure UpdateCamera;
       procedure RestoreCursor; override;
+      procedure ResizeCells;
     published
-      property OnRenderCell : TGridStrFn read _RenderCell write _RenderCell;
-      property RowCount : word read GetRowCount;
+      property OnRenderCell : TGridThunk read _RenderCell write _RenderCell;
+      property GridWidth : word read _gw write _gw;
+      property GridHeight : word read _gh write _gh;
+      property CellSizer : TCellSizer read _CellSizer write _CellSizer;
     end;
 
 type // A class with its own video ram buffer:
@@ -214,29 +216,22 @@ constructor TGridView.Create( aOwner : TComponent );
     _igx := 0; _igy := 0; _vgx := 0; _vgy := 0;
   end;
 
-procedure TGridView.LoadData;
-  begin
-  end;
-
-function TGridView.GetRowCount : word;
-  begin if assigned(_GetRowCount) then result := _GetRowCount else result := 0
-  end;
-
 procedure TGridView.Handle(msg : umsg.TMsg);
   begin
     case msg.code of
-      k_nav_up	: if _igy > 0 then dec(_igy) else ok;
-      k_nav_dn	: if _igy < rowCount-1 then inc(_igy) else ok;
-      k_nav_top	: _igy := 0;
-      k_nav_end	: if rowCount > 0 then _igy := rowCount - 1 else _igy := 0;
-      k_cmd_tog	: _igx := (_igx + 1) mod _gw;
-      k_cmd_del	: if assigned(_DeleteAt) then _DeleteAt(_igx, _igy) else ok;
+      k_nav_up  : if _igy > 0 then dec(_igy) else ok;
+      k_nav_dn  : if _igy < _gh-1 then inc(_igy) else ok;
+      k_nav_top : _igy := 0;
+      k_nav_end : if _gh > 0 then _igy := _gh - 1 else _igy := 0;
+      k_cmd_tog : _igx := (_igx + 1) mod _gw;
+      k_cmd_del : if assigned(_DeleteAt) then _DeleteAt(_igx, _igy) else ok;
       else ok;
     end;
     if msg.code in [k_nav_up, k_nav_dn, k_nav_top, k_nav_end] then UpdateCamera
     else ok;
     smudge;
   end;
+
 
 procedure TGridView.UpdateCamera;
   var yCam : word;
@@ -250,36 +245,49 @@ procedure TGridView.UpdateCamera;
         //  scrolldown1(1,80,14,25,nil);
       end
     else if ( yCam > self.h - 5 )
-      and ( self._vgy < self.RowCount ) then
+      and ( _vgy < _gh ) then
       begin
-	inc( _vgy );
-	//  scrollup1(1,80,y1,y2,nil);
-	//  scrollup1(1,80,14,25,nil);
+        inc( _vgy );
+        //  scrollup1(1,80,y1,y2,nil);
+        //  scrollup1(1,80,14,25,nil);
       end;
     smudge;
   end;
 
+procedure TGridView.ResizeCells;
+  var gx, gy : word;
+  begin
+    setlength(_cellw, _gw);
+    setlength(_cellh, _gh);
+    for gx := 0 to _gh-1 do
+      for gy := 0 to _gw-1 do
+        _CellSizer(gx, gy, _cellw[gx], _cellh[gy])
+  end;
 
 { TGridView - Rendering }
 
-function prepstr(s : string; len : byte) : TStr;
-  begin result := rfit(replace(replace(cstrip(s), ^M, ''), ^J, ''), len)
-  end;
-
 procedure TGridView.Render;
-  var gy : word; bar : byte; gh : word = 0;
+  var gx, gy, scrx, scry : word; bar : byte;
   begin bg(0); fg('w'); clrscr;
     if assigned(_RenderCell) then begin
       if _focused then bar := hibar else bar := lobar;
-      LoadData; gh := self.rowCount;
-      if gh = 0 then _igy := 0 else _igy := xpc.min(_igy, gh-1);
-      if gh > 0 then for gy := 0 to gh-1 do begin
-        gotoxy(0,gy); if gy = _igy then bg(bar) else bg(0);
-        write(prepstr(_RenderCell(0,gy), _cellw[0]));
-        fg('k'); emit('│'); fg('w');
-        write(prepstr(_RenderCell(1,gy), _cellw[1]));
+      if _gh = 0 then _igy := 0 else _igy := xpc.min(_igy, _gh-1);
+      scry := 0;
+      if _gh > 0 then for gy := 0 to _gh-1 do begin
+        scrx := 0;
+        for gx := 0 to _gw-1 do begin
+          pushsub(scrx, scry, _cellw[gx], _cellh[gy]);
+          gotoxy(0,0);
+          if gy = _igy then bg(bar) else bg(0);
+          _RenderCell(gx,gy);
+          popterm;
+          scrx += _cellw[gx]+1;
+          if gx+1 < _gw then
+            cw.colorxyv(scrx-1, scry, $ee, ntimes('│', _cellh[gy]-1));
+        end;
+        scry += _cellh[gy];
       end;
-      if gh = 0 then begin
+      if _gh = 0 then begin
         bg(bar); clreol; fg('k');
         write(chntimes(' ', _cellw[0]), '|');
       end
@@ -287,11 +295,12 @@ procedure TGridView.Render;
   end;
 
 procedure TGridView.RestoreCursor;
-  var i : word; cx : word = 0;
+  var i : word; cx : word = 0; cy : word = 0;
   begin { show the cursor on the current cell }
     if _igx > 0 then for i:= 0 to _igx-1 do inc(cx, _cellw[i]);
-    if rowCount > 0 then begin
-      gotoxy(_x+cx, _y+_igy); ShowCursor;
+    if _igy > 0 then for i:= 0 to _igy-1 do inc(cy, _cellh[i]);
+    if _gh > 0 then begin
+      gotoxy(_x+cx, _y+cy); ShowCursor;
     end
   end;
 
@@ -342,12 +351,12 @@ procedure TTermView.Render;
     xEnd := min(_w-1, _ioctx.xMax);
     for y := 0 to yEnd do
       begin
-	_ioctx.gotoxy(_x,_y+y);
-	for x := 0 to xEnd do
+        _ioctx.gotoxy(_x,_y+y);
+        for x := 0 to xEnd do
           begin
-	    cell := _gridterm.GetCell(x,y);
-	    _ioctx.textattr := attrtoword(cell.attr);
-	    _ioctx.emit(cell.ch);
+            cell := _gridterm.GetCell(x,y);
+            _ioctx.textattr := attrtoword(cell.attr);
+            _ioctx.emit(cell.ch);
           end;
       end;
   end;
