@@ -51,6 +51,13 @@ type logger = object
 end;
 var log : logger;
 
+type
+  G<T> = class { generic helper }
+    public
+      type ArrayOfT = array of T;
+      class function FromOpenArray( a : array of T ) : ArrayOfT;
+    end;
+
 function bytes(data : array of byte):tbytes;
 function vinc(var i:integer):integer;
 function incv(var i:integer):integer;
@@ -197,23 +204,17 @@ function fileparam : boolean;
   end;
 
 { convert open arrays to dynamic arrays }
-type
-  GDynArray<T> = class
-    public
-      type ArrayOfT = array of T;
-      class function FromOpenArray( a : array of T ) : ArrayOfT;
-    end;
 
-class function GDynArray<T>.FromOpenArray( a : array of T) : ArrayOfT;
+class function G<T>.FromOpenArray( a : array of T) : ArrayOfT;
   var i : cardinal;
   begin
     setlength(result, length(a));
-    for i := 0 to high(a) do result[i] := a[i];
+    if length(a) > 0 then for i := low(a) to high(a) do result[i] := a[i];
   end;
 
 function bytes(data : array of byte):tbytes;
   begin
-    result := GDynArray<byte>.FromOpenArray(data)
+    result := G<byte>.FromOpenArray(data)
   end;
 
 
