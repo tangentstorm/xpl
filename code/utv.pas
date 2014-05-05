@@ -259,8 +259,8 @@ procedure TGridView.ResizeCells;
   begin
     setlength(_cellw, _gw);
     setlength(_cellh, _gh);
-    for gx := 0 to _gh-1 do
-      for gy := 0 to _gw-1 do
+    for gy := 0 to _gh-1 do
+      for gx := 0 to _gw-1 do
         _CellSizer(gx, gy, _cellw[gx], _cellh[gy])
   end;
 

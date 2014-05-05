@@ -13,10 +13,13 @@ type
       procedure DrawCell(gx, gy : word);
     end;
 
+const gw = 11; gh = 8;
+
 procedure TGridViewApp.Init;
   begin
     _grid := TGridView.Create(self);
-    _grid.GridHeight := 5; _grid.GridWidth := 5;
+    _grid.GridHeight := gh; _grid.GridWidth := gw;
+    _grid.w := kvm.width;
     _grid.OnRenderCell := DrawCell;
     _grid.CellSizer := CellSize;
     _grid.ResizeCells;
@@ -45,7 +48,7 @@ procedure TGridViewApp.DrawCell(gx, gy : word);
   begin
     for j := 1 to gy+1 do begin
       fg(18 + gy * 8 + gx);
-      for i := 1 to gx + 1 do emit(chr(32 + (gy * 10 + gx)))
+      for i := 1 to gx + 1 do emit(chr(33 + (gy * gw + gx)))
     end
   end;
 
