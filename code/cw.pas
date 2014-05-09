@@ -20,6 +20,8 @@ type command =
      cwsavecol,
      cwloadcol,
      cwchntimes,
+     cwindent,
+     cwdedent,
      cwspecialstr,
      cwrenegade );
 
@@ -28,6 +30,8 @@ const //  why do I need both of these?
   ccolstr : TStr = 'krgybmcwKRGYBMCW';
   ccolset = [ 'k', 'r', 'g', 'y', 'b', 'm', 'c', 'w',
               'K', 'R', 'G', 'Y', 'B', 'M', 'C', 'W' ];
+
+var cwindentby : byte = 2; cwdepth : byte = 0;
 
 
 type
@@ -121,17 +125,20 @@ procedure colorxyc( x, y : byte; c : word; const s : TStr );
   end;
 
 procedure cwcommand( cn : command; s : TStr );
+  var i : integer;
   const digits = ['0','1','2','3','4','5','6','7','8','9'];
   begin
     case cn of
       cwfg : if s[ 1 ] in ccolset then kvm.Fg(s[ 1 ]);
       cwbg : if s[ 1 ] in ccolset then kvm.Bg(s[ 1 ]);
-      cwCR : kvm.newline;
       cwBS : if wherex > 0 then
                begin
 		 gotoxy( wherex-1, wherey ); emit(' ');
 		 gotoxy( wherex-1, wherey );
 	       end;
+      cwindent : inc(cwdepth);
+      cwdedent : dec(cwdepth);
+      cwCR     : begin kvm.newline; emit(chntimes(' ', cwdepth * cwindentby)) end;
       cwclrscr    : kvm.clrscr;
       cwclreol	  : kvm.clreol;
       cwsavecol	  : sav.c := kvm.textattr;
@@ -223,6 +230,8 @@ procedure cwrite( s : TStr );
 	  '^' : runcmd( cwspecialstr, 1 );
 	  ')' : runcmd( cwsavecol );
 	  '(' : runcmd( cwloadcol );
+	  '>' : runcmd( cwindent );
+	  '<' : runcmd( cwdedent );
 	  ']' : runcmd( cwsavexy );
 	  '[' : runcmd( cwloadxy );
 	  '0'..'9': begin
@@ -238,7 +247,7 @@ procedure cwrite( s : TStr );
 
 procedure cwriteln( s : TStr );
   begin
-    cwrite( s ); kvm.newline;
+    cwrite( s ); cwrite( '|_' );
   end;
 
 procedure cwrite( args : array of const );
@@ -258,7 +267,7 @@ procedure cwrite( args : array of const );
   end;
 
 procedure cwriteln( args : array of const ); inline;
-  begin cwrite( args ); kvm.newline;
+  begin cwrite( args ); cwrite('|_');
   end;
 
 procedure cwritexy( x, y : byte; s : TStr );
