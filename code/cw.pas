@@ -213,7 +213,7 @@ procedure cwrite( s : TStr );
 	end
       else
 	case ch of
-	  '|' : kvm.emit( '|' );
+	  '|' : begin kvm.emit( '|' ); cwcommandmode := false end;
 	  '_' : runcmd( cwcr );
 	  '!' : runcmd( cwbg, 1 );
 	  '@' : runcmd( cwgotoxy, 4 );
