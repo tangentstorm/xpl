@@ -125,7 +125,6 @@ procedure colorxyc( x, y : byte; c : word; const s : TStr );
   end;
 
 procedure cwcommand( cn : command; s : TStr );
-  var i : integer;
   const digits = ['0','1','2','3','4','5','6','7','8','9'];
   begin
     case cn of
