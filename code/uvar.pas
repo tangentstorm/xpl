@@ -9,9 +9,10 @@ type
 
 function A(vars : array of TVar) : TVars;
 
-function drop(n : word; vars: tvars) : TVars; inline;
-function behead( vars : tvars ) :TVars; inline;
-function implode(glue : tvar; vars: tvars) : TVars; inline;
+function drop(n : word; vars: tvars) : TVars;
+function behead( vars : tvars ) :TVars;
+function implode(glue : tvar; vars: tvars) : TVars;
+function repr( v : TVar ) : TStr;
 
 implementation
 
@@ -49,6 +50,19 @@ function implode(glue : tvar; vars: tvars) : TVars; inline;
       end;
       result[2*(len-1)] := vars[len-1]
     end
+  end;
+
+function repr( v : TVar ) : TStr; inline;
+  var item : TVar;
+  begin
+    if VarIsArray(v) then
+      begin
+	result :='';
+	for item in implode(' ', TVars(v)) do result += repr(item);
+	if length(result) > 0 then result := '[ ' + result + ' ]'
+	else result := '[]'
+      end
+    else writestr(result, v);
   end;
 
 initialization

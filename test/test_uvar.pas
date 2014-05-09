@@ -15,4 +15,12 @@ procedure test_implode;
     chk.equal(3, length( implode( ' ', A(['1','2']) )));
   end;
 
+procedure test_repr;
+  begin
+    chk.equal('[]', repr(A([])));
+    chk.equal('[ 1 ]', repr(A([1])));
+    chk.equal('[ 1 2 ]', repr(A([1,2])));
+    chk.equal('[ 1 [ 2 ] ]', repr(A([1, A([2]) ])));
+  end;
+
 end.
