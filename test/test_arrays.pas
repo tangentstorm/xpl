@@ -19,6 +19,15 @@ procedure test_append;
     chk.equal( 1, ints.append( 23456 ));
   end;
 
+procedure test_new;
+  begin
+    ints.free; ints := TInt32Array.Create([0,1,2]);
+    chk.equal(3, ints.length);
+    chk.equal(0, ints[0]);
+    chk.equal(1, ints[1]);
+    chk.equal(2, ints[2]);
+  end;
+
 procedure test_find;
   var i : cardinal;
   begin

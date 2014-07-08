@@ -14,7 +14,8 @@ type
     _count : cardinal;
     _growby : cardinal;
   public
-    constructor Create( growBy : cardinal = 16 );
+    constructor Create( growBy : cardinal = 16 ); overload;
+    constructor Create( items : array of T ); overload;
     function Grow : cardinal;
     function Append( item : T ) : cardinal;
     function Extend( items : array of T ) : cardinal;
@@ -42,6 +43,11 @@ constructor GArray<T>.Create( growBy : cardinal = 16 );
     _growBy := growBy;
     if _growBy > 0 then system.SetLength( _items, _growBy )
     else raise Exception.Create('GArray.growBy must be > 0')
+  end;
+
+constructor GArray<T>.Create( items : array of T );
+  begin
+    self.Create(16); self.Extend(items);;
   end;
 
 function GArray<T>.Grow : cardinal;
