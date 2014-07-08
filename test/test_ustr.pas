@@ -25,4 +25,13 @@ procedure test_chntimes;
     chk.equal('x', chntimes('x', 1));
     chk.equal('xx', chntimes('x', 2));
   end;
+
+procedure test_join;
+  begin
+    chk.equal('', join([]));
+    chk.equal('a', join(['a']));
+    chk.equal('abc', join(['a','b','c']));
+    chk.equal('a.b.c', join(['a','b','c'], '.'));
+  end;
+
 end.

@@ -23,6 +23,7 @@ interface uses xpc, sysutils, strutils;
   function startswith(const haystack, needle : TStr) : boolean;
   function boolstr(const b : boolean; const trueStr, falseStr : TStr ) : TStr;
   function replace( s, x, y : TStr ) : TStr;
+  function join(parts : array of TStr; glue : TStr = '') : TStr;
 
 implementation
 
@@ -183,6 +184,17 @@ function boolstr(const b : boolean; const trueStr, falseStr : TStr ) : TStr; inl
 function replace( s, x, y : TStr ) : TStr;
   begin
     result := a2u(sysutils.StringReplace(u2a(s), u2a(x), u2a(y), [rfReplaceAll]))
+  end;
+
+
+
+function join(parts : array of TStr; glue : TStr = '') : TStr;
+  var i : cardinal;
+  begin
+    result := '';
+    if length(parts) > 1 then
+      for i := 0 to high(parts)-1 do result += parts[i] + glue;
+    if length(parts) > 0 then result += parts[high(parts)];
   end;
 
 end.
