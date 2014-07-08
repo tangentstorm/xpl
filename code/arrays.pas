@@ -6,6 +6,8 @@ type
   IArray<T> = interface ( ISequence<T, cardinal> )
     function _GetLength : cardinal;
     procedure _SetLength( len : cardinal );
+    function Append( item : T ) : cardinal;
+    function Extend( items : array of T ) : cardinal;
     property length : cardinal read _GetLength write _SetLength;
   end;
 
