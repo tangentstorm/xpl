@@ -19,11 +19,11 @@ interface uses xpc, cr, stacks;
       // abstract part
       function GetItem( index : idx ) : t; virtual; abstract;
       procedure SetItem( index : idx; const value : t ); virtual; abstract;
-      function GetLength : cardinal; virtual; abstract;
-      procedure SetLength( len : cardinal ); virtual; abstract;
+      function _GetLength : cardinal; virtual; abstract;
+      procedure _SetLength( len : cardinal ); virtual; abstract;
       property item[ ix : idx ] : T
 	read GetItem write SetItem; default;
-      property length : cardinal read GetLength;
+      property length : cardinal read _GetLength;
 
       { --- begin nested type ----------------------------------- }
     type NSeqCursor = class( TInterfacedObject, ICursor<T> )

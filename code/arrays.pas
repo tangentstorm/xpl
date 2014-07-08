@@ -4,9 +4,9 @@ interface uses sq, sysutils;
 
 type
   IArray<T> = interface ( ISequence<T, cardinal> )
-    function GetLength : cardinal;
-    procedure SetLength( len : cardinal );
-    property length : cardinal read GetLength write SetLength;
+    function _GetLength : cardinal;
+    procedure _SetLength( len : cardinal );
+    property length : cardinal read _GetLength write _SetLength;
   end;
 
   GArray<T> = class ( GSeq<T, cardinal>, IArray<T> )
@@ -20,13 +20,13 @@ type
     function Append( item : T ) : cardinal;
     function Extend( items : array of T ) : cardinal;
   public { IArray }
-    function GetLength : cardinal; override;
-    procedure SetLength( len : cardinal ); override;
+    function _GetLength : cardinal; override;
+    procedure _SetLength( len : cardinal ); override;
     procedure SetItem( i : cardinal; const item : T ); override;
     function GetItem( i : cardinal ) : T; override; overload;
     function GetItem( i : cardinal; default : T) : T; overload;
     property at[ i : cardinal ]: T read GetItem write SetItem; default;
-    property length : cardinal read GetLength write SetLength;
+    property length : cardinal read _GetLength write _SetLength;
   end;
 
   // Find uses an equality check, so it only works on types where
@@ -41,7 +41,7 @@ constructor GArray<T>.Create( growBy : cardinal = 16 );
   begin
     _count := 0;
     _growBy := growBy;
-    if _growBy > 0 then system.SetLength( _items, _growBy )
+    if _growBy > 0 then SetLength( _items, _growBy )
     else raise Exception.Create('GArray.growBy must be > 0')
   end;
 
@@ -54,7 +54,7 @@ function GArray<T>.Grow : cardinal;
   begin
     result := _count; inc(_count);
     if _count >= system.Length( _items )
-      then system.SetLength( _items, result + _growBy )
+      then SetLength( _items, result + _growBy )
   end;
 
 function GArray<T>.Append( item : T ) : cardinal;
@@ -69,15 +69,15 @@ function GArray<T>.Extend( items : array of T ) : cardinal;
     for item in items do result := self.append(item);
   end;
 
-function GArray<T>.GetLength : cardinal;
+function GArray<T>._GetLength : cardinal;
   begin
     result := _count
   end;
 
-procedure GArray<T>.SetLength( len : cardinal );
+procedure GArray<T>._SetLength( len : cardinal );
   begin
     _count := len;
-    system.SetLength( _items, _count );
+    SetLength( _items, _count );
   end;
 
 procedure GArray<T>.SetItem( i : cardinal; const item : T );
