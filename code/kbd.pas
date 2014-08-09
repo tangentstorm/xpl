@@ -1,6 +1,6 @@
 {$mode objfpc}{$i xpc.inc}
 unit kbd; { keyboard constants }
-interface uses xpc, keyboard, num;
+interface uses keyboard;
 
   procedure getenter;
   function keypressed : boolean;
