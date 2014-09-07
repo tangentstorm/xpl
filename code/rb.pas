@@ -14,11 +14,13 @@
 unit rb;
 interface uses SysUtils, stacks;
 
-  type
+type
   TRBMapNode<TKey, TValue> = class
   private
+    type TNode = TRBMapNode<TKey, TValue>;
+  private
     IsBlack: boolean;
-    Left, Right, Parent: TRBMapNode<TKey, TValue>;
+    Left, Right, Parent: TNode;
     FKey: TKey;
   public
     Value: TValue;
@@ -44,11 +46,13 @@ interface uses SysUtils, stacks;
 
   // Implements a map with a red-black tree
   TRBMap<TKey, TValue>= class
+  private
+    type TNode = TRBMapNode<TKey, TValue>;
    protected
     FCount : integer;
     Root   : TRBMapNode<TKey, TValue>;
     function TreeSearch(const Key	 : TKey;
-			      out Parent : TRBMapNode<TKey, TValue>): TRBMapNode<TKey, TValue>;
+			      out Parent : TRBMapNode<TKey, TValue>): TNode;
     procedure LeftRotate(x: TRBMapNode<TKey, TValue>);
     procedure RightRotate(x: TRBMapNode<TKey, TValue>);
     function TreeInsertIfNotExist(const Key: TKey): TRBMapNode<TKey, TValue>;
@@ -105,7 +109,7 @@ implementation
 
   procedure TRBMap<TKey, TValue>.LeftRotate;
     var
-      y	: TRBMapNode<TKey, TValue>;
+      y	: TNode;
     begin
       y := x.Right;
 
@@ -123,7 +127,7 @@ implementation
     end;
 
   procedure TRBMap<TKey, TValue>.RightRotate;
-    var y: TRBMapNode<TKey, TValue>;
+    var y: TNode;
     begin
       y := x.Left;
 
@@ -141,7 +145,7 @@ implementation
     end;
 
   function TRBMap<TKey, TValue>.TreeInsertIfNotExist;
-    var Node, Parent, y: TRBMapNode<TKey, TValue>;
+    var Node, Parent, y: TNode;
     begin
       // already exists?
       Node := TreeSearch(Key, Parent);
@@ -284,7 +288,7 @@ implementation
     end;
 
   function TRBMapNodeEnumerator<TKey, TValue>.MoveNext;
-    var Node : TRBMapNode<TKey, TValue>;
+    var Node : TNode;
     begin
       // empty container?
       if Root = nil then Exit(False);
