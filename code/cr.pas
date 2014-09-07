@@ -32,15 +32,15 @@ interface
     end;
 
     { slider : 1-dimensinon, can move back and forth from origin }
-    generic ISlider<t> = interface( specialize Enumerator<t> )
+    generic ISlider<t,idx> = interface( specialize Enumerator<t> )
       function prev( out val : t ) : boolean;
       function prev : t;
-      procedure set_index( idx : cardinal );
-      property index : cardinal read get_index write set_index;
+      procedure set_index( anIndex : idx );
+      property index : idx read get_index write set_index;
     end;
 
     { abstract cursor : adds support for remembering positions }
-    generic ICursor<t> = interface( specialize ISlider<t> )
+    generic ICursor<t> = interface( specialize ISlider<t,cardinal> )
       procedure mark;
       procedure back;
     end;

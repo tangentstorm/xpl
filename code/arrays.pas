@@ -3,7 +3,7 @@ unit arrays;
 interface uses sq, sysutils;
 
 type
-  IArray<T> = interface ( ISequence<T, cardinal> )
+  IArray<T> = interface ( ISequence<T> )
     function _GetLength : cardinal;
     procedure _SetLength( len : cardinal );
     function Append( item : T ) : cardinal;
@@ -11,7 +11,7 @@ type
     property length : cardinal read _GetLength write _SetLength;
   end;
 
-  GArray<T> = class ( GSeq<T, cardinal>, IArray<T> )
+  GArray<T> = class ( GSeq<T>, IArray<T> )
     _items : array of T;
     _count : cardinal;
     _growby : cardinal;
