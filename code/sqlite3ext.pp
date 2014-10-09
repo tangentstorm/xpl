@@ -14,33 +14,39 @@ interface uses sqlite3;
     sqlite3ext.h
 }
 
-    Type
-    Pbyte  = ^byte;
-    Pchar  = ^char;
+type
+  ppsqlite3_value = ^psqlite3_value;
+  psqlite3_value = ^sqlite3_value;
+  sqlite3_value = record end;
+  TSqlValues = array [0..1024] of PSQlite3_Value;
+  PSqlValues = ^TSqlValues;
     Plongint  = ^longint;
     Psqlite3  = pointer;
     PDBh = pointer;
     Psqlite3_backup  = psqlite3backup;//^sqlite3_backup;
     Psqlite3_blob  = ^sqlite3_blob;
     Psqlite3_context  = ^sqlite3_context;
+    TSqlCtx =sqlite3_context;
+    PSqlCtx =^sqlite3_context;
     Psqlite3_module  = ^sqlite3_module;
     Psqlite3_mutex  = ^sqlite3_mutex;
     Psqlite3_stmt  = ^sqlite3_stmt;
-    Psqlite3_value  = ^sqlite3_value;
     Psqlite3_vfs  = ^sqlite3_vfs;
 {$IFDEF FPC}
 {$PACKRECORDS C}
 {$ENDIF}
 
-
+const
+  SQLITE_OK=0;
+  SQLITE_UTF8=1;
 
 type
 
- TProc = procedure (_1:pointer);cdecl;
- TPLFunc = function (_1:pointer; _2:longint):longint;
- XCommit = sqlite3.commit_callback;
+ TProc		       = procedure (_1:pointer);cdecl;
+ TPLFunc	       = function (_1:pointer; _2:longint):longint;
+ XCommit	       = sqlite3.commit_callback;
   sqlite3_api_routines = record
-      aggregate_context : function (_1:Psqlite3_context; nBytes:longint):pointer;cdecl;
+			   aggregate_context : function (_1:Psqlite3_context; nBytes:longint):pointer;cdecl;
       aggregate_count : function (_1:Psqlite3_context):longint;cdecl;
       bind_blob : function (_1:Psqlite3_stmt; _2:longint; _3:pointer; n:longint; _5:TProc):longint;cdecl;
       bind_double : function (_1:Psqlite3_stmt; _2:longint; _3:double):longint;cdecl;
@@ -76,7 +82,7 @@ type
       column_origin_name16 : function (_1:Psqlite3_stmt; _2:longint):pointer;cdecl;
       column_table_name : function (_1:Psqlite3_stmt; _2:longint):Pchar;cdecl;
       column_table_name16 : function (_1:Psqlite3_stmt; _2:longint):pointer;cdecl;
-      column_text : function (_1:Psqlite3_stmt; iCol:longint):Pbyte;cdecl;
+      column_text : function (_1:Psqlite3_stmt; iCol:longint):PChar;cdecl;
       column_text16 : function (_1:Psqlite3_stmt; iCol:longint):pointer;cdecl;
       column_type : function (_1:Psqlite3_stmt; iCol:longint):longint;cdecl;
       column_value : function (_1:Psqlite3_stmt; iCol:longint):Psqlite3_value;cdecl;
@@ -153,7 +159,7 @@ type
       value_int : function (_1:Psqlite3_value):longint;cdecl;
       value_int64 : function (_1:Psqlite3_value):sqlite_int64;cdecl;
       value_numeric_type : function (_1:Psqlite3_value):longint;cdecl;
-      value_text : function (_1:Psqlite3_value):Pbyte;cdecl;
+      value_text : function (_1:Psqlite3_value):PChar;cdecl;
       value_text16 : function (_1:Psqlite3_value):pointer;cdecl;
       value_text16be : function (_1:Psqlite3_value):pointer;cdecl;
       value_text16le : function (_1:Psqlite3_value):pointer;cdecl;
@@ -240,9 +246,9 @@ type
       vsnprintf : function (_1:longint; _2:Pchar; _3:Pchar; _4:array of const):Pchar;cdecl;
       wal_checkpoint_v2 : function (_1:Psqlite3; _2:Pchar; _3:longint; _4:Plongint; _5:Plongint):longint;cdecl;
     end;
+   PSQliteAPI = ^sqlite3_api_routines;
 
-
-var gSQLite : sqlite3_api_routines;
+var gSQLite : PSQLiteAPI;
 {
 const
   sqlite3_aggregate_context = sqlite3_api^.aggregate_context;
