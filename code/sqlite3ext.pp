@@ -1,7 +1,16 @@
 {$mode objfpc}
 unit sqlite3ext;
-interface uses sqlite3;
+interface uses ctypes, sqlite3;
 
+// --part 1-------------------------------------------------
+//
+// these are definitions from sqlite3ext.h , for creating
+// extension modules.
+//
+// part 2 contains definitions for creating virtual tables
+// that were not included in the sqlite3 header conversion
+// that ships with free pascal.
+// ---------------------------------------------------------
 {
   Automatically converted by H2Pas 1.0.0 from sqlite3ext.h
   The following command line parameters were used:
@@ -15,6 +24,7 @@ interface uses sqlite3;
 }
 
 type
+  PDBh = pointer;
   ppsqlite3_value = ^psqlite3_value;
   psqlite3_value = ^sqlite3_value;
   sqlite3_value = record end;
@@ -22,7 +32,6 @@ type
   PSqlValues = ^TSqlValues;
     Plongint  = ^longint;
     Psqlite3  = pointer;
-    PDBh = pointer;
     Psqlite3_backup  = psqlite3backup;//^sqlite3_backup;
     Psqlite3_blob  = ^sqlite3_blob;
     Psqlite3_context  = ^sqlite3_context;
@@ -456,6 +465,114 @@ in declaration at line 462 *)
 (* error
     extern const sqlite3_api_routines *sqlite3_api;
 in declaration at line 464 *)
+
+
+// ----------- part 2 : virtual tables ---------------------------
+
+type
+
+  Psqlite3_int64  = ^sqlite3_int64;
+  sqlite3_int64 = Int64;
+
+  Psqlite3_vtab  = ^sqlite3_vtab;
+  sqlite3_vtab = record
+    pModule : ^sqlite3_module;
+    nRef : cint;
+    zErrMsg : ^cchar;
+  end;
+
+  Psqlite3_vtab_cursor  = ^sqlite3_vtab_cursor;
+  sqlite3_vtab_cursor = record
+    pVtab : ^sqlite3_vtab;
+  end;
+
+  TConstraint = record
+    iColumn : cint;
+    op : cuchar;
+    usable : cuchar;
+    iTermOffset : cint;
+  end;
+
+  TOrderBy = record
+    iColumn : cint;
+    desc : cuchar;
+  end;
+
+  TConstraintUsage = record
+    argvIndex : cint;
+    omit : cuchar;
+  end;
+
+  Psqlite3_index_info  = ^sqlite3_index_info;
+  sqlite3_index_info = record
+    nConstraint : cint;
+    aConstraint : ^TConstraint;
+    nOrderBy : cint;
+    aOrderBy : ^TOrderBy;
+    aConstraintUsage : TConstraintUsage;
+    idxNum : cint;
+    idxStr : ^cchar;
+    needToFreeIdxStr : cint;
+    orderByConsumed : cint;
+    estimatedCost : double;
+    estimatedRows : sqlite3_int64; // sqlite 3.8 and later only
+  end;
+
+  PPCChar = ^PCChar;
+
+  TxFindFuncCb =
+    procedure (_para1:Psqlite3_context; _para2:longint; _para3:PPsqlite3_value);
+
+  const
+    SQLITE_INDEX_CONSTRAINT_EQ = 2;
+    SQLITE_INDEX_CONSTRAINT_GT = 4;
+    SQLITE_INDEX_CONSTRAINT_LE = 8;
+    SQLITE_INDEX_CONSTRAINT_LT = 16;
+    SQLITE_INDEX_CONSTRAINT_GE = 32;
+    SQLITE_INDEX_CONSTRAINT_MATCH = 64;
+
+
+
+type
+  TVTab = sqlite3_vtab;
+  sqlite3_module = record
+    iVersion : cint;
+    xCreate :
+      function (_1:Psqlite3; var pAux:pointer; argc:cint; argv:Ppcchar;
+                out ppVTab:Psqlite3_vtab; _6:PPcchar):cint; cdecl;
+    xConnect :
+      function (_1:Psqlite3; var pAux:pointer; argc:cint; argv:Ppcchar;
+                out ppVTab:Psqlite3_vtab; _6:PPcchar):cint; cdecl;
+    xBestIndex :
+      function (var pVTab:sqlite3_vtab; var ixifo:Psqlite3_index_info):cint;cdecl;
+    xDisconnect : function (pVTab:psqlite3_vtab):cint;cdecl;
+    xDestroy : function (pVTab:psqlite3_vtab):cint;cdecl;
+    xOpen : function (var pVTab:sqlite3_vtab;
+                      out ppCursor:Psqlite3_vtab_cursor):cint;cdecl;
+    xClose : function (_1:Psqlite3_vtab_cursor):cint;cdecl;
+    xFilter : function (_1:Psqlite3_vtab_cursor; idxNum:cint; idxStr:pcchar;
+                        argc:cint; var argv:Psqlite3_value):cint;cdecl;
+    xNext : function (_1:Psqlite3_vtab_cursor):cint;cdecl;
+    xEof : function (_1:Psqlite3_vtab_cursor):cint;cdecl;
+    xColumn : function (_1:Psqlite3_vtab_cursor;
+                        _2:Psqlite3_context; _3:cint):cint;cdecl;
+    xRowid : function (_1:Psqlite3_vtab_cursor;
+                       var pRowid:sqlite3_int64):cint;cdecl;
+    xUpdate : function (_1:Psqlite3_vtab; _2:cint;
+                        _3:PPsqlite3_value; _4:Psqlite3_int64):cint;cdecl;
+    xBegin : function (var pVTab:sqlite3_vtab):cint;cdecl;
+    xSync : function (var pVTab:sqlite3_vtab):cint;cdecl;
+    xCommit : function (var pVTab:sqlite3_vtab):cint;cdecl;
+    xRollback : function (var pVTab:sqlite3_vtab):cint;cdecl;
+    xFindFunction : function (var pVtab:sqlite3_vtab; nArg:cint; zName:pcchar;
+                              pxFunc:txFindFuncCb; var ppArg:pointer):cint;cdecl;
+    xRename : function (var pVtab:sqlite3_vtab; zNew:pcchar):cint;cdecl;
+    xSavepoint : function (var pVTab:sqlite3_vtab; _2:cint):cint;cdecl;
+    xRelease : function (var pVTab:sqlite3_vtab; _2:cint):cint;cdecl;
+    xRollbackTo : function (var pVTab:sqlite3_vtab; _2:cint):cint;cdecl;
+  end;
+
+
 
 implementation
 
