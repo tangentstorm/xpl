@@ -486,6 +486,14 @@ type
     pVtab : ^sqlite3_vtab;
   end;
 
+  PPCChar = ^PCChar;
+
+  TxFindFuncCb =
+    procedure (_para1:Psqlite3_context; _para2:longint; _para3:PPsqlite3_value);
+
+
+// index info data structure
+type
   TConstraint = record
     iColumn : cint;
     op : cuchar;
@@ -502,7 +510,7 @@ type
     argvIndex : cint;
     omit : cuchar;
   end;
-
+
   Psqlite3_index_info  = ^sqlite3_index_info;
   sqlite3_index_info = record
     nConstraint : cint;
@@ -518,11 +526,6 @@ type
     estimatedRows : sqlite3_int64; // sqlite 3.8 and later only
   end;
 
-  PPCChar = ^PCChar;
-
-  TxFindFuncCb =
-    procedure (_para1:Psqlite3_context; _para2:longint; _para3:PPsqlite3_value);
-
   const
     SQLITE_INDEX_CONSTRAINT_EQ = 2;
     SQLITE_INDEX_CONSTRAINT_GT = 4;
@@ -532,7 +535,7 @@ type
     SQLITE_INDEX_CONSTRAINT_MATCH = 64;
 
 
-
+// virtual methods for virtual tables
 type
   TVTab = sqlite3_vtab;
   sqlite3_module = record
