@@ -24,6 +24,7 @@ interface uses ctypes, sqlite3;
 }
 
 type
+  PChar = PAnsiChar;
   PDBh = pointer;
   ppsqlite3_value = ^psqlite3_value;
   psqlite3_value = ^sqlite3_value;
