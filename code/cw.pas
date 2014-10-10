@@ -253,15 +253,17 @@ procedure cwrite( args : array of const );
   var i : integer;
   begin
     for i := 0 to high( args ) do
-      case args[ i ].vtype of
-	vtinteger	: cwrite( n2s( args[ i ].vinteger ));
-	vtstring	: cwrite( a2u( args[ i ].vstring^ ));
-	vtansistring	: cwrite( a2u( ansistring(
-					 args[ i ].vansistring )));
-	vtUnicodeString	: cwrite( UnicodeString(
-				    args[ i ].vunicodestring ));
-	vtWideString : cwrite( WideString( args[ i ].vwidestring ));
-	else write('<vtype:', args[i].vtype, '>')
+      with args[ i ] do case vtype of
+	vtinteger	: cwrite( n2s( vinteger ));
+	vtBoolean      	: if vBoolean then cwrite( 'true' ) else cwrite( 'false' );
+	vtChar        	: cwrite( TStr( vchar ));
+	// vtPChar is always 8-bit even if PChar is 16 bit.
+	vtPChar         : cwrite( a2u( ansistring( vPChar )));
+	vtstring	: cwrite( a2u( vstring^ ));
+	vtansistring	: cwrite( a2u( ansistring( vansistring )));
+	vtUnicodeString	: cwrite( UnicodeString( vunicodestring ));
+	vtWideString : cwrite( WideString( vwidestring ));
+	else write('<vtype:', vtype, '>')
       end;
   end;
 
