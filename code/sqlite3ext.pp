@@ -547,7 +547,7 @@ type
       function (_1:Psqlite3; var pAux:pointer; argc:cint; argv:Ppcchar;
                 out ppVTab:Psqlite3_vtab; _6:PPcchar):cint; cdecl;
     xBestIndex :
-      function (var pVTab:sqlite3_vtab; var ixifo:Psqlite3_index_info):cint;cdecl;
+      function (var pVTab:sqlite3_vtab; var ixifo:sqlite3_index_info):cint;cdecl;
     xDisconnect : function (pVTab:psqlite3_vtab):cint;cdecl;
     xDestroy : function (pVTab:psqlite3_vtab):cint;cdecl;
     xOpen : function (var pVTab:sqlite3_vtab;
