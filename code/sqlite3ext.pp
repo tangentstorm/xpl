@@ -560,7 +560,7 @@ type
     xColumn : function (_1:Psqlite3_vtab_cursor;
                         _2:Psqlite3_context; _3:cint):cint;cdecl;
     xRowid : function (_1:Psqlite3_vtab_cursor;
-                       var pRowid:sqlite3_int64):cint;cdecl;
+                       out rowid:sqlite3_int64):cint;cdecl;
     xUpdate : function (_1:Psqlite3_vtab; _2:cint;
                         _3:PPsqlite3_value; _4:Psqlite3_int64):cint;cdecl;
     xBegin : function (var pVTab:sqlite3_vtab):cint;cdecl;
