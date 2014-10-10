@@ -77,11 +77,11 @@ type // TGridView : a scrolling 2d grid of text cells (like a spreadsheet)
     public
       constructor Create(aOwner : TComponent); override;
       procedure Render; override;
-      procedure Handle(msg : umsg.TMsg); override;
       procedure UpdateCamera;
       procedure RestoreCursor; override;
       procedure ResizeCells;
     published
+      procedure Handle(msg : umsg.TMsg); override;
       property OnRenderCell : TGridThunk read _RenderCell write _RenderCell;
       property GridWidth : word read _gw write _gw;
       property GridHeight : word read _gh write _gh;

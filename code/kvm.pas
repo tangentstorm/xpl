@@ -1,3 +1,4 @@
+
 {!! WARNING!! GENERATED FILE. edit ../org/kvm.pas.org instead!! !!}
 
 
@@ -832,7 +833,7 @@ type THookTerm = class (TInterfacedObject, ITerm, IHookTerm)
   
   
   function KvmWrite(var f: textrec): integer;
-    var s: ansistring;
+    var s: rawbytestring;
     begin
       if f.bufpos > 0 then
         begin

@@ -189,7 +189,7 @@ function paramline : TStr;
   var i	: byte; s : TStr;
   begin
     s := '';
-    for i := 1 to paramcount do s := s + a2u(paramstr( i )+ ' ');
+    for i := 1 to paramcount do s := s + a2u(rawbytestring(paramstr( i )))+ ' ';
     result := s;
   end; { paramline }
 

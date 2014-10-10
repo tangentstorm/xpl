@@ -895,7 +895,7 @@ See also the [[https://github.com/tangentstorm/xpl/blob/master/code/cw.pas][cw u
 #+begin_src pascal
 
   function KvmWrite(var f: textrec): integer;
-    var s: ansistring;
+    var s: rawbytestring;
     begin
       if f.bufpos > 0 then
         begin

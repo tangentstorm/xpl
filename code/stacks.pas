@@ -157,7 +157,7 @@ function GStack<A>.pick( const i : integer ) : A;
     else j := -i;
     if (j > 0) and (j <= count) then result := cells[j]
     else raise EStackIndexError.Create(
-      u2a('Invalid Index: ') + IntToStr(i));
+      Format('Invalid Index: %d', [ i ]));
   end;
 
 function GStack<A>.GetItem(const i : integer; const default : A) : A;

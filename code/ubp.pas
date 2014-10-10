@@ -259,10 +259,10 @@ implementation
     for i := low(keys) to high(keys) do
       if (i = 0) and (keys[i] = empty) then s := s + ' < '
       else if (self.keys[i] = empty) then s := s + ' - '
-      else s := s + ' ' + IntToStr(self.keys[ i ]) + ' ';
+      else s += a2u(format(' %d ', [ self.keys[ i ]]));
   
     if isleaf and assigned(_next) then
-      s := s + ' -> ' + IntToStr(_next.firstkey);
+      s := s + a2u(format(' -> %d', [ _next.firstkey ]));
   
     if isleaf then s += ' ]' else s += ' }';
   

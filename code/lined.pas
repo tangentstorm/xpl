@@ -76,7 +76,7 @@ implementation
     for ch in buf do begin
       inc( i );
       if ( ch < ' ' ) and not ( ch = ^J ) then begin
-	cwrite( '|g^' + chr( ord( '@' ) + ord( ch )) + '|w');
+	cwrite(['|g^', chr( ord( '@' ) + ord( ch )), '|w']);
 	inc( ofs );
       end
       else write( ch )

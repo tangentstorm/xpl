@@ -373,10 +373,9 @@ implementation
     end; { Remove }
   
   procedure GRing<T>.Drop;
-      var temp : GNode<T>;
     begin
       if IsEmpty then raise
-        Exception.Create(a2u('attempted to drop from empty list'))
+        Exception.Create('attempted to drop from empty list')
       else with makeCursor do begin toend; moveprev; deletenext end
     end;
   
@@ -589,8 +588,8 @@ implementation
           if position > 0 then
             for i := 1 to position do self.MoveNext
         end
-      else raise Exception.Create(Utf8Encode('out of bounds: ')
-                  + IntToStr(position))
+      else raise Exception.Create(
+		   Format('out of bounds: %d', [ position ]))
     end;
   function GRing<T>.TCursor.GetValue : t;
   begin

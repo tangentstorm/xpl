@@ -10,7 +10,6 @@ type
       depth : cardinal;
       _mask : string;
       first : boolean;
-      justPopped : boolean;
       function GetCurrent : TSearchRec;
     public
       property Done : boolean read _done;

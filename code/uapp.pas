@@ -11,11 +11,11 @@ type
       _focusables : GRing<TView>;
       _focus : IRingCursor<TView>;   { which child is focused ? }
     published { TView interface }
-      constructor Create( aOwner : TComponent ); override;
-      destructor Destroy; override;
       procedure Render; override;
       procedure Update; override;
     public { interface for users }
+      constructor Create( aOwner : TComponent ); override;
+      destructor Destroy; override;
       procedure keys(km : ukm.TKeyMap); virtual;
       procedure init; virtual;
       procedure step; virtual;

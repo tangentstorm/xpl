@@ -69,7 +69,7 @@ function TGraphData.Edge( a, b : cardinal ) : cardinal;
   var c : cardinal;
   begin
     for c in [ a, b ] do if c >= _nodeCount then
-      raise Exception.Create( 'invalid node: ' + IntToStr( a ));
+      raise Exception.Create(Format('invalid node: %d', [ a ]));
     result := _edgeCount;
     inc( _edgeCount );
   end;
