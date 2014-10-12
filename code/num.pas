@@ -1,6 +1,6 @@
 {$mode objfpc}{$i xpc.inc}
 unit num; { ■ number/conversion commands }
-interface uses xpc, sysutils, ustr;
+interface uses xpc, sysutils, ustr, math;
 
   function min( p, q : longint ) : longint;
   function max( p, q : longint ) : longint;
@@ -16,6 +16,8 @@ interface uses xpc, sysutils, ustr;
   function truth(p : longint ) : byte;
   function power(a, b : longint ) : longint;
   function sgn( x : longint ) : shortint;
+  function fact( n : cardinal ): cardinal;
+  function choose( n, k	: cardinal ): cardinal;
 
 implementation
 
@@ -130,6 +132,20 @@ function sgn( x : longint ) : shortint;
     if x > 0 then sgn :=  1;
     if x = 0 then sgn :=  0;
     if x < 0 then sgn := -1;
+  end;
+
+function fact( n : cardinal ): cardinal;
+  var i : cardinal;
+  begin
+    result := 1;
+    for i := 2 to n do result *= i;
+  end;
+
+function choose( n, k : cardinal ): cardinal;
+  var i : cardinal; r : extended = 1.0;
+  begin
+    for i := 0 to k-1 do r := r * (n-i) / (i+1);
+    result := floor(r);
   end;
 
 initialization
