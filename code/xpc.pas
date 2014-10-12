@@ -1,6 +1,6 @@
 {$i xpc.inc}{$mode delphi}
 unit xpc; { cross-platform compilation help }
-interface uses sysutils, classes;
+interface uses sysutils, classes, variants;
 
 const { Boolean synonyms }
   Yes	 = true;
@@ -31,11 +31,12 @@ function a2u(const a : ansistring) : TStr;
 
 
 procedure ok;
-
+
 { some handy debug routines }
 procedure die( msg :  TStr );
 procedure pause( msg : TStr );
 procedure hexdump( data : TStr );
+function StackTrace(E :  Exception):TStr;
 
 function toint( s : set32 ) : int32;
 function hex( x : int32; pad : byte = 0 ) : TStr;
@@ -154,6 +155,21 @@ procedure logger.debug( args :  array of const );
 procedure logger.debug( arg : TStr );
   begin debug([arg]);
   end;
+
+// http://wiki.freepascal.org/Logging_exceptions
+function StackTrace(E :  Exception):TStr;
+  var I : Integer; Frames : PPointer;
+  begin
+    if E <> nil then
+      WriteStr(Result,'Exception class: ', E.ClassName, LineEnding,
+		'Message: ', E.Message, LineEnding)
+    else Result:= '';
+    Writestr(Result, Result, BackTraceStrFunc(ExceptAddr));
+    Frames := ExceptFrames;
+    for I := 0 to ExceptFrameCount - 1 do
+      Writestr(Result, Result, LineEnding, BackTraceStrFunc(Frames[I]));
+  end;
+
 
 function hex( x : int32; pad : byte = 0 ) : TStr;
   const hexits = '0123456789ABCDEF';
