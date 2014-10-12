@@ -13,9 +13,9 @@ type
     protected
       _top : cardinal;
       _cur : TDbCursor;
-      procedure Render; override;
     public
       procedure Handle( msg : umsg.TMsg ); override;
+      procedure Render; override;
     published
       property DataCursor : TDbCursor read _cur write _cur;
     end;

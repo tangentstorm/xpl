@@ -32,7 +32,7 @@ implementation
   //  implement utf8.decode, with error checks
   // http://en.wikipedia.org/wiki/UTF-8#Description
   function decode( u : uchar ) : word;
-    var i, b, prev : byte;
+    var i, b : byte;
   begin
     result := 0;
     for i := 1 to length( u ) do begin

@@ -29,10 +29,10 @@ implementation
       w,mo,d,y : word;
   begin
     getdate( y, mo, d, w );
-    stardate := days[ w-1 ] + ' ' +
-		flushrt( n2s( mo ), 2, '0') +
-		flushrt( n2s( d ), 2, '0') + '.' +
-		copy(flushrt( n2s( y ), 4, '0'), 3, 5 ) + ' ' + time;
+    WriteStr(result, days[ w-1 ], ' ',
+		flushrt( n2s( mo ), 2, '0'),
+		flushrt( n2s( d ), 2, '0'), '.',
+		copy(flushrt( n2s( y ), 4, '0'), 3, 5 ), ' ', time);
   end; { stardate }
 
 end.

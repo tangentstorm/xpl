@@ -1,6 +1,6 @@
 { lined: line editor for pascal by tangenstorm
   inspired by linenoise by antirez. }
-{$i xpc.inc}{$mode objfpc}{$h+}
+{$mode delphiunicode}{$i xpc}
 unit lined;
 interface uses xpc, classes, sysutils, kvm, kbd, cw;
 
@@ -141,7 +141,7 @@ implementation
     // special case for new input at end of list:
     if hist_index = history.count
       then buf := ''
-    else buf := history[ hist_index ];
+    else buf := a2u(history[ hist_index ]);
     len := length( buf );
 
     // cursor tracking:
@@ -156,7 +156,7 @@ implementation
   end;
 
   procedure LineEditor.step;
-    var ch : char;
+    var ch : TChr;
   begin
     refresh; ch := kbd.readkey;
     case ch of
@@ -203,7 +203,7 @@ implementation
 
   procedure LineEditor.reset;
   begin
-    len := 0; cur := 1; plen := clength( pmt );
+    len := 0; cur := 1; plen := cwLen( pmt );
     _done := false;
     browse_history( history.count );
   end;
@@ -225,7 +225,7 @@ implementation
   function LineEditor.flush : TStr;
   begin
     result := self.buf;
-    if result <> '' then history.add( result );
+    if result <> '' then history.add( u2a( result ));
     self.buf := '';
     reset;
   end;
@@ -259,12 +259,12 @@ end;
 
 procedure StringList.load( path : TStr ); inline;
 begin
-  if fileExists( path ) then self.LoadFromFile( path );
+  if fileExists( u2a( path )) then self.LoadFromFile( u2a( path  ));
 end;
 
 procedure StringList.save( path : TStr ); inline;
 begin
-  self.SaveToFile( path );
+  self.SaveToFile( u2a( path ));
 end;
 
 

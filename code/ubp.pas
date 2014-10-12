@@ -270,7 +270,7 @@ implementation
     gIndent += '  ';
     for i := low(keys) to high(keys) do
       if assigned(self.vals[ i ]) then
-         s := s + lineending + gIndent + self.vals[ i ].ToString;
+	WriteStr(s, s, lineending, gIndent, self.vals[ i ].ToString);
     setlength(gIndent, length(gIndent)-2);
     result := s;
   end;
