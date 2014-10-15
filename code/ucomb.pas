@@ -61,7 +61,6 @@ function TComboCursor.GetLength : cardinal;
 function TComboCursor.GetValue : cardinal;
   var x : extended = 0; i : cardinal;
   begin
-    writeln;
     if _k = 0 then ok
     else begin
       x := _digits[_k-1];
