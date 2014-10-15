@@ -25,6 +25,7 @@ interface uses ctypes, sqlite3;
 
 const
   SQLITE_OK=0;
+  SQLITE_ERROR=1;
   SQLITE_UTF8=1;
     SQLITE_INDEX_CONSTRAINT_EQ = 2;
     SQLITE_INDEX_CONSTRAINT_GT = 4;
@@ -312,7 +313,7 @@ type
     aConstraint : ^TConstraint;
     nOrderBy : cint;
     aOrderBy : ^TOrderBy;
-    aConstraintUsage : TConstraintUsage;
+    aConstraintUsage : ^TConstraintUsage;
     idxNum : cint;
     idxStr : ^cchar;
     needToFreeIdxStr : cint;
@@ -340,7 +341,7 @@ type
                       out ppCursor:Psqlite3_vtab_cursor):cint;cdecl;
     xClose : function (_1:Psqlite3_vtab_cursor):cint;cdecl;
     xFilter : function (_1:Psqlite3_vtab_cursor; idxNum:cint; idxStr:pcchar;
-                        argc:cint; var argv:Psqlite3_value):cint;cdecl;
+                        argc:cint; argv:ppsqlite3_value):cint;cdecl;
     xNext : function (_1:Psqlite3_vtab_cursor):cint;cdecl;
     xEof : function (_1:Psqlite3_vtab_cursor):cint;cdecl;
     xColumn : function (_1:Psqlite3_vtab_cursor;
