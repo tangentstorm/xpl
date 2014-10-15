@@ -236,35 +236,36 @@ function bytes(data : array of byte):tbytes;
   end;
 
 class procedure G<T>.Sort( a : ArrayOfT; cmp:TCmpFn<T>; lo,hi:cardinal );
-  var i,j,k : cardinal; pvt,tmp:T;
+  var i,j,k{,n} : cardinal; pivot,tmp:T;
   begin
     assert(lo<=hi);
     if lo = hi then ok
-    else if hi-lo=1 then begin
-      if cmp(a[lo],a[hi]) in [cmpLT,cmpEQ] then ok
-      else begin tmp:=a[lo]; a[lo]:=a[hi]; a[hi]:=tmp end
-      end
     else begin
-      i:=lo; j:=hi; pvt := a[(i + j) div 2];
-//    writeln('sorting[',lo,'..',hi,']'); writeln('pivot:', pvt);
-//    readln;
-      while i < j do begin
-//      write( i:3, ' ', j:3, '   ');
-//      for k := low(a) to high(a) do begin
-//        if k = lo then write('|') else if k = i then write(' [') else write(' ');
-//        write(a[k]:3);
-//        if k = hi then write('|') else if k = j then write(']') else write(' ');
-//      end;
-//      writeln;
-        case cmp(a[i], pvt) of
-          cmpLT : inc(i);
-          cmpEQ,
-          cmpGT : begin tmp:=a[j]; a[j]:=a[i]; a[i]:=tmp; dec(j) end;
-        end
+      // writeln('sorting[',lo,'..',hi,']'); writeln('pivot:', pivot); readln;
+      i:=lo; k:=hi; j:=(i+k) div 2;
+      // place pivot on the far right so it ends up in its proper place.
+      pivot := a[j]; a[j]:=a[k]; a[k]:=pivot;
+      // we store values < pivot at a[j++], so j trails behind i
+      j := lo;
+      for i := lo to hi-1 do begin
+	// write( i:3, ' ', k:3, '  ', cmp(a[i], pivot), ' ');
+	case cmp(a[i], pivot) of
+	  cmpLT	: begin tmp:=a[j]; a[j]:=a[i]; a[i]:=tmp; inc(j) end;
+	  cmpEQ	: ok;
+	  cmpGT	: ok;
+	end;
+	// for n := low(a) to high(a) do begin
+	//   if n = lo then write('[') else if n = i then write('>')
+	//   else if n=j then write('*') else write(' ');
+	//   write(a[n]:3);
+	//   if n = hi then write(']') else write(' ');
+	// end;
+	// writeln;
       end;
-      assert(i=j);
-      if i > lo then sort(a, cmp, lo, i);
-      if i < hi then sort(a, cmp, i, hi);
+      // swap pivot with first value > pivot, but leave j alone
+      tmp:=a[j]; a[j]:=a[hi]; a[hi]:=tmp; assert(cmp(a[j],pivot)=cmpEQ);
+      if j > lo then sort(a, cmp, lo, j-1);
+      if j < hi then sort(a, cmp, j+1, hi);
     end;
   end;
 
