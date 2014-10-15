@@ -3,10 +3,10 @@ unit xpc; { cross-platform compilation help }
 interface uses sysutils, classes, variants;
 
 const { Boolean synonyms }
-  Yes	 = true;
-  No	 = false;
-  On	 = true;
-  Off	 = false;
+  Yes    = true;
+  No     = false;
+  On     = true;
+  Off    = false;
 type
   TStr = UnicodeString;
   TChr = WideChar;
@@ -53,10 +53,15 @@ end;
 var log : logger;
 
 type
+  TCmp = (cmpLT, cmpEQ, cmpGT);
+  TCmpFn<T> = function(a,b : T):TCmp;
+  TPred2<TX,TY> = function(x: TX; y:TY) : boolean;
   G<T> = class { generic helper }
-    public
+   public
       type ArrayOfT = array of T;
       class function FromOpenArray( a : array of T ) : ArrayOfT;
+      class procedure Sort( a:ArrayOfT; cmp:TCmpFn<T> );
+      class procedure Sort( a:ArrayOfT; cmp:TCmpFn<T>; lo,hi: cardinal );
     end;
 
 function bytes(data : array of byte):tbytes;
@@ -73,14 +78,11 @@ type
 
 implementation
 
-  procedure pass; inline;
-  begin
-  end; { pass }
-  procedure ok; inline;
+procedure ok; inline;
   begin
   end; { ok }
 
-  procedure die( msg :  TStr );
+procedure die( msg :  TStr );
   begin
     writeln;
     write( msg );
@@ -88,7 +90,7 @@ implementation
     halt;
   end;
 
-  procedure pause( msg : TStr );
+procedure pause( msg : TStr );
   begin
     writeln;
     write( '---| ', msg, ' |---' );
@@ -143,10 +145,10 @@ procedure logger.debug( args :  array of const );
     write( '(DEBUG: ' );
     for i := 0 to length( args ) - 1 do begin
       case args[ i ].vtype of
-	vtinteger : write( args[ i ].vinteger );
-	vtstring  : write( args[ i ].vstring^ );
-	vtansistring  : write( ansistring( args[ i ].vansistring ));
-	else write( '??' );
+        vtinteger : write( args[ i ].vinteger );
+        vtstring  : write( args[ i ].vstring^ );
+        vtansistring  : write( ansistring( args[ i ].vansistring ));
+        else write( '??' );
       end; { case }
     end;
     writeln( ')' );
@@ -162,7 +164,7 @@ function StackTrace(E :  Exception):TStr;
   begin
     if E <> nil then
       WriteStr(Result,'Exception class: ', E.ClassName, LineEnding,
-		'Message: ', E.Message, LineEnding)
+                'Message: ', E.Message, LineEnding)
     else Result:= '';
     Writestr(Result, Result, BackTraceStrFunc(ExceptAddr));
     Frames := ExceptFrames;
@@ -180,8 +182,8 @@ function hex( x : int32; pad : byte = 0 ) : TStr;
     for i := 7 downto 0 do begin
       d := (( x shr ( i * 4 ))  mod 16 );
       if (count > 0) or ( d > 0 ) then begin
-	result += TChr(hexits[ d + 1 ]);
-	inc(count)
+        result += TChr(hexits[ d + 1 ]);
+        inc(count)
       end;
     end;
     while count < pad do begin
@@ -202,7 +204,7 @@ function max( a, b :  int32 ) : int32;
 
 
 function paramline : TStr;
-  var i	: byte; s : TStr;
+  var i : byte; s : TStr;
   begin
     s := '';
     for i := 1 to paramcount do s := s + a2u(rawbytestring(paramstr( i )))+ ' ';
@@ -233,6 +235,43 @@ function bytes(data : array of byte):tbytes;
     result := G<byte>.FromOpenArray(data)
   end;
 
+class procedure G<T>.Sort( a : ArrayOfT; cmp:TCmpFn<T>; lo,hi:cardinal );
+  var i,j,k : cardinal; pvt,tmp:T;
+  begin
+    assert(lo<=hi);
+    if lo = hi then ok
+    else if hi-lo=1 then begin
+      if cmp(a[lo],a[hi]) in [cmpLT,cmpEQ] then ok
+      else begin tmp:=a[lo]; a[lo]:=a[hi]; a[hi]:=tmp end
+      end
+    else begin
+      i:=lo; j:=hi; pvt := a[(i + j) div 2];
+//    writeln('sorting[',lo,'..',hi,']'); writeln('pivot:', pvt);
+//    readln;
+      while i < j do begin
+//      write( i:3, ' ', j:3, '   ');
+//      for k := low(a) to high(a) do begin
+//        if k = lo then write('|') else if k = i then write(' [') else write(' ');
+//        write(a[k]:3);
+//        if k = hi then write('|') else if k = j then write(']') else write(' ');
+//      end;
+//      writeln;
+        case cmp(a[i], pvt) of
+          cmpLT : inc(i);
+          cmpEQ,
+          cmpGT : begin tmp:=a[j]; a[j]:=a[i]; a[i]:=tmp; dec(j) end;
+        end
+      end;
+      assert(i=j);
+      if i > lo then sort(a, cmp, lo, i);
+      if i < hi then sort(a, cmp, i, hi);
+    end;
+  end;
+
+class procedure G<T>.Sort( a : ArrayOfT; cmp:TCmpFn<T> );
+  // Generic methods cannot have nested procedures (yet?), so..
+  begin Sort(a, cmp, low(a),high(a))
+  end;
 
 function vinc(var i:integer):integer;
   // take value, then increment it
