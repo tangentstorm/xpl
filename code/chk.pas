@@ -37,7 +37,7 @@ end;
 procedure equal( a, b : TStr; msg : TStr = 'strings did not match' );
 begin
   if not peek( a = b ) then
-    fail( msg + ': "' + a + '" <> "' + b + '"' );
+    fail( msg + lineending + 'a = ' + a + lineending + 'b = '+ b );
 end;
 
 procedure equal( a, b : int; msg : TStr = 'numbers did not match' );
