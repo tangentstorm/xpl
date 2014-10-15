@@ -682,7 +682,8 @@ type THookTerm = class (TInterfacedObject, ITerm, IHookTerm)
     end;
   
   
-  function  asTerm : ITerm; begin result := work end;
+  type TWeakTerm = specialize Weak<ITerm>;
+  function  asTerm : ITerm; begin result := TWeakTerm.Ref(work) end;
   
   function  Width  : word; begin result := work.Width end;
   function  Height : word; begin result := work.Height end;
