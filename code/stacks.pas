@@ -146,6 +146,9 @@ procedure GStack<a>.swap;
 
 procedure GStack<a>.drop;
   begin
+    // default() here is mostly to prevent dangling references
+    // to interfaces (since it replaces them with nil)
+    cells[_count] := default(a);
     if _count = 0 then underflow
     else dec( _count );
   end; { GStack<a>.drop }
