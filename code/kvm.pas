@@ -31,6 +31,7 @@ type ITerm = interface [kITermGUID]
   procedure Fg( color : byte );
   procedure Bg( color : byte );
   procedure Emit( s : TStr );
+  procedure BackSpace;
   procedure GotoXY( x, y : word );
   procedure InsLine;
   procedure DelLine;
@@ -48,7 +49,7 @@ type TTextAttr = record
   end;
 
 type TTermMessage = (hkClrScr, hkClrEol, hkNewLine, hkScrollUp,
-         hkFg, hkBg, hkEmit, hkGoXY, hkInsLine, hkDelLine,
+         hkFg, hkBg, hkEmit, hkBkSp, hkGoXY, hkInsLine, hkDelLine,
          hkAttr, hkShowCursor, hkHideCursor, hkResize );
 
      TTermCallback =
@@ -83,6 +84,7 @@ procedure Newline;
 procedure Fg( color : byte );
 procedure Bg( color : byte );
 procedure Emit( s : TStr );
+procedure BackSpace;
 procedure GotoXY( x, y : word );
 procedure InsLine;
 procedure DelLine;
@@ -163,6 +165,7 @@ type TBaseTerm = class (TInterfacedObject, ITerm)
     procedure SetTextAttr( value : word ); virtual;
     procedure EmitChar( ch : TChr ); virtual;
     procedure Emit( s : TStr );
+    procedure BackSpace; virtual;
     procedure InsLine; virtual; procedure DelLine; virtual;
     procedure ShowCursor; virtual; procedure HideCursor; virtual;
     procedure Resize( NewW, NewH : word ); virtual;
@@ -253,6 +256,7 @@ type THookTerm = class (TInterfacedObject, ITerm, IHookTerm)
     procedure Fg( color : byte );
     procedure Bg( color : byte );
     procedure Emit( s : TStr );
+    procedure BackSpace;
     procedure GotoXY( x, y : word );
     procedure InsLine;
     procedure DelLine;
@@ -344,6 +348,15 @@ type THookTerm = class (TInterfacedObject, ITerm, IHookTerm)
       else ok;
     { ensure curs'.x = curs.x ; curs'.y = curs.y }
       self.gotoXY( oldX, _curs.y );
+    end;
+  
+  procedure TBaseTerm.BackSpace;
+    begin
+      if _curs.x > 0 then begin
+        self.gotoxy( _curs.x-1, _curs.y );
+        emit(' ');
+        self.gotoxy( _curs.x-1, _curs.y );
+      end;
     end;
   
   procedure TBaseTerm.NewLine;
@@ -695,6 +708,7 @@ type THookTerm = class (TInterfacedObject, ITerm, IHookTerm)
   procedure Fg( color : byte );    begin work.Fg( color ) end;
   procedure Bg( color : byte );    begin work.Bg( color ) end;
   procedure Emit( s : TStr );      begin work.Emit( s ) end;
+  procedure BackSpace;             begin work.BackSpace end;
   procedure GotoXY( x, y : word ); begin work.GotoXY( x, y ) end;
   
   procedure ClrScr;  begin work.ClrScr end;
@@ -802,6 +816,10 @@ type THookTerm = class (TInterfacedObject, ITerm, IHookTerm)
   
   procedure THookTerm.Emit( s : TStr );
     begin _subject.Emit( s ); _OnChange( hkEmit, [ s ]);
+    end;
+  
+  procedure THookTerm.BackSpace;
+    begin _subject.BackSpace; _OnChange( hkBkSp, [ ]);
     end;
   
   procedure THookTerm.GotoXY( x, y : word );

@@ -43,6 +43,7 @@ A screen tracks a cursor position, bounds, color.
     procedure Fg( color : byte );
     procedure Bg( color : byte );
     procedure Emit( s : TStr );
+    procedure BackSpace;
     procedure GotoXY( x, y : word );
     procedure InsLine;
     procedure DelLine;
@@ -175,6 +176,7 @@ type
       procedure SetTextAttr( value : word ); virtual;
       procedure EmitChar( ch : TChr ); virtual;
       procedure Emit( s : TStr );
+      procedure BackSpace; virtual;
       procedure InsLine; virtual; procedure DelLine; virtual;
       procedure ShowCursor; virtual; procedure HideCursor; virtual;
       procedure Resize( NewW, NewH : word ); virtual;
@@ -239,45 +241,54 @@ type
 
 #+name: @kvm:impl
 #+begin_src pascal
-    procedure TBaseTerm.ClrScr;
-      var y : word; i : integer;
-      begin
-        for y := 0 to yMax do
-          begin
-            gotoxy(0, y);
-            for i := 1 to self.width do Emit(' ');
-          end;
-        gotoxy(0, 0);
-      end;
+  procedure TBaseTerm.ClrScr;
+    var y : word; i : integer;
+    begin
+      for y := 0 to yMax do
+        begin
+          gotoxy(0, y);
+          for i := 1 to self.width do Emit(' ');
+        end;
+      gotoxy(0, 0);
+    end;
 
-    procedure TBaseTerm.ClrEol;
-      var oldX, i : word;
-      begin
-        oldX := _curs.x;
-        if oldX <= xMax then for i := oldX to xMax do Emit(' ')
-        else ok;
-      { ensure curs'.x = curs.x ; curs'.y = curs.y }
-        self.gotoXY( oldX, _curs.y );
-      end;
+  procedure TBaseTerm.ClrEol;
+    var oldX, i : word;
+    begin
+      oldX := _curs.x;
+      if oldX <= xMax then for i := oldX to xMax do Emit(' ')
+      else ok;
+    { ensure curs'.x = curs.x ; curs'.y = curs.y }
+      self.gotoXY( oldX, _curs.y );
+    end;
 
-    procedure TBaseTerm.NewLine;
-      var yOld : word;
-      begin
-        yOld := wherey;
-        if yOld = yMax then
-          begin
-            scrollUp; gotoXY( 0, yMax );
-            chk.equal( _curs.y, yMax, 'should be at bottom' )
-          end
-        else begin gotoXY( 0, yOld+1 ) end;
-        chk.equal( _curs.x, 0 );
+  procedure TBaseTerm.BackSpace;
+    begin
+      if _curs.x > 0 then begin
+        self.gotoxy( _curs.x-1, _curs.y );
+        emit(' ');
+        self.gotoxy( _curs.x-1, _curs.y );
       end;
+    end;
 
-    procedure TBaseTerm.ScrollUp;
-      var x, y : cardinal;
-      begin
-        x := _curs.x; y := _curs.y; gotoXY(0,0); delLine; gotoXY(x, y);
-      end;
+  procedure TBaseTerm.NewLine;
+    var yOld : word;
+    begin
+      yOld := wherey;
+      if yOld = yMax then
+        begin
+          scrollUp; gotoXY( 0, yMax );
+          chk.equal( _curs.y, yMax, 'should be at bottom' )
+        end
+      else begin gotoXY( 0, yOld+1 ) end;
+      chk.equal( _curs.x, 0 );
+    end;
+
+  procedure TBaseTerm.ScrollUp;
+    var x, y : cardinal;
+    begin
+      x := _curs.x; y := _curs.y; gotoXY(0,0); delLine; gotoXY(x, y);
+    end;
 
 #+end_src
 
@@ -655,7 +666,7 @@ We start with a handful of member variables to track the bounds:
 #+begin_src pascal
 
   type TTermMessage = (hkClrScr, hkClrEol, hkNewLine, hkScrollUp,
-           hkFg, hkBg, hkEmit, hkGoXY, hkInsLine, hkDelLine,
+           hkFg, hkBg, hkEmit, hkBkSp, hkGoXY, hkInsLine, hkDelLine,
            hkAttr, hkShowCursor, hkHideCursor, hkResize );
 
        TTermCallback =
@@ -700,6 +711,7 @@ We start with a handful of member variables to track the bounds:
       procedure Fg( color : byte );
       procedure Bg( color : byte );
       procedure Emit( s : TStr );
+      procedure BackSpace;
       procedure GotoXY( x, y : word );
       procedure InsLine;
       procedure DelLine;
@@ -818,6 +830,10 @@ We start with a handful of member variables to track the bounds:
 
   procedure THookTerm.Emit( s : TStr );
     begin _subject.Emit( s ); _OnChange( hkEmit, [ s ]);
+    end;
+
+  procedure THookTerm.BackSpace;
+    begin _subject.BackSpace; _OnChange( hkBkSp, [ ]);
     end;
 
   procedure THookTerm.GotoXY( x, y : word );
@@ -1119,6 +1135,7 @@ In general, you're only going to work with one screen at a time, so it's conveni
   procedure Fg( color : byte );
   procedure Bg( color : byte );
   procedure Emit( s : TStr );
+  procedure BackSpace;
   procedure GotoXY( x, y : word );
   procedure InsLine;
   procedure DelLine;
@@ -1169,6 +1186,7 @@ The others just delegate to the =work= term.
   procedure Fg( color : byte );    begin work.Fg( color ) end;
   procedure Bg( color : byte );    begin work.Bg( color ) end;
   procedure Emit( s : TStr );      begin work.Emit( s ) end;
+  procedure BackSpace;             begin work.BackSpace end;
   procedure GotoXY( x, y : word ); begin work.GotoXY( x, y ) end;
 
   procedure ClrScr;  begin work.ClrScr end;
