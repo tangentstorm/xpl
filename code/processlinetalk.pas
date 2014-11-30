@@ -3,19 +3,21 @@
 {
  This is based in PasDoc_ProcessLineTalk from pasdoc project
  Clean up and improvements by Luiz Américo Pereira Câmara
+
+ updated for delphiunicode and fpc trunk
+ by tangentstorm Sun Nov 30 09:46:58 CST 2014
 }
 
 unit ProcessLineTalk;
 
-{$mode objfpc}
-{$H+}
+{$mode delphiunicode}{$i xpc.inc}
 
 interface
 
-uses 
-  SysUtils, Classes, Process;
+uses xpc, SysUtils, Classes, Process;
 
 type
+  TStr = RawByteString;
   { TTextReader reads given Stream line by line.
     Lines may be terminated in Stream with #13, #10, #13+#10 or #10+#13.
     This way I can treat any TStream quite like standard Pascal text files:
@@ -29,27 +31,27 @@ type
     Original version of this class comes from Michalis Kamburelis
     code library, see [http://www.camelot.homedns.org/~michalis/],
     unit base/KambiClassUtils.pas. }
-    
+
   TTextReader = class
   private
     Stream: TStream;
-    ReadBuf: string;
+    ReadBuf: TStr;
     FOwnsStream: boolean;
     { This is either #0 or #10 (tells to ignore next #13 char) or #13
       (tells to ignore next #10 char) }
-    LastNewLineChar: char;
+    LastNewLineChar: TChr;
   public
     { This is a comfortable constructor, equivalent to
         TTextReader.Create(TFileStream.Create(FileName, fmOpenRead), true) }
-    constructor CreateFromFileStream(const FileName: string);
+    constructor CreateFromFileStream(const FileName: TStr);
 
     { If AOwnsStream then in Destroy we will free Stream object. }
     constructor Create(AStream: TStream; AOwnsStream: boolean);
     destructor Destroy; override;
 
-    { Reads next line from Stream. Returned string does not contain
+    { Reads next line from Stream. Returned TStr does not contain
       any end-of-line characters. }
-    function Readln: string;
+    function Readln: TStr;
 
     function Eof: boolean;
   end;
@@ -71,19 +73,20 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure Execute; override;
-    procedure WriteLine(const S: string);
-    function ReadLine: string;
-    function ReadLine(SkipLines: Integer): String;
+    procedure WriteLine(const S: TStr);
+    function ReadLine: TStr; overload;
+    function ReadLine(SkipLines: Integer): TStr; overload;
     function HasOutput: Boolean;
+    function Eof: Boolean;
   end;
 
 implementation
 
 { TTextReader ---------------------------------------------------------------- }
 
-constructor TTextReader.CreateFromFileStream(const FileName: string);
+constructor TTextReader.CreateFromFileStream(const FileName: TStr);
 begin
- Create(TFileStream.Create(FileName, fmOpenRead), true);
+ Create(TFileStream.Create(u2a(FileName), fmOpenRead), true);
 end;
 
 constructor TTextReader.Create(AStream: TStream; AOwnsStream: boolean);
@@ -100,10 +103,10 @@ begin
  inherited;
 end;
 
-function TTextReader.Readln: string;
-const 
+function TTextReader.Readln: TStr;
+const
   BUF_INC = 100;
-var 
+var
   ReadCnt, i: integer;
 begin
  i := 1;
@@ -127,7 +130,7 @@ begin
    end;
   end;
 
-  if ((ReadBuf[i] = #10) and (LastNewLineChar = #13)) or 
+  if ((ReadBuf[i] = #10) and (LastNewLineChar = #13)) or
      ((ReadBuf[i] = #13) and (LastNewLineChar = #10)) then
   begin
    { We got 2nd newline character ? Ignore it. }
@@ -183,22 +186,22 @@ begin
   OutputLineReader := TTextReader.Create(Output, false);
 end;
 
-procedure TProcessLineTalk.WriteLine(const S: string);
+procedure TProcessLineTalk.WriteLine(const S: TStr);
 var
-  LineTerminator: string;
+  LineTerminator: TStr;
 begin
-  if Length(S) > 0 then 
+  if Length(S) > 0 then
     Input.WriteBuffer(S[1], Length(S));
   LineTerminator := LineEnding;
   Input.Write(LineTerminator[1], Length(LineTerminator));
 end;
 
-function TProcessLineTalk.ReadLine: string;
+function TProcessLineTalk.ReadLine: TStr;
 begin
   Result := OutputLineReader.Readln;
 end;
 
-function TProcessLineTalk.ReadLine(SkipLines: Integer): String;
+function TProcessLineTalk.ReadLine(SkipLines: Integer): TStr;
 begin
   while SkipLines > 0 do
   begin
@@ -212,6 +215,11 @@ end;
 function TProcessLineTalk.HasOutput: Boolean;
 begin
   Result := not OutputLineReader.Eof;
+end;
+
+function TProcessLineTalk.Eof: Boolean;
+begin
+  Result := OutputLineReader.Eof;
 end;
 
 end.
