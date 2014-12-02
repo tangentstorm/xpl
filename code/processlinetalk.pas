@@ -186,7 +186,7 @@ begin
   OutputLineReader := TTextReader.Create(Output, false);
 end;
 
-procedure TProcessLineTalk.WriteLine(const S: TStr);
+procedure TProcessLineTalk.WriteLine(const S: RawByteString);
 var
   LineTerminator: TStr;
 begin
