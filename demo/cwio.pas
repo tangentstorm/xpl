@@ -27,7 +27,7 @@ procedure SendReadKey(cmd : TProcessLineTalk);
   end;
 
 procedure SendReadLn(cmd : TProcessLineTalk; prompt:TStr);
-  var s : TStr = ' 0!:0 <''demo.ijs'' ';
+  var s : TStr = '';
   begin
     lined.prompt(prompt, s); writeln;
     cmd.WriteLine(u2a(s));
