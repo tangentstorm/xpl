@@ -2,7 +2,7 @@
 unit cw; { colorwrite }
 interface uses xpc, num, ustr, kvm;
 
-const trg = '|'; // trigger char
+var trg:TChr = '|'; // trigger char
 
 type command =
   ( cwnotask,
@@ -78,7 +78,7 @@ var
 
   function cLength( s : TStr ) : integer; deprecated'use cwlen';
   function cpadstr(s:TStr;len:byte;ch:TChr):TStr; deprecated'use cwpad';
-  function normaltext(s:TStr;esc:TChr=trg) : TStr; deprecated'use cwesc';
+  function normaltext(s:TStr;esc:TChr='|') : TStr; deprecated'use cwesc';
 
   { these highlight punctuation and box drawing
     characters using a standard palette }
@@ -208,8 +208,8 @@ procedure cwrite( s : TStr );
     begin
       next_char;
       if not cwcommandmode then
-	case ch of
-	  trg : cwcommandmode := true;
+	if ch=trg then cwcommandmode := true
+	else case ch of
 	  ^J,
 	  ^M  : runcmd( cwcr );
 	  ^G  : kvm.emit('␇' ); // 'bell'
@@ -218,8 +218,8 @@ procedure cwrite( s : TStr );
 	  else kvm.emit( ch );
 	end
       else
-	case ch of
-	  '|' : begin kvm.emit( '|' ); cwcommandmode := false end;
+	if ch=trg then begin kvm.emit( trg ); cwcommandmode := false end
+	else case ch of
 	  '_' : runcmd( cwcr );
 	  '!' : runcmd( cwbg, 1 );
 	  '@' : runcmd( cwgotoxy, 4 );
@@ -246,7 +246,7 @@ procedure cwrite( s : TStr );
 
 procedure cwriteln( s : TStr );
   begin
-    cwrite( s ); cwrite( '|_' );
+    cwrite( s ); cwrite( trg+'_' );
   end;
 
 procedure cwrite( args : array of const );
@@ -268,7 +268,7 @@ procedure cwrite( args : array of const );
   end;
 
 procedure cwriteln( args : array of const ); inline;
-  begin cwrite( args ); cwrite('|_');
+  begin cwrite( args ); cwrite( trg+'_');
   end;
 
 procedure cwritexy( x, y : byte; s : TStr );
@@ -322,8 +322,8 @@ function cwlen( s : TStr ) : integer;
     i := 1;
     while i <= length( s ) do
       if ( s[ i ] = trg ) and ( i + 1 <= length( s )) then
-	case s[ i + 1 ] of
-	  '|': incby( 2, 1 );
+	if s[i+1] = trg then incby( 2, 1 )
+	else case s[ i + 1 ] of
 	  '@': incby( 5, 0 );
 	  '#': incby( 4, 0 );
 	  else incby( 2, 0 );
@@ -338,8 +338,8 @@ function cstrip( s : TStr ) : TStr;
     result := '';
     while i <= length( s ) do
       if s[ i ] = trg then
-	case s[ i + 1 ] of
-	  '|': begin i += 2; result += '|'; end;
+	if s[ i+1 ] = trg then begin i += 2; result += trg; end
+	else case s[ i + 1 ] of
 	  '@': inc( i, 5 );
 	  '#': inc( i, 4 );
 	  else inc( i, 2 );
@@ -351,7 +351,7 @@ function cstrip( s : TStr ) : TStr;
   end;
 
 
-function normaltext( s : TStr; esc : TChr=trg ) : TStr; deprecated 'use cwesc';
+function normaltext( s : TStr; esc : TChr='|') : TStr; deprecated 'use cwesc';
   begin
     result := cwesc( s );
   end;
