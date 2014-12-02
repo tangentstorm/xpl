@@ -206,8 +206,9 @@ function max( a, b :  int32 ) : int32;
 function paramline : TStr;
   var i : byte; s : TStr;
   begin
-    s := '';
-    for i := 1 to paramcount do s := s + a2u(rawbytestring(paramstr( i )))+ ' ';
+    if paramcount > 0 then s := paramstr(1) else s:= '';
+    if paramcount > 1 then for i := 2 to paramcount do
+      s := s + ' ' + paramstr( i );
     result := s;
   end; { paramline }
 
