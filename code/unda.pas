@@ -52,7 +52,7 @@ type
      _data : array of T;
    public type
      INDCellRef = ICellRef<T>;
-     TNDCellIter = class (TInterfacedObject, IEnumerator<INDCellRef>)
+     TNDCellIter = class (TInterfacedObject {,IEnumerator<INDCellRef>})
        private
          _cur : ICellRef<T>;
        public
