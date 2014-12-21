@@ -23,7 +23,6 @@ procedure TApp1.init;
     count := 0;
   end;
 
-
 procedure TApp1.OnKey( ext : boolean; ch : char );
   begin
     term.emit(ch); view.smudge;
@@ -39,7 +38,7 @@ procedure TApp1.keys(km : ukm.TKeyMap);
 procedure TApp1.step;
   begin
   end;
-  
+
 begin
   uapp.Run(TApp1);
 end.

@@ -1,8 +1,6 @@
 {$mode delphiunicode}{$i xpc.inc}
 program fxdemo;
-uses kvm, fx, cw, stacks;
-
-var terms : GStack<kvm.ITerm>;
+uses kvm, fx, cw;
 
 const
   green	  = 2; yellow  = 3; blue = 4; magenta = 5;
@@ -10,18 +8,15 @@ const
 
 procedure sub(x,y : cardinal);
   begin
-    terms.push(kvm.work);
-    kvm.work := kvm.TSubTerm.Create(kvm.work, x, y, subw, subh);
+    kvm.PushSub(x, y, subw, subh);
     kvm.bg('k'); kvm.fg('w'); clrscr;
   end;
 
 procedure pop;
-  begin
-    kvm.work := terms.pop;
+  begin kvm.PopTerm;
   end;
 
 begin
-  terms := GStack<kvm.ITerm>.Create(16);
   fx.fillscreen( $0004, '▒');
 
   sub(2, 1); cwritexy(0, 0, '|wtxtline');

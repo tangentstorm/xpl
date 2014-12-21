@@ -1,6 +1,6 @@
 // range extension for sqlite;
 //
-// $ fpc -fPIC sqlrange.pas -o
+// $ fpc -fPIC sqlrange.pas && mv libsqlrange.so sqlrange.so
 // $ sqlite3
 // sqlite> .load ./sqlrange
 // sqlite> create virtual table range using range;
@@ -48,7 +48,7 @@ function vtDisconnect(pVTab:psqlite3_vtab):cint;cdecl;
 // virtual table 'best index' query
 
 function vtBestIndex(var pVTab:sqlite3_vtab;
-                     var ixifo:Psqlite3_index_info) : cint; cdecl;
+                     var ixifo:sqlite3_index_info) : cint; cdecl;
   begin
     result := SQLITE_OK; // just use whatever the defaults are
   end;
@@ -76,7 +76,7 @@ function vtClose (pCur:Psqlite3_vtab_cursor):cint;cdecl;
   end;
 
 function vtFilter (pCur:Psqlite3_vtab_cursor; idxNum:cint; idxStr:pcchar;
-                        argc:cint; var argv:Psqlite3_value) : cint; cdecl;
+                        argc:cint; argv:ppsqlite3_value) : cint; cdecl;
   begin
     PVtCursor(pCur).idx := 0; result := SQLITE_OK;
   end;
@@ -111,7 +111,7 @@ function vtRowid (pCur : Psqlite3_vtab_cursor;
   end;
 
 
-  
+
 
 // virtual table - optional methods
 
@@ -158,7 +158,6 @@ function vtRowid (pCur : Psqlite3_vtab_cursor;
   end;}
 
 
-  
 
 // -- virtual table -- methods
 const
@@ -200,9 +199,7 @@ begin
   gSQLite.create_module(dbh, 'range', @SqlVtRange, nil);
   result := SQLITE_OK;
 end;
-  
-		   
+
 exports
   sqlite3_sqlrange_init;
-
-end.		   
+end.

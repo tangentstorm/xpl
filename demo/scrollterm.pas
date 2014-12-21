@@ -23,16 +23,16 @@ begin
     chk.equal( wherey, j );
   end;
 
-  sub := TSubTerm.create( kvm.work, 3, 4, 68, 18 ); sub.clrscr;
-  sub := TSubTerm.create( kvm.work, 5, 5, 64, 16 ); sub.gotoxy(0,0);
+  sub := SubTerm( kvm.asTerm, 3, 4, 68, 18 ); sub.clrscr;
+  sub := SubTerm( kvm.asTerm, 5, 5, 64, 16 ); sub.gotoxy(0,0);
 
   // the next line redirects output to the subwindow.
-  win := kvm.work; kvm.work := sub;
+  kvm.pushTerm(sub);
   repeat
     fg(255-random(16)); write('scroll'); sleep(1);
   until keypressed;
 
   readkey; readkey; // pause for screenshot
-  kvm.work := win; // restore the main window for the clrscr
+  kvm.popterm; // restore the main window for the clrscr
   showcursor; clrscr;
 end.

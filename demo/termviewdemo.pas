@@ -14,7 +14,6 @@ type
 procedure TTermViewApp.Initialize;
   var s : ITerm;
   begin
-    
     sprite := TTermView.Create(self);
     sprite.dump;
     sprite.Init(0, 0, 16, 8);
@@ -46,7 +45,7 @@ procedure TTermViewApp.DoRun;
     end; { case }
     sprite.smudge;
   end;
-
+
 begin
   CustomApplication := TTermViewApp.Create(nil);
   with CustomApplication do

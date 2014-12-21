@@ -1,3 +1,5 @@
+// demo of cx unit, which provides (c)olorized e(x)ception tracebacks.
+{$mode delphi}
 program cxdemo;
 uses xpc, cx, sysutils;
 
