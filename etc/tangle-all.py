@@ -19,7 +19,8 @@ always_regen = '-f' in sys.argv
 
 for filename in os.listdir(os.path.expanduser(orgdir)):
     if filename.endswith('.org'):
-        timepath = os.path.join('etc/stamps', "." + filename[:-4] + '.last-tangled')
+        timepath = os.path.join('etc/stamps',
+                                "." + filename[:-4] + '.last-tangled')
         filepath = os.path.join(orgdir, filename)
         regen =(always_regen
                 or not os.path.exists(timepath)

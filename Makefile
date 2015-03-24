@@ -7,7 +7,7 @@ GEN = ./.gen
 BIN = ./bin
 
 FPC = fpc -Mobjfpc -FE$(BIN) -Fu$(GEN) -Fi$(GEN) -Fu./code -Fi./code -gl
-PY = python2.7
+PY = python
 TANGLE = ./etc/tangle.el
 
 targets:
