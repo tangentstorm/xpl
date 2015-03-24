@@ -9,10 +9,12 @@ interface uses xpc, sysutils, ustr, math;
   function incwrap( goesto, amt, min, max : longint ) : longint;
   function decwrap( from, amt, min, max : longint ) : longint;
   function stepwrap( x, amt, min, max : longint ) : longint;
-  function h2s( w : word ) : TStr;
-  function s2h( s : TStr ) : word;
+  function h2s( w : word ) : TStr; deprecated 'use n2h';
+  function s2h( s : TStr ) : word; deprecated 'use h2n';
   function n2s( x : longint ) : TStr;
   function s2n( s : TStr ) : longint;
+  function n2h( n : cardinal ) : TStr;
+  function h2n( s : TStr ) : cardinal;
   function truth(p : longint ) : byte;
   function power(a, b : longint ) : longint;
   function sgn( x : longint ) : shortint;
@@ -69,32 +71,37 @@ implementation
     stepwrap := x;
   end;
 
-function h2s( w : word ) : TStr;
-  var h : TStr;
-  begin
-    h := '0123456789ABCDEF';
-    h2s := '$' +
-	   h[ w shr 12 and $000F + 1 ] +
-	   h[ w shr  8 and $000F + 1 ] +
-	   h[ w shr  4 and $000F + 1 ] +
-	   h[ w mod 16 + 1 ];
+// hex ↔ number conversions
+
+function n2h( n : cardinal ) : TStr;
+  const hexits = '0123456789ABCDEF';
+  function n2h_aux( t : cardinal) : TStr;
+    begin
+      if t = 0 then result := ''
+      else result := n2h_aux( t shr 4 ) + TChr(hexits[ (t and $0f) + 1 ]);
+    end;
+  begin result := '$' + n2h_aux(n);
   end;
 
-function s2h( s : TStr ) : word;
-  var c : byte; v : word;
+function h2n( s : TStr ) : cardinal;
+  var ch : TChr;
   begin
-    v := 0;
-    if s[ 1 ] = '$' then delete( s, 1, 1 );
-    for c := 1 to length( s ) do begin
-      v := v shl 4;
-      case s[ 1 ] of
-	'0'..'9' : v := v + ord( s[1] ) - 48;
-	'A'..'F' : v := v + ord( s[1] ) - 55;  { ord('A') -55 = 10 }
-      end;
-      delete( s, 1, 1 );
-    end;
-    s2h := v;
+    result := 0;
+    for ch in s do begin
+      result := result shl 4;
+      case ch of
+	'$' : ok;
+	'0'..'9' : result := result + ord( ch ) - 48;
+	'A'..'F' : result := result + ord( ch ) - 55;  { ord('A')-55 = 10 }
+	'a'..'f' : result := result + ord( ch ) - 87;  { ord('a')-87 = 10 }
+      end
+    end
   end;
+
+// ancient confusing names:
+function h2s( w : word) : TStr; begin result := n2h(w); end;
+function s2h( s : TStr) : word; begin result := h2n(s); end;
+
 
 function n2s( x : longint ) : TStr;
   var s : TStr;
