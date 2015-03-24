@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Tangles all items in the ./text (or dir specified in environ['ORG'])
 
