@@ -7,21 +7,24 @@ type
     function _GetLength : cardinal;
     procedure _SetLength( len : cardinal );
     function Append( item : T ) : cardinal;
-    function Extend( items : array of T ) : cardinal;
+    function Extend( items : array of T ) : cardinal; overload;
+    function Extend( items : IArray<T> ) : cardinal; overload;
     property length : cardinal read _GetLength write _SetLength;
+    function GetEnumerator : IEnumerator<T>;
   end;
 
   GArray<T> = class ( GSeq<T>, IArray<T> )
     _items : array of T;
     _count : cardinal;
     _growby : cardinal;
-  public
+  public { IArray }
     constructor Create( growBy : cardinal = 16 ); overload;
     constructor Create( items : array of T ); overload;
     function Grow : cardinal;
     function Append( item : T ) : cardinal;
-    function Extend( items : array of T ) : cardinal;
-  public { IArray }
+    function Extend( items : array of T ) : cardinal; overload;
+    function Extend( items : IArray<T> ) : cardinal; overload;
+  public { ISeq }
     function _GetLength : cardinal; override;
     procedure _SetLength( len : cardinal ); override;
     procedure SetItem( i : cardinal; const item : T ); override;
@@ -29,6 +32,7 @@ type
     function GetItem( i : cardinal; default : T) : T; overload;
     property at[ i : cardinal ]: T read GetItem write SetItem; default;
     property length : cardinal read _GetLength write _SetLength;
+    function GetEnumerator : IEnumerator<T>;
   end;
 
   // Find uses an equality check, so it only works on types where
@@ -48,27 +52,28 @@ constructor GArray<T>.Create( growBy : cardinal = 16 );
   end;
 
 constructor GArray<T>.Create( items : array of T );
-  begin
-    self.Create(16); self.Extend(items);;
+  begin self.Create(16); self.Extend(items);;
   end;
 
 function GArray<T>.Grow : cardinal;
   begin
     result := _count; inc(_count);
     if _count >= system.Length( _items )
-      then SetLength( _items, result + _growBy )
+    then SetLength( _items, result + _growBy )
   end;
 
 function GArray<T>.Append( item : T ) : cardinal;
-  begin
-    result := self.Grow;
-    _items[ result ] := item;
+  begin result := self.Grow; _items[ result ] := item;
   end;
 
 function GArray<T>.Extend( items : array of T ) : cardinal;
   var item : T;
-  begin
-    for item in items do result := self.append(item);
+  begin for item in items do result := self.append(item);
+  end;
+
+function GArray<T>.Extend( items : IArray<T> ) : cardinal;
+  var item : T;
+  begin for item in items do result := self.append(item);
   end;
 
 function GArray<T>._GetLength : cardinal;
@@ -108,6 +113,10 @@ function GEqArray<T>.Find( item : T; out i : cardinal ) : boolean;
       repeat
         dec( i ); result := item = _items[ i ]
       until result or (i = 0);
+  end;
+
+function GArray<T>.GetEnumerator : IEnumerator<T>;
+  begin result := GSeq<T>(self).GetEnumerator;
   end;
 
 end.
