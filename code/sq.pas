@@ -2,10 +2,23 @@
 unit sq;{ sequences }
 interface uses xpc, cr, stacks;
 
-  type ISequence<TVal> = interface
-    function GetItem( i : cardinal ) : TVal;
-    procedure SetItem( i : cardinal; const value : TVal );
-    property item[ i : cardinal ] : TVal read GetItem write SetItem; default;
+// ugh. this provides generic sequences with for..in..do support,
+// but it's a mess because of problems with the generics parser in fpc.
+
+type
+{  ISequence<X> = interface;
+  TSequenceEnumerator<T> = class
+//private type ISeq = ISequence<T>; // sq.pas(8,36) Fatal: Internal error 2012101001
+//constructor Create(seq:ISequence<T>); // sq.pas(9,36) Fatal: Internal error 2012101001
+    function MoveNext : boolean;
+    function GetCurrent:T;
+    property Current : T; read GetCurrent;
+  end; }
+  ISequence<T> = interface
+    function GetItem( i : cardinal ) : T;
+//    function GetEnumerator:TSequenceEnumerator<T>;
+    procedure SetItem( i : cardinal; const value : T );
+    property item[ i : cardinal ] : T read GetItem write SetItem; default;
   end;
 
   { abstract sequence class.
@@ -26,7 +39,7 @@ interface uses xpc, cr, stacks;
       property length : cardinal read _GetLength;
 
       { --- begin nested type ----------------------------------- }
-    type NSeqCursor = class( TInterfacedObject, ICursor<T> )
+    type NSeqCursor = class( TInterfacedObject, ICursor<T>, IEnumerator<T> )
       private type SSeq = GSeq<T>;
       public
 	constructor create( seq : SSeq );
@@ -58,8 +71,7 @@ interface uses xpc, cr, stacks;
 
       public  { for..in loop interface }
         function MoveNext : boolean;
-	property Current : T read get_value;
-
+        function GetCurrent : T;
       private
         type idxstack = GStack<cardinal>;
       private
@@ -173,17 +185,20 @@ implementation
     result := NSeqCursor.create( self );
   end;
 
-  { IEnumerator Interaface for FOR .. IN ... DO  loops }
+{ IEnumerator Interaface for FOR .. IN ... DO  loops }
 
-  function GSeq<T>.GetEnumerator : NSeqCursor;
-  begin
-    result := self.make_cursor;
+function GSeq<T>.GetEnumerator : NSeqCursor;
+  begin result := self.make_cursor;
   end;
 
-  function GSeq<T>.NSeqcursor.MoveNext : boolean;
+function GSeq<T>.NSeqcursor.MoveNext : boolean;
   begin
     try self.next; result := true;
     except result := false end;
+  end;
+
+function GSeq<T>.NSeqcursor.GetCurrent : T;
+  begin result := get_value;
   end;
 
 end.
