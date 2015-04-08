@@ -142,16 +142,17 @@ function a2u(const a : ansistring) : TStr; inline;
 procedure logger.debug( args :  array of const );
   var i : integer;
   begin
-    write( '(DEBUG: ' );
+    write('[', DateTimeToStr(now), '] DEBUG: ' );
     for i := 0 to length( args ) - 1 do begin
       case args[ i ].vtype of
         vtinteger : write( args[ i ].vinteger );
         vtstring  : write( args[ i ].vstring^ );
-        vtansistring  : write( ansistring( args[ i ].vansistring ));
+        vtansistring : write( ansistring( args[ i ].vansistring ));
+        vtunicodestring : write( unicodestring( args[i].vunicodestring ));
         else write( '??' );
       end; { case }
     end;
-    writeln( ')' );
+    writeln;
   end;
 
 procedure logger.debug( arg : TStr );
