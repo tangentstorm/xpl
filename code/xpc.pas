@@ -34,6 +34,8 @@ procedure ok;
 
 { some handy debug routines }
 procedure die( msg :  TStr );
+procedure throw( msg : TStr); overload;
+procedure throw( msgFmt : TStr; args:array of const); overload;
 procedure pause( msg : TStr );
 procedure hexdump( data : TStr );
 function StackTrace(E :  Exception):TStr;
@@ -88,6 +90,14 @@ procedure die( msg :  TStr );
     write( msg );
     writeln;
     halt;
+  end;
+
+procedure throw(msg : TStr);
+  begin throw(msg,[]);
+  end;
+
+procedure throw(msgFmt : TStr; args:array of const);
+  begin raise Exception.Create(Format(msgFmt, args));
   end;
 
 procedure pause( msg : TStr );
