@@ -1,6 +1,6 @@
 {$mode delphi}{$i xpc.inc}
 unit arrays;
-interface uses sq, sysutils;
+interface uses xpc, sq;
 
 type
   IArray<T> = interface ( ISequence<T> )
@@ -9,6 +9,7 @@ type
     function Append( item : T ) : cardinal;
     function Extend( items : array of T ) : cardinal; overload;
     function Extend( items : IArray<T> ) : cardinal; overload;
+    procedure Fill( item : T );
     property length : cardinal read _GetLength write _SetLength;
     function GetEnumerator : IEnumerator<T>;
   end;
@@ -20,10 +21,12 @@ type
   public { IArray }
     constructor Create( growBy : cardinal = 16 ); overload;
     constructor Create( items : array of T ); overload;
+    constructor Create( newCount : cardinal; fillWith:T ); overload;
     function Grow : cardinal;
     function Append( item : T ) : cardinal;
     function Extend( items : array of T ) : cardinal; overload;
     function Extend( items : IArray<T> ) : cardinal; overload;
+    procedure Fill( item : T );
   public { ISeq }
     function _GetLength : cardinal; override;
     procedure _SetLength( len : cardinal ); override;
@@ -42,19 +45,24 @@ type
   end;
 
 implementation
-
+
 constructor GArray<T>.Create( growBy : cardinal = 16 );
   begin
     _count := 0;
     _growBy := growBy;
     if _growBy > 0 then SetLength( _items, _growBy )
-    else raise Exception.Create('GArray.growBy must be > 0')
+    else throw('GArray.growBy must be > 0')
   end;
 
 constructor GArray<T>.Create( items : array of T );
-  begin self.Create(16); self.Extend(items);;
+  begin self.Create(16); self.Extend(items);
   end;
 
+constructor GArray<T>.Create( newCount : cardinal; fillWith:T );
+  begin self.Create; self.Length:=newCount; self.Fill(fillWith);
+  end;
+
+
 function GArray<T>.Grow : cardinal;
   begin
     result := _count; inc(_count);
@@ -76,6 +84,12 @@ function GArray<T>.Extend( items : IArray<T> ) : cardinal;
   begin for item in items do result := self.append(item);
   end;
 
+procedure GArray<T>.Fill( item : T);
+  var i : cardinal;
+  begin for i := 0 to length-1 do _items[ i ] := item
+  end;
+
+{ iseq interface }
 function GArray<T>._GetLength : cardinal;
   begin
     result := _count
@@ -90,13 +104,13 @@ procedure GArray<T>._SetLength( len : cardinal );
 procedure GArray<T>.SetItem( i : cardinal; const item : T );
   begin
     if i < _count then _items[ i ] := item
-    else raise Exception.Create('array index out of bounds')
+    else throw('array index out of bounds')
   end;
 
 function GArray<T>.GetItem( i : cardinal ) : T;
   begin
     if i < _count then result := _items[ i ]
-    else raise Exception.Create('array index out of bounds')
+    else throw('array index out of bounds: %d[%d]', [_count, i])
   end;
 
 function GArray<T>.GetItem( i : cardinal; default : T ) : T;
