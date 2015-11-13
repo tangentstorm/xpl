@@ -18,7 +18,7 @@
   {$overflowchecks on}
   {$rangechecks on}
   {$typedaddress on}
-  {$IFNDEF FREEBSD}
+  {$IFDEF WINDOWS}
   {$checkpointer on}            // checks pointers for nil (when -gh used)
   {$ENDIF}
 
