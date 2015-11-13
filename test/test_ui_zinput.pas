@@ -90,7 +90,7 @@ procedure test_OnAccept;
     s.value := '';
     inp.value := 'hello world';
     inp.Accept; // make sure default handler doesn't crash.
-    inp.OnAccept := @s.SetValue;
+    inp.OnAccept := s.SetValue;
     inp.Accept;
     chk.equal( s.value, 'hello world' );
   end;
