@@ -15,12 +15,12 @@ type
     function  AtEnd : TBit;
     function  Value : T;
     property idx : TInt read GetIdx write SetIdx;
-  end;	      
+  end;
 
   INDArray<T> = interface
     procedure SetAtIdx( i : TInt; aValue : T );
     function  GetAtIdx( i : TInt ) : T;
-    function  CellRef( i : TInt ) : ICellRef;
+    function  CellRef( i : TInt ) : ICellRef<T>;
     function GetRank : TInt;
     function GetCount : TInt;
     function GetShape : TInts;
@@ -205,7 +205,7 @@ function _TNDArray<T>.GetEnumerator : TNDCellIter;
 function _TNDArray<T>.GetRank : TInt;
   begin result := _rank
   end;
-  
+
 function _TNDArray<T>.GetCount : TInt;
   begin result := _count
   end;
