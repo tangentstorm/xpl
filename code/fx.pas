@@ -60,11 +60,11 @@ implementation
 
 
 procedure vln( x, y, h : byte; c : word );
-  begin colorxyv( x, y, c, ustr.chntimes( '│',  h ))
+  begin colorxyv( x, y, c, ustr.chntimes( '│'[1],  h ))
   end;
 
 procedure hln( x, y, w : byte; c : word );
-  begin cxy( c, x, y, ustr.chntimes( '─', w ));
+  begin cxy( c, x, y, ustr.chntimes( '─'[1], w ));
   end;
 
 procedure txtline( a, b, x, y : byte; c : word );
@@ -85,8 +85,8 @@ procedure Rectangle( a, b, x, y : byte; c : word );
     // up when rendering these two characters on the same line:
     // whichever one is written second gets displaced 2 spaces to
     // the left...
-    for count := B+1 to Y-1 do cxy( c, a, count, '│' );
-    for count := B+1 to Y-1 do cxy( c, x, count, '│' );
+    for count := B+1 to Y-1 do cxy( c, a, count, '│'[1] );
+    for count := B+1 to Y-1 do cxy( c, x, count, '│'[1] );
     cxy( c, a, b, '┌' );
     cxy( c, a, y, '└' );
     cxy( c, x, b, '┐' );
