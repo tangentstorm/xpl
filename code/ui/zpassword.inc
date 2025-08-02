@@ -9,7 +9,7 @@ end;
 
 constructor zPassword.default( a, b, tl, dl : integer; start : String );
 begin
-  create( a, b, tl, dl, $0A, $0E, '■', start );
+  create( a, b, tl, dl, $0A, $0E, '■'[1], start );
 end;
 
 

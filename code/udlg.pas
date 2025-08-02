@@ -16,16 +16,20 @@
 {$WARNING Parameters to dlg commands are not sanitized. do not use in real code! (TODO)}
 {$i xpc}{$mode delphi}{ dialog example }
 unit udlg;
-interface uses unix, sysutils;
-  
+interface
+{$IFDEF UNIX}
+uses unix, sysutils;
+
   type TStr = rawbytestring;
   var tmpfile : TStr = 'x.txt';
   function dialog(cmd, argfmt : TStr; argv : array of const) : TStr;
   function menu(title : TStr; h,w,mh : byte; options: array of TStr) : TStr;
   function fselect(path : TStr; h,w : byte) : TStr;
+{$ENDIF}
 
 implementation
 
+{$IFDEF UNIX}
 function readln(var f : textfile) : TStr;
   begin
     system.readln(f, result);
@@ -66,6 +70,6 @@ function fselect(path : TStr; h,w : byte) : TStr;
   begin
     result := dialog('fselect', '"%s" %d %d', [h, w])
   end;
-
+{$ENDIF}
 begin
 end.

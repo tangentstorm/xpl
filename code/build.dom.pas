@@ -3,7 +3,7 @@ unit build.dom;
 interface uses dom, build;
 
 type
-  IDomBuilder = interface( specialize IBuilder<TDOMNode> )
+  IDomBuilder = interface( IBuilder<TDOMNode> )
   end;
   TDomBuilder = class( TInterfacedObject, IDomBuilder )
     _last ,

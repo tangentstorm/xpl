@@ -15,7 +15,7 @@ end;
 
 constructor zVScroller.default( a, b, _min, _max, strt : Byte );
 begin
-  create( a, b, _min, _max, strt, '│', '■', $08, $0A );
+  create( a, b, _min, _max, strt, '│'[1], '■'[1], $08, $0A );
 end;
 
 

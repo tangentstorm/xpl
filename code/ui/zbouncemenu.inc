@@ -26,24 +26,24 @@ begin
   inherited Render;
   if mv then mou.show
 end;
-  
+
 
 procedure zBounceMenu.format( choice : zChoice );
 begin
   if choice.st2 = ''
   then choice.st2 := invertstr( choice.st1 );
-  
+
   if choice.st1 <> ''
   then choice.st1 := normalstr( choice.st1 )
   else choice.st1 := sepbar;
-  
+
   choice.x  := tx;
   choice.x2 := tx + width + 1;
   choice.y  := ty + height;
   choice.y2 := ty + height;
   inc( height, 1 );
 end;
-  
+
 
 function zbouncemenu.normalstr( s : String ) : String;
 begin
@@ -63,18 +63,18 @@ end;
 
 function zbouncemenu.top : String;
 begin
-  result := '|!' + zbmb + '|' + zbmf + '┌' + chntimes( '─', width ) + '┐';
+  result := '|!' + zbmb + '|' + zbmf + '┌' + chntimes( '─'[1], width ) + '┐';
 end;
 
 
 function zbouncemenu.sepbar : String;
 begin
-  result := '|!' + zbmb + '|' + zbmf + '├' + chntimes( '─', width ) + '┤';
+  result := '|!' + zbmb + '|' + zbmf + '├' + chntimes( '─'[1], width ) + '┤';
 end;
 
 
 function zbouncemenu.bottom : String;
 begin
-  result := '|!' + zbmb + '|' + zbmf + '└' + chntimes( '─', width ) + '┘';
+  result := '|!' + zbmb + '|' + zbmf + '└' + chntimes( '─'[1], width ) + '┘';
 end;
 
