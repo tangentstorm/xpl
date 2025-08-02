@@ -29,7 +29,7 @@ implementation
       w,mo,d,y : word;
   begin
     getdate( y, mo, d, w );
-    WriteStr(result, days[ w-1 ], ' ',
+    WriteStr(result, days[ w ], ' ',
 		flushrt( n2s( mo ), 2, '0'),
 		flushrt( n2s( d ), 2, '0'), '.',
 		copy(flushrt( n2s( y ), 4, '0'), 3, 5 ), ' ', time);
