@@ -18,9 +18,9 @@
   {$overflowchecks on}
   {$rangechecks on}
   {$typedaddress on}
-  {$IFDEF WINDOWS}
+  {$IFDEF WINDOWS}{$IFDEF CPUX86}
   {$checkpointer on}            // checks pointers for nil (when -gh used)
-  {$ENDIF}
+  {$ENDIF}{$ENDIF}
 
   // things to disallow because they're bad practice
   {$writeableconst off} // ancient. use initialized vars instead
