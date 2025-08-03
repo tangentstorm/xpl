@@ -99,8 +99,7 @@ A terminal's display buffer is essentially a grid of such cells. I'm using my [[
     end;
 #+end_src
 
-#+name: @kvm:impl
-#+begin_src pascal
+#+begin_src pascal :noweb-ref @kvm:impl
 
   function TTermGrid.GetAttr( const x, y : word ) : TTextAttr;
     begin
@@ -198,8 +197,7 @@ type
 #+end_src
 ** implementation
 *** constructor
-#+name: @kvm:impl
-#+begin_src pascal
+#+begin_src pascal :noweb-ref @kvm:impl
 
   constructor TBaseTerm.Create( NewW, NewH : word );
     begin
@@ -210,8 +208,7 @@ type
 
 #+end_src
 *** display geometry
-#+name: @kvm:impl
-#+begin_src pascal
+#+begin_src pascal :noweb-ref @kvm:impl
   function TBaseTerm.Width : word; begin result := _w end;
   function TBaseTerm.Height: word; begin result := _h end;
   function TBaseTerm.XMax : word; begin result := max(0, _w-1) end;
@@ -223,8 +220,8 @@ type
 #+end_src
 
 *** cursor position
-#+name: @kvm:impl
-#+begin_src pascal
+
+#+begin_src pascal :noweb-ref @kvm:impl
 
   function TBaseTerm.WhereX : word; begin result := _curs.x end;
   function TBaseTerm.WhereY : word; begin result := _curs.y end;
@@ -239,8 +236,7 @@ type
 #+end_src
 
 
-#+name: @kvm:impl
-#+begin_src pascal
+#+begin_src pascal  :noweb-ref @kvm:impl
   procedure TBaseTerm.ClrScr;
     var y : word; i : integer;
     begin
@@ -296,8 +292,7 @@ type
 
 It may not always be possible to change the shape of the cursor, so by default, these do nothing.
 
-#+name: @kvm:impl
-#+begin_src pascal
+#+begin_src pascal  :noweb-ref @kvm:impl
 
   procedure TBaseTerm.ShowCursor; begin ok end;
   procedure TBaseTerm.HideCursor; begin ok end;
@@ -308,8 +303,7 @@ It may not always be possible to change the shape of the cursor, so by default, 
 
 These may have to be pushed down into gridterm, or else everything needs to have a grid.
 
-#+name: @kvm:impl
-#+begin_src pascal
+#+begin_src pascal :noweb-ref @kvm:impl
 
   procedure TBaseTerm.InsLine; begin ok end;
   procedure TBaseTerm.DelLine; begin ok end;
@@ -320,8 +314,7 @@ These may have to be pushed down into gridterm, or else everything needs to have
 
 These control the foreground and background colors of the characters generated with (emit).
 
-#+name: @kvm:impl
-#+begin_src pascal
+#+begin_src pascal :noweb-ref @kvm:impl
 
   function  TBaseTerm.GetTextAttr : word;
     begin
@@ -350,8 +343,7 @@ These control the foreground and background colors of the characters generated w
 #+end_src
 
 *** text emitter
-#+name: @kvm:impl
-#+begin_src pascal
+#+begin_src pascal :noweb-ref @kvm:impl
 
   procedure TBaseTerm.EmitChar( ch : TChr );
      begin
@@ -375,8 +367,7 @@ These control the foreground and background colors of the characters generated w
 #+end_src
 
 *** debug routines
-#+name: @kvm:impl
-#+begin_src pascal
+#+begin_src pascal :noweb-ref @kvm:impl
   procedure tbaseterm.dump;
     begin
       if self = nil then trace('[NIL]')
@@ -426,8 +417,7 @@ These control the foreground and background colors of the characters generated w
 
 ** Implementation
 
-#+name: @kvm:impl
-#+begin_src pascal
+#+begin_src pascal :noweb-ref @kvm:impl
 
   constructor TGridTerm.Create( NewW, NewH : word );
     begin
@@ -517,8 +507,7 @@ These control the foreground and background colors of the characters generated w
     end;
 #+end_src
 
-#+name: @kvm:impl
-#+begin_src pascal
+#+begin_src pascal :noweb-ref @kvm:impl
   constructor TAnsiTerm.Create(NewW, NewH : word; CurX, CurY : byte);
     begin
       inherited Create( NewW, NewH );
@@ -617,8 +606,7 @@ These control the foreground and background colors of the characters generated w
 
 We start with a handful of member variables to track the bounds:
 
-#+name: @kvm:impl
-#+begin_src pascal
+#+begin_src pascal :noweb-ref @kvm:impl
 
   constructor TSubTerm.Create(term : ITerm; x, y, NewW, NewH : word );
     begin
@@ -731,8 +719,7 @@ We start with a handful of member variables to track the bounds:
 #+end_src
 ** implementation
 *** constructor and empty callback
-#+name: @hook:impl
-#+begin_src pascal
+#+begin_src pascal :noweb-ref @hook:impl
 
   constructor THookTerm.Create;
     begin inherited;
@@ -767,8 +754,7 @@ We start with a handful of member variables to track the bounds:
     end;
 #+end_src
 *** passthrough queries (no callback)
-#+name: @hook:impl
-#+begin_src pascal
+#+begin_src pascal :noweb-ref @hook:impl
 
   function THookTerm.Width : word;
     begin result := _subject.width
@@ -801,8 +787,7 @@ We start with a handful of member variables to track the bounds:
 #+end_src
 
 ***  callbacks
-#+name: @hook:impl
-#+begin_src pascal
+#+begin_src pascal :noweb-ref @hook:impl
 
   procedure THookTerm.ClrScr;
     begin _subject.ClrScr; _OnChange( hkClrScr, [ ]);
@@ -874,8 +859,8 @@ We start with a handful of member variables to track the bounds:
 #+end_src
 
 * char mnemonics for ansi colors.
-#+name: @kvm:impl
-#+begin_src pascal
+
+#+begin_src pascal :noweb-ref @kvm:impl
 
   procedure bg( ch :  char );
     var i : byte;
@@ -959,7 +944,7 @@ See also the [[https://github.com/tangentstorm/xpl/blob/master/code/cw.pas][cw u
 There are basically three steps to deal with:
 
 #+name: lifecycle
-#+begin_src pascal
+#+begin_src pascal :noweb yes
   initialization
     <<redirect-io>>
     <<create-term-obj>>
@@ -980,8 +965,7 @@ First, we want to redirect the =Output= file, so that calls to =Write= and =Writ
 The second step is simply to create a new =ITerm= instance and assign the =work= variable.
 
 
-#+name: @kvm:impl
-#+begin_src pascal
+#+begin_src pascal :noweb-ref @kvm:impl
   {$IFDEF UNIX}
   function GetLiveAnsiTerm : TAnsiTerm;
     var termw, termh : byte; curx, cury : byte;
@@ -1036,8 +1020,7 @@ We maintain a stack of ITerm instances so that =kvm.work= can be assigned and la
 
 ** implementation
 
-#+name: @kvm:impl
-#+begin_src pascal
+#+begin_src pascal :noweb-ref @kvm:impl
 
   type TTermStack = specialize GStack<ITerm>;
   var termStack : TTermStack;
@@ -1091,8 +1074,7 @@ function HookTerm( term : ITerm ) : IHookTerm;
 :TS:       <2014-04-13 01:37AM>
 :ID:       fdybtl90agg0
 :END:
-#+name: @kvm:impl
-#+begin_src pascal
+#+begin_src pascal :noweb-ref @kvm:impl
 
   function GridTerm( w, h : cardinal ): IGridTerm;
     begin result := TGridTerm.Create( w, h )
@@ -1150,8 +1132,7 @@ In general, you're only going to work with one screen at a time, so it's conveni
 ** implementation
 ** conversions
 
-#+name: @kvm:impl
-#+begin_src pascal
+#+begin_src pascal :noweb-ref @kvm:impl
 
   function WordToAttr(w : word): TTextAttr; inline;
     begin
@@ -1170,8 +1151,7 @@ In general, you're only going to work with one screen at a time, so it's conveni
 
 The others just delegate to the =work= term.
 
-#+name: @kvm:impl
-#+begin_src pascal
+#+begin_src pascal :noweb-ref @kvm:impl
 
   type TWeakTerm = specialize Weak<ITerm>;
   function  asTerm : ITerm; begin result := TWeakTerm.Ref(work) end;
@@ -1211,11 +1191,8 @@ The others just delegate to the =work= term.
 
 
 * OUTPUT =kvm.pas=
-#+begin_src pascal :tangle "../code/kvm.pas" :noweb tangle
-
-
+#+begin_src pascal :tangle "../code/kvm.pas" :noweb yes
   {!! WARNING!! GENERATED FILE. edit ../org/kvm.pas.org instead!! !!}
-
 
   {$mode objfpc}{$i xpc.inc}{$m+}
   unit kvm;
@@ -1273,8 +1250,7 @@ function my : int32;
 function mb : set32;
 #+end_src
 
-#+name @kvm:impl
-#+begin_src pascal
+#+begin_src pascal :noweb-ref @kvm:impl
 {  mouse routines are just stubs at the moment }
 
 function hasmouse : boolean;
