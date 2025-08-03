@@ -1,6 +1,6 @@
 // Terminal sensors for various platforms.
 {$mode objfpc}
-unit terminal;
+unit uterm;
 interface
 {$macro on}
 {$if defined(VIDEO_FALLBACK)}{$define SUBUNIT:=uterm_video}
