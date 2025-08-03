@@ -4,16 +4,22 @@
 
 {$mode delphiunicode}{$i xpc.inc }
 program xterm256color;
-  uses xpc, kvm, ustr;
+  uses xpc, ustr, sysutils;
 
-  procedure resetcolor;
+  procedure esc(s : TStr); begin  write(#27, '[', s) end;
+  procedure ClrScr; begin esc('H'); esc('J') end;
+  procedure Fg(b : byte); begin esc('38;5;' + IntToStr(b) + 'm') end;
+  procedure Bg(b : byte); begin esc('48;5;' + IntToStr(b) + 'm') end;
+
+
+  procedure ResetColor;
   begin
-    fg('w'); bg('k');
+    fg(7); bg(0);
   end;
 
   function hexbyte( b : byte ) : string;
   begin
-    result := pad( hex( b ), 2, '0' )
+    result := rpad( hex( b ), 2, '0' )
   end;
 
   { the original looked a lot nicer because it used two spaces of background
@@ -22,10 +28,10 @@ program xterm256color;
   procedure showcolor( color :  byte );
   begin
     resetcolor;
-    kvm.fg( color );
+    fg( color );
     write(':');
-    kvm.bg( color );
-    kvm.fg( 0 );
+    bg( color );
+    fg( 0 );
     write('-');
   end;
 
@@ -42,7 +48,7 @@ var
   red, green, blue, gray, color, level, x,y : byte;
 begin
 
-  kvm.ClrScr;
+  ClrScr;
 
   { -- configure the palette --------------------- }
 
@@ -50,22 +56,20 @@ begin
   // reproduction of the standard ANSI colors, but possibly more
   // pleasing shades.
 
-  //  we have to write(stdout,#27), or else kvm strips out the escape! :(
-
   for red := 0 to 5 do
     for green := 0 to 5 do
       for blue := 0 to 5 do
       begin
-	write( stdout, #27, ']4;', 16 + (red * 36) + (green * 6) + blue, 'rgb:' );
-	if red <> 0 then write( stdout, hexbyte( red * 40 + 55 ))
-	else write( stdout, '00' );
-	write(stdout, '/');
-	if green <> 0 then write(stdout, hexbyte( green * 40 + 55 ))
-	else write(stdout, '00' );
-	write(stdout, '/');
-	if blue <> 0 then write(stdout, hexbyte( blue * 40 + 55 ))
-	else write(stdout, '00' );
-	write(stdout, #27, '\' );
+        write(#27, ']4;'); write(16 + (red * 36) + (green * 6) + blue, 'rgb:' );
+        if red <> 0 then write(hexbyte( red * 40 + 55 ))
+        else write( '00' );
+        write('/');
+        if green <> 0 then write(hexbyte( green * 40 + 55 ))
+        else write('00' );
+        write('/');
+        if blue <> 0 then write(hexbyte( blue * 40 + 55 ))
+        else write('00' );
+        write(#27, '\' );
       end;
 
   // colors 232-255 are a grayscale ramp, intentionally leaving out
@@ -73,16 +77,15 @@ begin
   for gray := 0 to 23 do
   begin
     level := (gray * 10) + 8;
-    write( stdout, #27, ']4;', 232 + gray, 'rgb:' );
-    write( stdout, hexbyte( level ), '/', hexbyte( level ), '/', hexbyte( level ));
-    write( stdout, #27, '\' );
+    write( #27, ']4;'); write( 232 + gray, 'rgb:' );
+    write( hexbyte( level ), '/', hexbyte( level ), '/', hexbyte( level ));
+    write( #27, '\' );
   end;
 
 
   // display the colors
 
   // first the system ones:
-  
   section( 'System colors:');
   for color := 0 to 7 do showcolor( color );
   resetcolor; writeln;
@@ -93,9 +96,7 @@ begin
   section( 'Color cube, 6x6x6:' );
   for green := 0 to 5 do begin
     for red := 0 to 5 do begin
-      for blue := 0 to 5 do begin
-	showcolor( 16 + (red * 36) + (green * 6) + blue )
-      end;
+      for blue := 0 to 5 do showcolor( 16 + (red * 36) + (green * 6) + blue );
       resetcolor; { to draw the spaces between layers of the cube }
       write('  ');
     end;
@@ -117,7 +118,7 @@ begin
     for x := 0 to 15 do begin
       color := y*16+x; fg(color); write(hexbyte(color));
     end;
-    writeln;
+    resetcolor; writeln;
   end;
 
   resetcolor; writeln;
